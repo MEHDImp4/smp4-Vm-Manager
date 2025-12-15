@@ -1,0 +1,129 @@
+import { Cloud, Github, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+
+const Footer = () => {
+  return (
+    <footer className="border-t border-border/50 bg-card/50">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid md:grid-cols-4 gap-8 mb-12">
+          {/* Brand */}
+          <div className="md:col-span-1">
+            <Link to="/" className="flex items-center gap-2 mb-4">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <Cloud className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold">
+                Mini<span className="gradient-text">Cloud</span>
+              </span>
+            </Link>
+            <p className="text-muted-foreground text-sm mb-4">
+              Containers et VM légères pour apprendre et expérimenter.
+            </p>
+            <div className="flex gap-3">
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+              >
+                <Github className="w-5 h-5" />
+              </a>
+              <a
+                href="https://discord.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Links */}
+          <div>
+            <h4 className="font-semibold mb-4">Produit</h4>
+            <ul className="space-y-2">
+              <li>
+                <a href="#templates" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                  Templates
+                </a>
+              </li>
+              <li>
+                <a href="#points" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                  Tarification
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                  Documentation
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-4">Ressources</h4>
+            <ul className="space-y-2">
+              <li>
+                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                  Tutoriels
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                  Blog
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                  Status
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-4">Support</h4>
+            <ul className="space-y-2">
+              <li>
+                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                  Centre d'aide
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                  Contact
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                  Discord
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="px-2 py-1 rounded bg-primary/20 text-primary text-xs font-medium">
+              Projet éducatif
+            </span>
+            <span>© 2024 MiniCloud. Tous droits réservés.</span>
+          </div>
+          <div className="flex gap-6 text-sm text-muted-foreground">
+            <a href="#" className="hover:text-foreground transition-colors">
+              Confidentialité
+            </a>
+            <a href="#" className="hover:text-foreground transition-colors">
+              CGU
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;

@@ -1,0 +1,562 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, Terminal, Cpu, HardDrive, MemoryStick, Globe, Shield, ExternalLink, Power, Play, Square, RotateCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { toast } from "sonner";
+import { Terminal as XTerminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import 'xterm/css/xterm.css';
+import { useRef } from "react";
+
+const formatBytes = (bytes: number, decimals = 2) => {
+    if (!+bytes) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+};
+
+const InstanceDetails = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [stats, setStats] = useState({ cpu: 0, ram: 0, storage: 0, diskBytes: 0, maxDiskBytes: 0, ip: null, status: 'unknown', rootPassword: null });
+    const [cpuData, setCpuData] = useState<any[]>([]);
+    const [ramData, setRamData] = useState<any[]>([]);
+    const [instance, setInstance] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!id) return;
+
+        const fetchStats = async () => {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+
+            try {
+                const response = await fetch(`http://localhost:3001/api/instances/${id}/stats`, {
+                    headers: { "Authorization": `Bearer ${user.token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setStats(data);
+
+                    const timeStr = new Date().toLocaleTimeString();
+                    setCpuData(prev => [...prev.slice(-19), { time: timeStr, value: data.cpu }]);
+                    setRamData(prev => [...prev.slice(-19), { time: timeStr, value: data.ram }]);
+                }
+            } catch (e) {
+                console.error("Stats poll error", e);
+            }
+        };
+
+        fetchStats(); // Initial fetching
+        const interval = setInterval(fetchStats, 5000); // Poll every 5s
+        return () => clearInterval(interval);
+    }, [id]);
+
+    // Fetch instance details
+    useEffect(() => {
+        const fetchInstance = async () => {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) {
+                navigate("/login");
+                return;
+            }
+            const user = JSON.parse(userStr);
+
+            try {
+                const response = await fetch("http://localhost:3001/api/instances", {
+                    headers: { "Authorization": `Bearer ${user.token}` }
+                });
+
+                if (response.ok) {
+                    const instances = await response.json();
+                    const found = instances.find((i: any) => i.id === id);
+                    if (found) {
+                        setInstance(found);
+                    } else {
+                        // navigate("/dashboard"); 
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch instance", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchInstance();
+    }, [id, navigate]);
+
+    // Terminal Logic
+    const terminalRef = useRef<HTMLDivElement>(null);
+    const xtermRef = useRef<XTerminal | null>(null);
+    const wsRef = useRef<WebSocket | null>(null);
+
+    useEffect(() => {
+        if (!instance?.vmid || !stats.ip || !stats.rootPassword) return;
+
+        // Cleanup previous session
+        if (xtermRef.current) {
+            xtermRef.current.dispose();
+            xtermRef.current = null;
+        }
+        if (wsRef.current) {
+            wsRef.current.close();
+            wsRef.current = null;
+        }
+
+        const term = new XTerminal({
+            cursorBlink: true,
+            fontFamily: '"Fira Code", monospace',
+            fontSize: 14,
+            theme: {
+                background: '#09090b', // zinc-950
+                foreground: '#f4f4f5',
+            }
+        });
+
+        const fitAddon = new FitAddon();
+        term.loadAddon(fitAddon);
+
+        if (terminalRef.current) {
+            term.open(terminalRef.current);
+            fitAddon.fit();
+            xtermRef.current = term;
+        }
+
+        term.write('Connecting to SSH WebSocket...\r\n');
+
+        // Connect to WebSocket
+        const ws = new WebSocket(`ws://localhost:3001/ws/ssh?vmid=${instance.vmid}&host=${stats.ip}`);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+            term.write('WebSocket Connected. Authenticating...\r\n');
+            ws.send(JSON.stringify({
+                type: 'auth',
+                username: 'smp4'
+                // password: stats.rootPassword // Removed for interactive auth
+            }));
+        };
+
+        ws.onmessage = (ev) => {
+            try {
+                const msg = JSON.parse(ev.data);
+                if (msg.type === 'data') {
+                    term.write(msg.data);
+                } else if (msg.type === 'error') {
+                    term.write(`\r\n\x1b[31mError: ${msg.message}\x1b[0m\r\n`);
+                } else if (msg.type === 'connected') {
+                    term.write('\r\n\x1b[32mSSH Session Established.\x1b[0m\r\n');
+                    term.focus();
+                } else if (msg.type === 'disconnect') {
+                    term.write('\r\n\x1b[33mDisconnected.\x1b[0m\r\n');
+                }
+            } catch (e) {
+                // If not JSON, just write raw (fallback)
+                // term.write(ev.data);
+            }
+        };
+
+        ws.onerror = () => {
+            term.write('\r\n\x1b[31mWebSocket Error.\x1b[0m\r\n');
+        };
+
+        ws.onclose = () => {
+            term.write('\r\nConnection Closed.\r\n');
+        };
+
+        term.onData(data => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'input', data }));
+            }
+        });
+
+        term.onResize(size => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'resize', rows: size.rows, cols: size.cols }));
+            }
+        });
+
+        const resizeObserver = new ResizeObserver(() => fitAddon.fit());
+        if (terminalRef.current) resizeObserver.observe(terminalRef.current);
+
+        return () => {
+            if (ws.readyState === WebSocket.OPEN) ws.close();
+            term.dispose();
+            resizeObserver.disconnect();
+        };
+    }, [instance?.vmid, stats.ip, stats.rootPassword]);
+
+    const handleRestart = async () => {
+        if (!confirm("Voulez-vous vraiment redémarrer cette instance ?")) return;
+
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        try {
+            const response = await fetch(`http://localhost:3001/api/instances/${id}/restart`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+
+            if (response.ok) {
+                // toast.success("Redémarrage en cours..."); 
+                alert("Redémarrage en cours...");
+            } else {
+                alert("Erreur lors du redémarrage");
+            }
+        } catch (error) {
+            console.error("Restart error", error);
+        }
+    };
+
+    if (loading) return <div className="min-h-screen bg-background flex items-center justify-center">Chargement...</div>;
+    if (!instance) return <div className="min-h-screen bg-background flex items-center justify-center">Instance non trouvée</div>;
+
+    const isOnline = stats.status === 'online' || stats.status === 'running';
+
+    return (
+        <div className="min-h-screen bg-background p-4 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+                            <ArrowLeft className="w-5 h-5" />
+                        </Button>
+                        <div>
+                            <h1 className="text-2xl font-bold flex items-center gap-2">
+                                {instance.name}
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isOnline ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
+                                    {isOnline ? '● En ligne' : '○ Arrêté'}
+                                </span>
+                            </h1>
+                            <p className="text-muted-foreground flex items-center gap-2 text-sm">
+                                ID: {instance.id} • IP: <span className="font-mono bg-secondary/10 px-1 rounded">{stats.ip || 'En attente...'}</span>
+                                {stats.rootPassword && (
+                                    <>
+                                        • Password: <span className="font-mono bg-secondary/10 px-1 rounded select-all cursor-text text-red-400">{stats.rootPassword}</span>
+                                    </>
+                                )}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className={`gap-2 ${isOnline ? 'text-destructive border-destructive/50 hover:bg-destructive/10' : 'text-success border-success/50 hover:bg-success/10'}`}
+                            onClick={async () => {
+                                const userStr = localStorage.getItem("user");
+                                if (!userStr) return;
+                                const user = JSON.parse(userStr);
+                                try {
+                                    const res = await fetch(`http://localhost:3001/api/instances/${id}/toggle`, {
+                                        method: "POST",
+                                        headers: { "Authorization": `Bearer ${user.token}` }
+                                    });
+                                    if (res.ok) {
+                                        toast.success(isOnline ? "Arrêt en cours..." : "Démarrage en cours...");
+                                        // Optinally refresh stats immediately or wait for poll
+                                    }
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            }}
+                        >
+                            {isOnline ? <Square className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+                            {isOnline ? "Arrêter" : "Démarrer"}
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-secondary/20 hover:bg-secondary/40 border-border/50 gap-2"
+                            onClick={handleRestart}
+                            disabled={!isOnline}
+                        >
+                            <RotateCw className="w-4 h-4" />
+                            Redémarrer
+                        </Button>
+
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="gap-2"
+                            onClick={async () => {
+                                const confirmName = prompt(`Pour confirmer la suppression, tapez le nom de l'instance :\n${instance.name}`);
+                                if (confirmName !== instance.name) {
+                                    if (confirmName !== null) alert("Nom incorrect. Suppression annulée.");
+                                    return;
+                                }
+
+                                const userStr = localStorage.getItem("user");
+                                if (!userStr) return;
+                                const user = JSON.parse(userStr);
+
+                                try {
+                                    const res = await fetch(`http://localhost:3001/api/instances/${id}`, {
+                                        method: "DELETE",
+                                        headers: { "Authorization": `Bearer ${user.token}` }
+                                    });
+                                    if (res.ok) {
+                                        toast.success("Instance supprimée avec succès");
+                                        navigate("/dashboard");
+                                    } else {
+                                        alert("Erreur lors de la suppression");
+                                    }
+                                } catch (e) {
+                                    console.error(e);
+                                    alert("Erreur de connexion");
+                                }
+                            }}
+                        >
+                            Delete
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Main Content: Terminal */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="glass rounded-xl border border-border/50 overflow-hidden flex flex-col h-[500px]">
+                            <div className="bg-black/80 px-4 py-2 flex items-center justify-between border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <Terminal className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground font-mono">smp4@server:~</span>
+                                </div>
+                                <div className="flex gap-1.5">
+                                    <div className="w-3 h-3 rounded-full bg-red-500/50" />
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
+                                    <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                                </div>
+                            </div>
+                            <div className="flex-1 bg-black p-1 font-mono text-sm overflow-hidden relative" ref={terminalRef}>
+                                {(!isOnline || !stats.ip) && (
+                                    <div className="absolute inset-0 flex items-center justify-center flex-col opacity-50 z-10 select-none pointer-events-none">
+                                        <Terminal className="w-16 h-16 mb-4 text-muted-foreground" />
+                                        <p className="text-muted-foreground">En attente de connexion...</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Sidebar: Metrics & Actions */}
+                    <div className="space-y-6">
+
+                        {/* Actions Card */}
+                        <div className="glass rounded-xl p-5 border border-border/50 space-y-4">
+                            <h3 className="font-semibold text-sm text-muted-foreground">Actions Rapides</h3>
+                            <div className="grid gap-3">
+                                <a
+                                    href={stats.ip ? `http://${stats.ip}:9000` : '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`w-full flex items-center justify-start h-auto py-3 px-4 rounded-md border border-border/50 transition-colors group ${stats.ip ? 'hover:bg-primary/5 hover:border-primary/50' : 'opacity-50 cursor-not-allowed'}`}
+                                >
+                                    <div className="p-2 rounded-lg bg-primary/10 text-primary mr-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                        <ExternalLink className="w-4 h-4" />
+                                    </div>
+                                    <div className="text-left">
+                                        <div className="font-semibold text-sm">Accès Portainer</div>
+                                        <div className="text-xs text-muted-foreground">Gérer les conteneurs</div>
+                                    </div>
+                                </a>
+
+                                <Button variant="outline" className="w-full justify-start h-auto py-3 border-border/50 hover:bg-secondary/5 hover:border-secondary/50 group">
+                                    <div className="p-2 rounded-lg bg-secondary/10 text-secondary mr-3 group-hover:bg-secondary group-hover:text-primary-foreground transition-colors">
+                                        <Shield className="w-4 h-4" />
+                                    </div>
+                                    <div className="text-left">
+                                        <div className="font-semibold text-sm">VPN Config</div>
+                                        <div className="text-xs text-muted-foreground">Télécharger .ovpn</div>
+                                    </div>
+                                </Button>
+
+                                <Button variant="outline" className="w-full justify-start h-auto py-3 border-border/50 hover:bg-warning/5 hover:border-warning/50 group">
+                                    <div className="p-2 rounded-lg bg-warning/10 text-warning mr-3 group-hover:bg-warning group-hover:text-primary-foreground transition-colors">
+                                        <Globe className="w-4 h-4" />
+                                    </div>
+                                    <div className="text-left">
+                                        <div className="font-semibold text-sm">Sous-domaines</div>
+                                        <div className="text-xs text-muted-foreground">Configuration DNS</div>
+                                    </div>
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Metrics Card */}
+                        <div className="glass rounded-xl p-5 border border-border/50 flex flex-col justify-between h-auto bg-card/30 backdrop-blur-sm">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-semibold text-sm text-card-foreground flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    Ressources en direct
+                                </h3>
+                            </div>
+
+                            <div className="space-y-4 flex-1 flex flex-col justify-center">
+                                {/* CPU Graph */}
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="p-1 rounded bg-blue-500/10 text-blue-500">
+                                                <Cpu className="w-3.5 h-3.5" />
+                                            </div>
+                                            <span className="font-medium text-muted-foreground">CPU</span>
+                                        </div>
+                                        <span className="font-bold text-foreground font-mono">{stats.cpu}%</span>
+                                    </div>
+                                    <div className="h-[60px] w-full rounded-md border border-white/10 bg-black/40 overflow-hidden relative shadow-inner">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={cpuData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="cpuGradient" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="value"
+                                                    stroke="#3b82f6"
+                                                    strokeWidth={1.5}
+                                                    fill="url(#cpuGradient)"
+                                                    isAnimationActive={false}
+                                                />
+                                                <YAxis hide domain={[0, 100]} />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* RAM Graph */}
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="p-1 rounded bg-purple-500/10 text-purple-500">
+                                                <MemoryStick className="w-3.5 h-3.5" />
+                                            </div>
+                                            <span className="font-medium text-muted-foreground">RAM</span>
+                                        </div>
+                                        <span className="font-bold text-foreground font-mono">{stats.ram}%</span>
+                                    </div>
+                                    <div className="h-[60px] w-full rounded-md border border-white/10 bg-black/40 overflow-hidden relative shadow-inner">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={ramData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="ramGradient" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
+                                                        <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="value"
+                                                    stroke="#a855f7"
+                                                    strokeWidth={1.5}
+                                                    fill="url(#ramGradient)"
+                                                    isAnimationActive={false}
+                                                />
+                                                <YAxis hide domain={[0, 100]} />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Storage Bar */}
+                                <div className="space-y-2 pt-1">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="p-1 rounded bg-amber-500/10 text-amber-500">
+                                                <HardDrive className="w-3.5 h-3.5" />
+                                            </div>
+                                            <span className="font-medium text-muted-foreground">Stockage</span>
+                                        </div>
+                                        <div className="flex items-baseline gap-1 font-mono">
+                                            <span className="font-bold text-foreground">{formatBytes(stats.diskBytes || 0)}</span>
+                                            <span className="text-[10px] text-muted-foreground">/ {formatBytes(stats.maxDiskBytes || 0)}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="h-2.5 w-full bg-secondary/20 rounded-full overflow-hidden border border-white/5">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-amber-500 to-orange-600 shadow-sm transition-all duration-700 ease-in-out"
+                                            style={{ width: `${Math.min(stats.storage, 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Documentation Section */}
+            <div className="glass rounded-2xl p-6 border border-border/50 mt-8">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-primary" />
+                    Guide de démarrage rapide
+                </h3>
+
+                <div className="space-y-4">
+                    {/* Step 1 */}
+                    <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">1</div>
+                        <div>
+                            <h4 className="font-medium mb-1">Connexion SSH</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Utilisez le terminal ci-dessus ou connectez-vous via SSH avec l'utilisateur <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">smp4</code> et le mot de passe affiché.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">2</div>
+                        <div>
+                            <h4 className="font-medium mb-1">Changer votre mot de passe</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Lors de la première connexion, vous serez invité à changer votre mot de passe. Choisissez un mot de passe sécurisé que vous n'oublierez pas.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Step 3 */}
+                    <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">3</div>
+                        <div>
+                            <h4 className="font-medium mb-1">Accéder à Portainer</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Portainer est préinstallé. Accédez-y via <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">http://{stats.ip || 'IP'}:9000</code> pour gérer vos containers Docker visuellement.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Step 4 - Placeholder */}
+                    <div className="flex gap-4 opacity-60">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold text-sm">4</div>
+                        <div>
+                            <h4 className="font-medium mb-1 flex items-center gap-2">
+                                Sous-domaines personnalisés
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">Bientôt</span>
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                                Créez des sous-domaines personnalisés pour accéder à vos services. Cette fonctionnalité sera bientôt disponible.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default InstanceDetails;

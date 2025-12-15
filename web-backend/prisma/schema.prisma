@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String
+  points     Float    @default(100.0)
+  created_at DateTime @default(now())
+
+  instances  Instance[]
+
+  @@map("users")
+}
+
+model Instance {
+  id           String   @id @default(uuid())
+  vmid         Int?     @unique // Proxmox VMID
+  name         String
+  template     String
+  cpu          String
+  ram          String
+  storage      String
+  pointsPerDay Float
+  status       String   @default("stopped") // "online" or "stopped"
+  rootPassword String?  // Optional root password generated on creation
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  created_at   DateTime @default(now())
+
+  @@map("instances")
+}
+
+model Template {
+  id      String @id
+  name    String
+  cpu     String
+  ram     String
+  storage String
+  points  Float
+
+  versions TemplateVersion[]
+
+  @@map("templates")
+}
+
+model TemplateVersion {
+  id         Int      @id @default(autoincrement())
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id])
+  os         String   // "ubuntu", "debian"
+  proxmoxId  Int      // The ID of the template in Proxmox (e.g., 100, 101)
+
+  @@unique([templateId, os])
+  @@map("template_versions")
+}

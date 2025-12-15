@@ -1,0 +1,72 @@
+[
+    {
+        "id": "nano",
+        "name": "Nano",
+        "cpu": "1 vCPU",
+        "ram": "512 Mo",
+        "storage": "12 Go",
+        "points": 4,
+        "versions": [
+            {
+                "os": "default",
+                "proxmoxId": 101
+            }
+        ]
+    },
+    {
+        "id": "micro",
+        "name": "Micro",
+        "cpu": "1 vCPU",
+        "ram": "1 Go",
+        "storage": "12 Go",
+        "points": 8,
+        "versions": [
+            {
+                "os": "default",
+                "proxmoxId": 102
+            }
+        ]
+    },
+    {
+        "id": "small",
+        "name": "Small",
+        "cpu": "2 vCPU",
+        "ram": "2 Go",
+        "storage": "20 Go",
+        "points": 12,
+        "versions": [
+            {
+                "os": "default",
+                "proxmoxId": 103
+            }
+        ]
+    },
+    {
+        "id": "medium",
+        "name": "Medium",
+        "cpu": "3 vCPU",
+        "ram": "4 Go",
+        "storage": "28 Go",
+        "points": 18,
+        "versions": [
+            {
+                "os": "default",
+                "proxmoxId": 104
+            }
+        ]
+    },
+    {
+        "id": "pro",
+        "name": "Pro",
+        "cpu": "4 vCPU",
+        "ram": "8 Go",
+        "storage": "32 Go",
+        "points": 28,
+        "versions": [
+            {
+                "os": "default",
+                "proxmoxId": 105
+            }
+        ]
+    }
+]

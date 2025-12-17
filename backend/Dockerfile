@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (including devDependencies for prisma)
-RUN npm install
+# Install dependencies (including devDependencies for prisma) and OpenSSL for Alpine Compatibility
+RUN apk add --no-cache openssl && npm install
 
 # Copy prisma schema
 COPY prisma ./prisma/

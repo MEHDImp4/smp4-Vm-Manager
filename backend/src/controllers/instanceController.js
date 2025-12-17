@@ -478,13 +478,16 @@ const createDomain = async (req, res) => {
         }
 
         // Get Instance IP
-        const stats = await proxmoxService.getLXCStatus(instance.vmid);
-        if (!stats.ip) {
+        const interfaces = await proxmoxService.getLXCInterfaces(instance.vmid);
+        const eth0 = interfaces.find(i => i.name === 'eth0');
+        const ip = eth0 && eth0.inet ? eth0.inet.split('/')[0] : null;
+
+        if (!ip) {
             return res.status(400).json({ error: "Instance must have an IP address to bind a domain" });
         }
 
         const fullHostname = `${subdomain}.smp4.xyz`;
-        const serviceUrl = `http://${stats.ip}:${port}`;
+        const serviceUrl = `http://${ip}:${port}`;
 
         // Add to Cloudflare
         await cloudflareService.addTunnelIngress(fullHostname, serviceUrl);

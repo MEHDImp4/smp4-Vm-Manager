@@ -25,7 +25,7 @@ const Dashboard = () => {
       setTotalPoints(user.points || 0);
 
       try {
-        const response = await fetch("http://localhost:3001/api/instances", {
+        const response = await fetch("/api/instances", {
           headers: {
             "Authorization": `Bearer ${user.token}`
           }
@@ -49,7 +49,7 @@ const Dashboard = () => {
       const user = JSON.parse(userStr);
 
       try {
-        const response = await fetch("http://localhost:3001/api/auth/me", {
+        const response = await fetch("/api/auth/me", {
           headers: {
             "Authorization": `Bearer ${user.token}`
           }
@@ -81,7 +81,7 @@ const Dashboard = () => {
     const user = JSON.parse(userStr);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/instances/${id}/toggle`, {
+      const response = await fetch(`/api/instances/${id}/toggle`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${user.token}`
@@ -127,7 +127,7 @@ const Dashboard = () => {
     const user = JSON.parse(userStr);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/instances/${deleteConfirm.instance.id}`, {
+      const response = await fetch(`/api/instances/${deleteConfirm.instance.id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${user.token}`

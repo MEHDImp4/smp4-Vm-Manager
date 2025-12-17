@@ -28,7 +28,7 @@ const CreateInstance = () => {
     useEffect(() => {
         const fetchTemplates = async () => {
             try {
-                const response = await fetch("http://localhost:3001/api/templates");
+                const response = await fetch("/api/templates");
                 if (response.ok) {
                     const data = await response.json();
                     setTemplates(data);
@@ -62,7 +62,7 @@ const CreateInstance = () => {
 
             const templateData = templates.find(t => t.id === selectedTemplate);
 
-            const response = await fetch("http://localhost:3001/api/instances", {
+            const response = await fetch("/api/instances", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

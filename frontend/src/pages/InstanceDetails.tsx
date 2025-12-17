@@ -48,7 +48,7 @@ const InstanceDetails = () => {
             const user = JSON.parse(userStr);
 
             try {
-                const response = await fetch(`http://localhost:3001/api/instances/${id}/stats`, {
+                const response = await fetch(`/api/instances/${id}/stats`, {
                     headers: { "Authorization": `Bearer ${user.token}` }
                 });
                 if (response.ok) {
@@ -80,7 +80,8 @@ const InstanceDetails = () => {
             const user = JSON.parse(userStr);
 
             try {
-                const response = await fetch("http://localhost:3001/api/instances", {
+                // const response = await fetch("http://localhost:3001/api/instances", {
+                const response = await fetch("/api/instances", {
                     headers: { "Authorization": `Bearer ${user.token}` }
                 });
 
@@ -109,7 +110,7 @@ const InstanceDetails = () => {
         const user = JSON.parse(userStr);
 
         try {
-            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots`, {
+            const response = await fetch(`/api/instances/${id}/snapshots`, {
                 headers: { "Authorization": `Bearer ${user.token}` }
             });
             if (response.ok) {
@@ -136,7 +137,7 @@ const InstanceDetails = () => {
 
         setSnapshotLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots`, {
+            const response = await fetch(`/api/instances/${id}/snapshots`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${user.token}`,
@@ -168,7 +169,7 @@ const InstanceDetails = () => {
 
         setSnapshotLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots/${snapId}/restore`, {
+            const response = await fetch(`/api/instances/${id}/snapshots/${snapId}/restore`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${user.token}` }
             });
@@ -195,7 +196,7 @@ const InstanceDetails = () => {
 
         setSnapshotLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots/${snapId}`, {
+            const response = await fetch(`/api/instances/${id}/snapshots/${snapId}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${user.token}` }
             });
@@ -223,7 +224,7 @@ const InstanceDetails = () => {
         setSnapshotLoading(true);
 
         try {
-            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots/${snapId}/download`, {
+            const response = await fetch(`/api/instances/${id}/snapshots/${snapId}/download`, {
                 headers: { "Authorization": `Bearer ${user.token}` }
             });
 
@@ -282,7 +283,9 @@ const InstanceDetails = () => {
         term.write('Connecting to SSH WebSocket...\r\n');
 
         // Connect to WebSocket
-        const ws = new WebSocket(`ws://localhost:3001/ws/ssh?vmid=${instance.vmid}&host=${stats.ip}`);
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/ssh?vmid=${instance.vmid}&host=${stats.ip}`;
+        const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -351,7 +354,7 @@ const InstanceDetails = () => {
         const user = JSON.parse(userStr);
 
         try {
-            const response = await fetch(`http://localhost:3001/api/instances/${id}/restart`, {
+            const response = await fetch(`/api/instances/${id}/restart`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${user.token}` }
             });
@@ -409,7 +412,7 @@ const InstanceDetails = () => {
                                 if (!userStr) return;
                                 const user = JSON.parse(userStr);
                                 try {
-                                    const res = await fetch(`http://localhost:3001/api/instances/${id}/toggle`, {
+                                    const res = await fetch(`/api/instances/${id}/toggle`, {
                                         method: "POST",
                                         headers: { "Authorization": `Bearer ${user.token}` }
                                     });
@@ -453,7 +456,7 @@ const InstanceDetails = () => {
                                 const user = JSON.parse(userStr);
 
                                 try {
-                                    const res = await fetch(`http://localhost:3001/api/instances/${id}`, {
+                                    const res = await fetch(`/api/instances/${id}`, {
                                         method: "DELETE",
                                         headers: { "Authorization": `Bearer ${user.token}` }
                                     });

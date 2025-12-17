@@ -1,6 +1,5 @@
 const express = require('express');
-const { register, login, getProfile } = require('../controllers/authController');
-const { verifyToken } = require('../middlewares/authMiddleware');
+
 
 const router = express.Router();
 
@@ -40,6 +39,7 @@ const upload = multer({
 });
 
 const { register, login, getProfile, updatePassword, uploadAvatar } = require('../controllers/authController');
+const { verifyToken } = require('../middlewares/authMiddleware');
 
 router.post('/register', register);
 router.post('/login', login);

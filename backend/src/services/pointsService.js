@@ -37,7 +37,6 @@ const deductPoints = async () => {
             if (costPerMinute > 0) {
                 let newBalance = user.points - costPerMinute;
 
-                // CRITICAL: Check if balance is exhausted
                 if (newBalance <= 0) {
                     console.log(`User ${user.email} has exhausted points. Stopping instances.`);
                     newBalance = 0;
@@ -54,11 +53,20 @@ const deductPoints = async () => {
                     });
                 }
 
-                // Update user balance
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: { points: newBalance }
-                });
+                // Update user balance AND log transaction
+                await prisma.$transaction([
+                    prisma.user.update({
+                        where: { id: user.id },
+                        data: { points: newBalance }
+                    }),
+                    prisma.pointTransaction.create({
+                        data: {
+                            userId: user.id,
+                            amount: -costPerMinute,
+                            type: 'usage'
+                        }
+                    })
+                ]);
 
                 // console.log(`Deducted ${costPerMinute.toFixed(4)} points from ${user.email}. New balance: ${newBalance.toFixed(4)}`);
             }

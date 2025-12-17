@@ -155,4 +155,19 @@ const uploadAvatar = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getProfile, updatePassword, uploadAvatar };
+const getPointsHistory = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const transactions = await prisma.pointTransaction.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            take: 100 // Limit to last 100 transactions
+        });
+        res.json(transactions);
+    } catch (error) {
+        console.error("History fetch error", error);
+        res.status(500).json({ message: "Failed to fetch points history" });
+    }
+};
+
+module.exports = { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory };

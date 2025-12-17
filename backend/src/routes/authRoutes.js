@@ -38,7 +38,7 @@ const upload = multer({
     }
 });
 
-const { register, login, getProfile, updatePassword, uploadAvatar } = require('../controllers/authController');
+const { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory } = require('../controllers/authController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
 router.post('/register', register);
@@ -46,5 +46,7 @@ router.post('/login', login);
 router.get('/me', verifyToken, getProfile);
 router.put('/password', verifyToken, updatePassword);
 router.post('/avatar', verifyToken, upload.single('avatar'), uploadAvatar);
+router.put('/me/avatar', verifyToken, upload.single('avatar'), uploadAvatar); // Alternative route
+router.get('/me/points-history', verifyToken, getPointsHistory);
 
 module.exports = router;

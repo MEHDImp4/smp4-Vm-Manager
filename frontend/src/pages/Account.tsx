@@ -12,7 +12,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Cloud, LogOut, User, Shield, Key, ChevronRight, LayoutDashboard, Coins, History, Settings, Loader2, Camera } from "lucide-react";
+import { Cloud, LogOut, User, Shield, Key, ChevronRight, LayoutDashboard, Coins, History, Settings, Loader2, Camera, Sparkles, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 const Account = () => {
@@ -30,6 +30,25 @@ const Account = () => {
         confirmPassword: ""
     });
 
+    // Buy Points State
+    const [buyOpen, setBuyOpen] = useState(false);
+    const [buyLoading, setBuyLoading] = useState(false);
+
+
+
+    const handleBuyPoints = async () => {
+        setBuyLoading(true);
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setBuyLoading(false);
+        setBuyOpen(false);
+        toast.success("Points achetés avec succès ! (Simulation)");
+        // Update user points locally for demo
+        setUser((prev: any) => ({ ...prev, points: (prev?.points || 0) + 500 }));
+    };
+
+    const [usageData, setUsageData] = useState<any[]>([]);
+
     useEffect(() => {
         const fetchUserData = async () => {
             const userStr = localStorage.getItem('user');
@@ -39,26 +58,58 @@ const Account = () => {
             }
             const localUser = JSON.parse(userStr);
 
-            // Fetch fresh profile data including avatar
+            // Fetch fresh profile data
             try {
                 const res = await fetch('/api/auth/me', {
                     headers: { "Authorization": `Bearer ${localUser.token}` }
                 });
                 if (res.ok) {
                     const freshUser = await res.json();
-                    // Merge with token from local storage
                     const updatedUser = { ...freshUser, token: localUser.token };
                     setUser(updatedUser);
                     localStorage.setItem('user', JSON.stringify(updatedUser)); // Update local storage
                 } else {
                     setUser(localUser); // Fallback
                 }
+
+                // Fetch Points History
+                const historyRes = await fetch('/api/auth/me/points-history', {
+                    headers: { "Authorization": `Bearer ${localUser.token}` }
+                });
+                if (historyRes.ok) {
+                    const transactions = await historyRes.json();
+                    processHistoryData(transactions);
+                }
+
             } catch (e) {
                 setUser(localUser);
             }
         };
         fetchUserData();
     }, [navigate]);
+
+    const processHistoryData = (transactions: any[]) => {
+        // Group by day (last 7 days) using simple aggregation
+        const last7Days = [...Array(7)].map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            return d.toISOString().split('T')[0];
+        });
+
+        const grouped = last7Days.map(date => {
+            const dayTransactions = transactions.filter((t: any) => t.createdAt.startsWith(date) && t.type === 'usage');
+            const totalPoints = dayTransactions.reduce((acc: number, t: any) => acc + Math.abs(t.amount), 0);
+
+            const dateObj = new Date(date);
+            const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+            return {
+                name: days[dateObj.getDay()],
+                points: parseFloat(totalPoints.toFixed(2))
+            };
+        });
+
+        setUsageData(grouped);
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('user');
@@ -311,44 +362,100 @@ const Account = () => {
                         </div>
                     </div>
 
-                    {/* Stats / Usage Summary */}
+                    {/* Stats / Usage Summary - Enhanced */}
                     <div className="grid md:grid-cols-2 gap-6 animate-fade-up-delay-2">
-                        <div className="glass rounded-2xl p-6 border border-white/10 hover:border-primary/20 transition-colors group">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-semibold flex items-center gap-2">
-                                    <Coins className="w-5 h-5 text-yellow-500" />
-                                    Solde de Points
-                                </h3>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
-                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                </Button>
+                        {/* Points Balance & Buy */}
+                        <div className="glass rounded-2xl p-6 border border-white/10 hover:border-primary/20 transition-colors group relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-yellow-500/10 rounded-full blur-[80px]" />
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="font-semibold flex items-center gap-2">
+                                        <div className="p-2 rounded-lg bg-yellow-500/10 text-yellow-500">
+                                            <Coins className="w-5 h-5" />
+                                        </div>
+                                        Solde de Points
+                                    </h3>
+                                </div>
+                                <div className="text-4xl font-bold mb-2 tracking-tight">{user.points?.toFixed(0) || '0'} <span className="text-lg text-muted-foreground font-normal">pts</span></div>
+                                <p className="text-sm text-muted-foreground mb-6">Suffisant pour environ {Math.floor((user.points || 0) / 50)} jours de VM standard.</p>
+
+                                <Dialog open={buyOpen} onOpenChange={setBuyOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button className="w-full h-11 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hover:from-yellow-500/20 hover:to-orange-500/20 text-yellow-500 border border-yellow-500/20 shadow-none">
+                                            <Sparkles className="w-4 h-4 mr-2" />
+                                            Recharger mon compte
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md glass border-white/10">
+                                        <DialogHeader>
+                                            <DialogTitle className="flex items-center gap-2">
+                                                <Coins className="w-5 h-5 text-yellow-500" />
+                                                Recharger des points
+                                            </DialogTitle>
+                                            <DialogDescription>
+                                                Choisissez un pack de points. (Simulation)
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid grid-cols-2 gap-4 py-4">
+                                            {[
+                                                { amount: 100, price: "5€", popular: false },
+                                                { amount: 500, price: "20€", popular: true },
+                                                { amount: 1000, price: "35€", popular: false },
+                                                { amount: 5000, price: "150€", popular: false },
+                                            ].map((pack, i) => (
+                                                <div key={i} className={`relative p-4 rounded-xl border cursor-pointer hover:bg-white/5 transition-all ${pack.popular ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-white/10 bg-white/5'}`} onClick={handleBuyPoints}>
+                                                    {pack.popular && (
+                                                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-wider">
+                                                            Populaire
+                                                        </div>
+                                                    )}
+                                                    <div className="text-center">
+                                                        <div className="text-2xl font-bold text-foreground mb-1">{pack.amount}</div>
+                                                        <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Points</div>
+                                                        <div className="mt-3 py-1 px-2 rounded-lg bg-white/10 text-sm font-bold">
+                                                            {pack.price}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <DialogFooter>
+                                            <Button variant="ghost" onClick={() => setBuyOpen(false)}>Annuler</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
-                            <div className="text-3xl font-bold mb-1">{user.points?.toFixed(2) || '0.00'}</div>
-                            <div className="text-sm text-muted-foreground mb-4">Points disponibles</div>
-                            <Button className="w-full bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hover:from-yellow-500/20 hover:to-orange-500/20 text-yellow-500 border border-yellow-500/20 shadow-none">
-                                Recharge Rapide
-                            </Button>
                         </div>
 
-                        <div className="glass rounded-2xl p-6 border border-white/10 hover:border-secondary/20 transition-colors group">
-                            <div className="flex items-center justify-between mb-4">
+                        {/* Usage Graph */}
+                        <div className="glass rounded-2xl p-6 border border-white/10 hover:border-blue-500/20 transition-colors group relative overflow-hidden flex flex-col">
+                            <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-blue-500/10 rounded-full blur-[80px]" />
+                            <div className="flex items-center justify-between mb-6 relative z-10">
                                 <h3 className="font-semibold flex items-center gap-2">
-                                    <History className="w-5 h-5 text-blue-500" />
-                                    Historique
+                                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                                        <TrendingUp className="w-5 h-5" />
+                                    </div>
+                                    Consommation (7j)
                                 </h3>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
-                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-secondary transition-colors" />
-                                </Button>
                             </div>
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between text-sm p-2 rounded-lg bg-white/5">
-                                    <span className="text-muted-foreground">Dernière connexion</span>
-                                    <span className="font-mono">Aujourd'hui</span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm p-2 rounded-lg bg-white/5">
-                                    <span className="text-muted-foreground">Instances créées</span>
-                                    <span className="font-mono">--</span>
-                                </div>
+                            <div className="flex-1 w-full min-h-[150px] relative z-10">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={usageData}>
+                                        <defs>
+                                            <linearGradient id="colorPoints" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#71717a', fontSize: 12 }} dy={10} />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '8px' }}
+                                            itemStyle={{ color: '#e4e4e7' }}
+                                            cursor={{ stroke: '#3f3f46', strokeWidth: 1 }}
+                                        />
+                                        <Area type="monotone" dataKey="points" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorPoints)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
                     </div>

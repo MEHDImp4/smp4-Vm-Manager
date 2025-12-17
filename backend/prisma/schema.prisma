@@ -18,8 +18,20 @@ model User {
   avatarUrl  String?
 
   instances  Instance[]
+  transactions PointTransaction[]
 
   @@map("users")
+}
+
+model PointTransaction {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Float    // Negative for deduction, Positive for recharge
+  type      String   // "usage", "recharge", "bonus"
+  createdAt DateTime @default(now())
+
+  @@map("point_transactions")
 }
 
 model Instance {

@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import Account from "./pages/Account";
 import CreateInstance from "./pages/CreateInstance";
 import InstanceDetails from "./pages/InstanceDetails";
+import InstanceDomains from "./pages/InstanceDomains";
 
 import DockerGuide from "./pages/DockerGuide";
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/register" element={<Auth />} />
           <Route path="/create" element={<CreateInstance />} />
           <Route path="/instance/:id" element={<InstanceDetails />} />
+          <Route path="/instance/:id/domains" element={<InstanceDomains />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

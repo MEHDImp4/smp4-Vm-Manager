@@ -820,100 +820,7 @@ const InstanceDetails = () => {
                             </div>
                         </div>
 
-                        {/* Domains Card */}
-                        <div className="glass rounded-xl p-6 md:p-8 border border-white/10 space-y-6 animate-fade-up-delay-2 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[80px]" />
-                            <div className="flex items-center justify-between relative z-10">
-                                <h3 className="font-bold text-lg text-foreground flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
-                                        <Globe className="w-5 h-5" />
-                                    </div>
-                                    Domaines & Accès Public
-                                </h3>
-                            </div>
 
-                            <div className="relative z-10 space-y-6">
-                                {/* Creation Form */}
-                                <div className="flex flex-col md:flex-row gap-4 items-end">
-                                    <div className="flex-1 space-y-2 w-full">
-                                        <label className="text-sm font-medium text-muted-foreground">Sous-domaine</label>
-                                        <div className="flex items-center gap-2">
-                                            <div className="relative flex-1">
-                                                <input
-                                                    type="text"
-                                                    placeholder="mon-app"
-                                                    value={newDomain.subdomain}
-                                                    onChange={(e) => setNewDomain({ ...newDomain, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                                />
-                                            </div>
-                                            <span className="text-muted-foreground font-mono text-sm">.smp4.xyz</span>
-                                        </div>
-                                    </div>
-                                    <div className="w-full md:w-32 space-y-2">
-                                        <label className="text-sm font-medium text-muted-foreground">Port Interne</label>
-                                        <input
-                                            type="number"
-                                            placeholder="8080"
-                                            value={newDomain.port}
-                                            onChange={(e) => setNewDomain({ ...newDomain, port: e.target.value })}
-                                            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500/50 transition-colors"
-                                        />
-                                    </div>
-                                    <Button
-                                        onClick={handleCreateDomain}
-                                        disabled={domainLoading || !newDomain.subdomain || !newDomain.port}
-                                        className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white"
-                                    >
-                                        {domainLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                                        Créer
-                                    </Button>
-                                </div>
-
-                                {/* Domains List */}
-                                <div className="space-y-3">
-                                    {domains.length === 0 ? (
-                                        <div className="text-sm text-muted-foreground text-center py-8 border border-dashed border-white/10 rounded-xl bg-white/5">
-                                            <Globe className="w-8 h-8 mx-auto mb-3 opacity-50" />
-                                            Aucun domaine configuré
-                                        </div>
-                                    ) : (
-                                        domains.map((dom) => (
-                                            <div key={dom.id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-indigo-500/30 transition-all hover:bg-white/10 group">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
-                                                        <LinkIcon className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <a
-                                                            href={`https://${dom.subdomain}.smp4.xyz`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-base font-semibold text-foreground hover:underline decoration-indigo-500/50 underline-offset-4 flex items-center gap-2"
-                                                        >
-                                                            {dom.subdomain}.smp4.xyz
-                                                            <ExternalLink className="w-3 h-3 opacity-50" />
-                                                        </a>
-                                                        <p className="text-xs text-muted-foreground font-mono">
-                                                            Port interne: {dom.port}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                                                    onClick={() => handleDeleteDomain(dom.id)}
-                                                    disabled={domainLoading}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        </div>
 
                         {/* Backups Card */}
                         <div className="glass rounded-xl p-6 md:p-8 border border-white/10 space-y-6 animate-fade-up-delay-2 relative overflow-hidden">
@@ -1044,7 +951,22 @@ const InstanceDetails = () => {
                                     </div>
                                 </Button>
 
-                                {/* Removed dummy subdomain button */}
+                                <Button
+                                    variant="outline"
+                                    onClick={() => navigate(`/instance/${id}/domains`)}
+                                    className="h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-warning/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] justify-start"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-br from-warning/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="relative z-10 flex flex-col gap-3 items-start text-left w-full">
+                                        <div className="p-3 w-fit rounded-lg bg-warning/20 text-warning">
+                                            <Globe className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-base text-foreground">Sous-domaines</div>
+                                            <div className="text-sm text-muted-foreground">Configuration DNS</div>
+                                        </div>
+                                    </div>
+                                </Button>
                             </div>
                         </div>
 

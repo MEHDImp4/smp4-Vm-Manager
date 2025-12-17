@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Cloud, LogOut, User, Shield, Key, ChevronRight, LayoutDashboard, Coins, History, Settings, Loader2, Camera, Sparkles, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Account = () => {
     const navigate = useNavigate();

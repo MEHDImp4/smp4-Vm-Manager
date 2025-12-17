@@ -44,8 +44,34 @@ class SSHService {
         const sessionId = `${vmid}-${Date.now()}`;
         let stream = null;
 
+        // Auth state
+        let pendingUsername = null;
+        let passwordBuffer = '';
+        let isCollectingPassword = false;
+
+        // Password change state
+        let isChangingPassword = false;
+        let newPasswordBuffer = '';
+        let confirmPasswordBuffer = '';
+        let passwordChangeStep = 0; // 0=new, 1=confirm
+        let passwordChangeDone = null;
+
+        const attemptConnection = (username, password) => {
+            console.log(`[SSH] Connecting to ${host} as ${username}...`);
+            conn.connect({
+                host: host,
+                port: 22,
+                username: username,
+                password: password,
+                tryKeyboard: true,
+                readyTimeout: 10000
+            });
+        };
+
         conn.on('ready', () => {
             console.log(`[SSH] Connected to ${host} for VM ${vmid}`);
+            isCollectingPassword = false;
+            isChangingPassword = false;
             ws.send(JSON.stringify({ type: 'connected' }));
 
             conn.shell({ term: 'xterm-256color', cols: 80, rows: 24 }, (err, s) => {
@@ -56,11 +82,8 @@ class SSHService {
                 }
 
                 stream = s;
-
-                // Store session
                 this.sessions.set(sessionId, { conn, stream, ws });
 
-                // Data from SSH -> WebSocket
                 stream.on('data', (data) => {
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ type: 'data', data: data.toString('utf8') }));
@@ -78,41 +101,121 @@ class SSHService {
             });
         });
 
+        conn.on('keyboard-interactive', (name, instructions, lang, prompts, finish) => {
+            // Auto-reply with collected password if we have one
+            console.log(`[SSH] Keyboard interactive prompt for ${vmid}`);
+            finish(prompts.map(() => passwordBuffer));
+        });
+
+        // Handle password change required by server
+        conn.on('change password', (message, done) => {
+            console.log(`[SSH] Password change required for ${vmid}: ${message}`);
+            isChangingPassword = true;
+            isCollectingPassword = false;
+            passwordChangeStep = 0;
+            newPasswordBuffer = '';
+            confirmPasswordBuffer = '';
+            passwordChangeDone = done;
+
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'data', data: `\r\n${message}\r\nNew password: ` }));
+            }
+        });
+
         conn.on('error', (err) => {
             console.error(`[SSH] Connection error for ${vmid}:`, err.message);
-            // Ensure socket is open before sending
             if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'error',
-                    message: `SSH Connect Failed: ${err.message}`
-                }));
+                ws.send(JSON.stringify({ type: 'error', message: `SSH Error: ${err.message}` }));
             }
-            // Give it a moment to send before closing
             setTimeout(() => ws.close(), 100);
         });
 
-        // Handle WebSocket messages (Authentication & Input)
+        // Handle WebSocket messages
         ws.on('message', (message) => {
             try {
                 const msg = JSON.parse(message);
 
                 if (msg.type === 'auth') {
-                    // Authenticate and Connect
-                    console.log(`[SSH] Authenticating to ${host} as ${msg.username}...`);
-                    conn.connect({
-                        host: host,
-                        port: 22,
-                        username: msg.username,
-                        password: msg.password,
-                        readyTimeout: 10000
-                    });
+                    // Start password collection
+                    pendingUsername = msg.username;
+                    isCollectingPassword = true;
+                    passwordBuffer = '';
+
+                    // Show password prompt to user
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: 'data', data: `\r\n${msg.username}@server's password: ` }));
+                    }
                 } else if (msg.type === 'input') {
-                    if (stream) stream.write(msg.data);
+                    if (isChangingPassword) {
+                        // Password change flow
+                        const char = msg.data;
+                        if (char === '\r' || char === '\n') {
+                            if (passwordChangeStep === 0) {
+                                // New password entered, ask for confirmation
+                                if (ws.readyState === WebSocket.OPEN) {
+                                    ws.send(JSON.stringify({ type: 'data', data: '\r\nConfirm new password: ' }));
+                                }
+                                passwordChangeStep = 1;
+                            } else {
+                                // Confirmation entered
+                                if (ws.readyState === WebSocket.OPEN) {
+                                    ws.send(JSON.stringify({ type: 'data', data: '\r\n' }));
+                                }
+                                if (newPasswordBuffer === confirmPasswordBuffer) {
+                                    // Passwords match, submit
+                                    isChangingPassword = false;
+                                    if (passwordChangeDone) {
+                                        passwordChangeDone(newPasswordBuffer);
+                                        passwordChangeDone = null;
+                                    }
+                                } else {
+                                    // Passwords don't match
+                                    if (ws.readyState === WebSocket.OPEN) {
+                                        ws.send(JSON.stringify({ type: 'data', data: '\r\nPasswords do not match. New password: ' }));
+                                    }
+                                    passwordChangeStep = 0;
+                                    newPasswordBuffer = '';
+                                    confirmPasswordBuffer = '';
+                                }
+                            }
+                        } else if (char === '\u007f') { // Backspace
+                            if (passwordChangeStep === 0) {
+                                if (newPasswordBuffer.length > 0) newPasswordBuffer = newPasswordBuffer.slice(0, -1);
+                            } else {
+                                if (confirmPasswordBuffer.length > 0) confirmPasswordBuffer = confirmPasswordBuffer.slice(0, -1);
+                            }
+                        } else {
+                            if (passwordChangeStep === 0) {
+                                newPasswordBuffer += char;
+                            } else {
+                                confirmPasswordBuffer += char;
+                            }
+                        }
+                    } else if (isCollectingPassword) {
+                        const char = msg.data;
+                        if (char === '\r' || char === '\n') {
+                            // Submit password
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({ type: 'data', data: '\r\n' }));
+                            }
+                            isCollectingPassword = false;
+                            attemptConnection(pendingUsername, passwordBuffer);
+                        } else if (char === '\u007f') { // Backspace
+                            if (passwordBuffer.length > 0) {
+                                passwordBuffer = passwordBuffer.slice(0, -1);
+                            }
+                        } else {
+                            passwordBuffer += char;
+                            // Do NOT echo characters (password field)
+                        }
+                    } else if (stream) {
+                        stream.write(msg.data);
+                    }
                 } else if (msg.type === 'resize') {
                     if (stream) stream.setWindow(msg.rows, msg.cols, 0, 0);
                 }
             } catch (e) {
-                // Raw data fallback if needed (though we expect JSON now)
+                console.error(e);
             }
         });
 
@@ -137,9 +240,10 @@ class SSHService {
      * Execute a command on a remote host via SSH
      * @returns {Promise<string>} stdout
      */
-    async execCommand(host, command) {
+    async execCommand(host, command, { username = 'root', password } = {}) {
         return new Promise((resolve, reject) => {
             const conn = new Client();
+            const authPassword = password || process.env.LXC_SSH_PASSWORD || 'root';
 
             conn.on('ready', () => {
                 conn.exec(command, (err, stream) => {
@@ -164,14 +268,19 @@ class SSHService {
                         stderr += data;
                     });
                 });
+            }).on('keyboard-interactive', (name, instructions, lang, prompts, finish) => {
+                // Auto-reply to prompts with the password
+                finish(prompts.map(() => authPassword));
             }).on('error', (err) => {
                 reject(err);
             }).connect({
                 host: host,
                 port: 22,
-                username: 'root',
-                password: process.env.LXC_SSH_PASSWORD || 'root',
-                readyTimeout: 10000
+                username: username,
+                password: authPassword,
+                tryKeyboard: true,
+                readyTimeout: 10000,
+                debug: (msg) => console.log(`[SSH-DEBUG] ${msg}`)
             });
         });
     }

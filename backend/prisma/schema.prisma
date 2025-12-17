@@ -35,7 +35,21 @@ model Instance {
   user         User     @relation(fields: [userId], references: [id])
   created_at   DateTime @default(now())
 
+  snapshots    Snapshot[]
+
   @@map("instances")
+}
+
+model Snapshot {
+  id              String   @id @default(uuid())
+  instanceId      String
+  instance        Instance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  name            String   // User-friendly name
+  proxmoxSnapName String   // Internal Proxmox snapshot name (e.g., snap_1702684800)
+  description     String?
+  createdAt       DateTime @default(now())
+
+  @@map("snapshots")
 }
 
 model Template {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Terminal, Cpu, HardDrive, MemoryStick, Globe, Shield, ExternalLink, Power, Play, Square, RotateCw } from "lucide-react";
+import { ArrowLeft, Terminal, Cpu, HardDrive, MemoryStick, Globe, Shield, ExternalLink, Power, Play, Square, RotateCw, Camera, Download, Trash2, History, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -9,6 +9,14 @@ import { Terminal as XTerminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import { useRef } from "react";
+
+interface Snapshot {
+    id: string;
+    name: string;
+    proxmoxSnapName: string;
+    description?: string;
+    createdAt: string;
+}
 
 const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
@@ -27,6 +35,9 @@ const InstanceDetails = () => {
     const [ramData, setRamData] = useState<any[]>([]);
     const [instance, setInstance] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+    const [snapshotLoading, setSnapshotLoading] = useState(false);
+    const [maxSnapshots, setMaxSnapshots] = useState(3);
 
     useEffect(() => {
         if (!id) return;
@@ -90,6 +101,146 @@ const InstanceDetails = () => {
         };
         fetchInstance();
     }, [id, navigate]);
+
+    // Fetch snapshots
+    const fetchSnapshots = async () => {
+        const userStr = localStorage.getItem("user");
+        if (!userStr || !id) return;
+        const user = JSON.parse(userStr);
+
+        try {
+            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots`, {
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setSnapshots(data.snapshots);
+                setMaxSnapshots(data.maxSnapshots);
+            }
+        } catch (e) {
+            console.error("Failed to fetch snapshots", e);
+        }
+    };
+
+    useEffect(() => {
+        if (id) fetchSnapshots();
+    }, [id]);
+
+    const handleCreateSnapshot = async () => {
+        const name = prompt("Nom du snapshot (optionnel):");
+        if (name === null) return; // User cancelled
+
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        setSnapshotLoading(true);
+        try {
+            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${user.token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name: name || undefined })
+            });
+
+            if (response.ok) {
+                toast.success("Snapshot créé avec succès");
+                fetchSnapshots();
+            } else {
+                const err = await response.json();
+                toast.error(err.error || "Erreur lors de la création");
+            }
+        } catch (e) {
+            toast.error("Erreur de connexion");
+        } finally {
+            setSnapshotLoading(false);
+        }
+    };
+
+    const handleRestoreSnapshot = async (snapId: string, snapName: string) => {
+        if (!confirm(`Voulez-vous vraiment restaurer le snapshot "${snapName}" ?\n\nAttention: Le conteneur sera arrêté puis redémarré.`)) return;
+
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        setSnapshotLoading(true);
+        try {
+            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots/${snapId}/restore`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+
+            if (response.ok) {
+                toast.success("Snapshot restauré avec succès");
+            } else {
+                const err = await response.json();
+                toast.error(err.error || "Erreur lors de la restauration");
+            }
+        } catch (e) {
+            toast.error("Erreur de connexion");
+        } finally {
+            setSnapshotLoading(false);
+        }
+    };
+
+    const handleDeleteSnapshot = async (snapId: string, snapName: string) => {
+        if (!confirm(`Voulez-vous vraiment supprimer le snapshot "${snapName}" ?`)) return;
+
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        setSnapshotLoading(true);
+        try {
+            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots/${snapId}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+
+            if (response.ok) {
+                toast.success("Snapshot supprimé");
+                fetchSnapshots();
+            } else {
+                const err = await response.json();
+                toast.error(err.error || "Erreur lors de la suppression");
+            }
+        } catch (e) {
+            toast.error("Erreur de connexion");
+        } finally {
+            setSnapshotLoading(false);
+        }
+    };
+
+    const handleDownloadSnapshot = async (snapId: string) => {
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        toast.info("Préparation du téléchargement... Cela peut prendre quelques minutes.");
+        setSnapshotLoading(true);
+
+        try {
+            const response = await fetch(`http://localhost:3001/api/instances/${id}/snapshots/${snapId}/download`, {
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                toast.success(`Backup créé: ${data.backup.filename}`);
+                alert(`Le backup a été créé sur le serveur.\n\nFichier: ${data.backup.filename}\nTaille: ${Math.round(data.backup.size / 1024 / 1024)} MB\n\n${data.note}`);
+            } else {
+                const err = await response.json();
+                toast.error(err.error || "Erreur lors du téléchargement");
+            }
+        } catch (e) {
+            toast.error("Erreur de connexion");
+        } finally {
+            setSnapshotLoading(false);
+        }
+    };
 
     // Terminal Logic
     const terminalRef = useRef<HTMLDivElement>(null);
@@ -391,6 +542,102 @@ const InstanceDetails = () => {
                                     </div>
                                 </Button>
                             </div>
+                        </div>
+
+                        {/* Snapshots Card */}
+                        <div className="glass rounded-xl p-5 border border-border/50 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                                    <Camera className="w-4 h-4" />
+                                    Snapshots
+                                </h3>
+                                <span className="text-xs text-muted-foreground bg-secondary/20 px-2 py-0.5 rounded-full">
+                                    {snapshots.length}/{maxSnapshots}
+                                </span>
+                            </div>
+
+                            {/* Create Snapshot Button */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full justify-center gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/10"
+                                onClick={handleCreateSnapshot}
+                                disabled={snapshotLoading}
+                            >
+                                {snapshotLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Camera className="w-4 h-4" />
+                                )}
+                                Créer un snapshot
+                            </Button>
+
+                            {/* Snapshots List */}
+                            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                                {snapshots.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground text-center py-4">
+                                        Aucun snapshot disponible
+                                    </p>
+                                ) : (
+                                    snapshots.map((snap) => (
+                                        <div
+                                            key={snap.id}
+                                            className="flex items-center justify-between p-2 rounded-lg bg-secondary/10 border border-border/30 hover:border-primary/30 transition-colors"
+                                        >
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate">{snap.name}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {new Date(snap.createdAt).toLocaleDateString('fr-FR', {
+                                                        day: 'numeric',
+                                                        month: 'short',
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-1 ml-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-success hover:text-success hover:bg-success/10"
+                                                    onClick={() => handleRestoreSnapshot(snap.id, snap.name)}
+                                                    disabled={snapshotLoading}
+                                                    title="Restaurer"
+                                                >
+                                                    <History className="w-3.5 h-3.5" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-blue-500 hover:text-blue-500 hover:bg-blue-500/10"
+                                                    onClick={() => handleDownloadSnapshot(snap.id)}
+                                                    disabled={snapshotLoading}
+                                                    title="Télécharger"
+                                                >
+                                                    <Download className="w-3.5 h-3.5" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    onClick={() => handleDeleteSnapshot(snap.id, snap.name)}
+                                                    disabled={snapshotLoading}
+                                                    title="Supprimer"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {snapshots.length >= maxSnapshots && (
+                                <p className="text-xs text-amber-500 text-center">
+                                    ⚠️ Limite atteinte. Le prochain snapshot supprimera le plus ancien.
+                                </p>
+                            )}
                         </div>
 
                         {/* Metrics Card */}

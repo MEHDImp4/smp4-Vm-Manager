@@ -1,11 +1,12 @@
 {
-  "name": "backend",
+  "name": "web-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
@@ -13,13 +14,18 @@
   "type": "commonjs",
   "dependencies": {
     "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "node-ssh": "^13.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.2.1",
+    "nodemon": "^3.1.11",
     "ssh2": "^1.17.0",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@prisma/client": "5.22.0",
+    "prisma": "5.22.0"
   }
 }

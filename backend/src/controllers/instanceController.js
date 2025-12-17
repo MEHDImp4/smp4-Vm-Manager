@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const proxmoxService = require('../services/proxmox.service');
 const sshService = require('../services/ssh.service');
 const crypto = require('crypto');
+const systemOs = require('os');
 
 const createInstance = async (req, res) => {
     try {
@@ -75,6 +76,16 @@ const createInstance = async (req, res) => {
                 await proxmoxService.waitForTask(upid);
                 console.log(`[Background] Clone complete for ${vmid}. Starting...`);
 
+                // Set User & Date Tag
+                try {
+                    const dateTag = new Date().toISOString().split('T')[0];
+                    console.log(`[Background] Setting tags '${sanitizedUser},${template},${dateTag}' for ${vmid}...`);
+                    await proxmoxService.configureLXC(vmid, { tags: `${sanitizedUser},${template},${dateTag}` });
+                } catch (tagError) {
+                    console.warn(`[Background] Failed to set tag for ${vmid}:`, tagError.message);
+                    // Continue creation even if tagging fails
+                }
+
                 // Password setting via Proxmox API is not supported for LXC config in this version.
                 // We will set it via SSH after boot.
 
@@ -105,7 +116,7 @@ const createInstance = async (req, res) => {
                     console.log(`[Background] VM ${vmid} is up at ${ip}. Configuring 'smp4' user...`);
 
                     // Allow SSH to come up fully (sometimes IP is ready before SSHd)
-                    await new Promise(r => setTimeout(r, 5000));
+                    await new Promise(r => setTimeout(r, 10000));
 
                     try {
                         // 1. Enable Password Authentication & Root Login
@@ -127,6 +138,66 @@ const createInstance = async (req, res) => {
                         await sshService.execCommand(ip, `echo "root:${rootPassword}" | chpasswd`);
 
                         console.log(`[Background] User 'smp4' configured successfully for ${vmid}`);
+
+                        // 6. Security: Configure Firewall
+                        try {
+                            // 6a. Whitelist Backend IP for WebSocket/SSH access
+                            const networks = systemOs.networkInterfaces();
+                            let backendIp = null;
+                            // Priority: Find 192.168.x.x address first as it matches the blocked subnet
+                            for (const name of Object.keys(networks)) {
+                                for (const net of networks[name]) {
+                                    if (net.family === 'IPv4' && !net.internal && net.address.startsWith('192.168.')) {
+                                        backendIp = net.address;
+                                        break;
+                                    }
+                                }
+                                if (backendIp) break;
+                            }
+
+                            // Fallback: take any external IPv4 if no 192.168.x.x found
+                            if (!backendIp) {
+                                for (const name of Object.keys(networks)) {
+                                    for (const net of networks[name]) {
+                                        if (net.family === 'IPv4' && !net.internal) {
+                                            backendIp = net.address;
+                                            break;
+                                        }
+                                    }
+                                    if (backendIp) break;
+                                }
+                            }
+
+                            if (backendIp) {
+                                console.log(`[Background] Whitelisting backend IP ${backendIp} on ${vmid}...`);
+                                await proxmoxService.addFirewallRule(vmid, {
+                                    type: 'out',
+                                    action: 'ACCEPT',
+                                    dest: backendIp,
+                                    enable: 1,
+                                    comment: 'Allow backend access (SSH/WS)'
+                                });
+                            } else {
+                                console.warn('[Background] Could not detect backend IP. WebSocket access might be blocked.');
+                            }
+
+                            // 6b. Block local network
+                            console.log(`[Background] Adding firewall DROP rule for 192.168.1.0/24 to ${vmid}...`);
+                            await proxmoxService.addFirewallRule(vmid, {
+                                type: 'out',
+                                action: 'DROP',
+                                dest: '192.168.1.0/24',
+                                enable: 1,
+                                comment: 'Block access to local network'
+                            });
+                            console.log(`[Background] Firewall rules added for ${vmid}`);
+
+                            // 7. Security: Enable Firewall
+                            console.log(`[Background] Enabling firewall for ${vmid}...`);
+                            await proxmoxService.setFirewallOptions(vmid, { enable: 1 });
+                        } catch (fwError) {
+                            console.warn(`[Background] Failed to add firewall rule via API:`, fwError.message);
+                        }
                     } catch (sshError) {
                         console.error(`[Background] Failed to configure 'smp4' user via SSH:`, sshError.message);
                     }

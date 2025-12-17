@@ -113,7 +113,7 @@ const PointsSection = () => {
                 <div className="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
                   <div className="font-bold text-lg mb-1">{calculateDays(points, 4)}j</div>
                   <div className="text-muted-foreground text-xs uppercase font-medium">Nano</div>
-                  <div className="text-[10px] text-muted-foreground opacity-70">4 pts/j</div>
+                  <div className="text-[10px] text-muted-foreground opacity-70">16 Go • 4 pts/j</div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-center relative overflow-hidden">
@@ -121,14 +121,14 @@ const PointsSection = () => {
                   <div className="relative z-10">
                     <div className="font-bold text-lg mb-1 text-primary">{calculateDays(points, 12)}j</div>
                     <div className="text-primary text-xs uppercase font-medium">Small</div>
-                    <div className="text-[10px] text-primary/70">12 pts/j</div>
+                    <div className="text-[10px] text-primary/70">32 Go • 12 pts/j</div>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
                   <div className="font-bold text-lg mb-1">{calculateDays(points, 28)}j</div>
                   <div className="text-muted-foreground text-xs uppercase font-medium">Pro</div>
-                  <div className="text-[10px] text-muted-foreground opacity-70">28 pts/j</div>
+                  <div className="text-[10px] text-muted-foreground opacity-70">48 Go • 28 pts/j</div>
                 </div>
               </div>
             </div>

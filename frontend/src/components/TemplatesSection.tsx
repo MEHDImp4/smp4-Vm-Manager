@@ -1,4 +1,4 @@
-import { Cpu, HardDrive, MemoryStick, Rocket } from "lucide-react";
+import { Cpu, HardDrive, MemoryStick, Rocket, Container } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -7,7 +7,7 @@ const templates = [
     name: "Nano",
     cpu: "1 vCPU",
     ram: "512 Mo",
-    storage: "12 Go",
+    storage: "16 Go",
     usage: "Tests, petits containers",
     points: 4,
     popular: false,
@@ -16,7 +16,7 @@ const templates = [
     name: "Micro",
     cpu: "1 vCPU",
     ram: "1 Go",
-    storage: "12 Go",
+    storage: "24 Go",
     usage: "API simple, backend léger",
     points: 8,
     popular: false,
@@ -25,7 +25,7 @@ const templates = [
     name: "Small",
     cpu: "2 vCPU",
     ram: "2 Go",
-    storage: "20 Go",
+    storage: "32 Go",
     usage: "App web + base de données",
     points: 12,
     popular: true,
@@ -34,8 +34,8 @@ const templates = [
     name: "Medium",
     cpu: "3 vCPU",
     ram: "4 Go",
-    storage: "28 Go",
-    usage: "Docker + Portainer inclus",
+    storage: "40 Go",
+    usage: "Environnements de production",
     points: 18,
     popular: false,
   },
@@ -43,7 +43,7 @@ const templates = [
     name: "Pro",
     cpu: "4 vCPU",
     ram: "8 Go",
-    storage: "32 Go",
+    storage: "48 Go",
     usage: "Projets avancés, multi-services",
     points: 28,
     popular: false,
@@ -76,8 +76,8 @@ const TemplatesSection = () => {
             <div
               key={index}
               className={`relative glass rounded-2xl p-6 hover-lift border ${template.popular
-                  ? "border-primary/50 shadow-lg shadow-primary/10"
-                  : "border-border/50"
+                ? "border-primary/50 shadow-lg shadow-primary/10"
+                : "border-border/50"
                 }`}
             >
               {template.popular && (
@@ -101,6 +101,10 @@ const TemplatesSection = () => {
                 <div className="flex items-center gap-3 text-sm">
                   <HardDrive className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground">{template.storage}</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <Container className="w-4 h-4 text-primary" />
+                  <span className="text-muted-foreground">Docker + Portainer</span>
                 </div>
               </div>
 

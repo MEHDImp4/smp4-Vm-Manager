@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Terminal, Cpu, HardDrive, MemoryStick, Globe, Shield, ExternalLink, Power, Play, Square, RotateCw, Camera, Download, Trash2, History, Loader2 } from "lucide-react";
+import { Terminal, RotateCw, Cpu, MemoryStick, HardDrive, Camera, History, Download, Trash2, ExternalLink, Shield, Globe, BookOpen, ArrowLeft, Square, Play, Power, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -36,6 +37,7 @@ const InstanceDetails = () => {
     const [instance, setInstance] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+    const [showDocDialog, setShowDocDialog] = useState(false);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
     const [maxSnapshots, setMaxSnapshots] = useState(3);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -58,6 +60,25 @@ const InstanceDetails = () => {
         const interval = setInterval(updateCountdown, 60000); // Update every minute
         return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        const hasSeen = localStorage.getItem("hasSeenDocPopup");
+        if (!hasSeen) {
+            setShowDocDialog(true);
+        }
+    }, []);
+
+    const handleCloseDialog = () => {
+        setShowDocDialog(false);
+        localStorage.setItem("hasSeenDocPopup", "true");
+    };
+
+    const handleReadDocs = () => {
+        handleCloseDialog();
+        setTimeout(() => {
+            document.getElementById('quick-guide')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -782,7 +803,7 @@ const InstanceDetails = () => {
             </div>
 
             {/* Documentation Section */}
-            <div className="glass rounded-2xl p-6 border border-border/50 mt-8">
+            <div id="quick-guide" className="glass rounded-2xl p-6 border border-border/50 mt-8">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <Shield className="w-5 h-5 text-primary" />
                     Guide de démarrage rapide
@@ -818,6 +839,9 @@ const InstanceDetails = () => {
                             <h4 className="font-medium mb-1">Accéder à Portainer</h4>
                             <p className="text-sm text-muted-foreground">
                                 Portainer est préinstallé. Accédez-y via <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">http://{stats.ip || 'IP'}:9000</code> pour gérer vos containers Docker visuellement.
+                                <span className="block mt-2 text-warning/80 text-xs font-medium">
+                                    ⚠️ Si Portainer ne marche pas la première fois, redémarrez la VM.
+                                </span>
                             </p>
                         </div>
                     </div>
@@ -837,7 +861,29 @@ const InstanceDetails = () => {
                     </div>
                 </div>
             </div>
-        </div>
+
+            <Dialog open={showDocDialog} onOpenChange={handleCloseDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <BookOpen className="w-5 h-5 text-primary" />
+                            Bienvenue sur votre VM !
+                        </DialogTitle>
+                        <DialogDescription>
+                            C'est votre première visite ? Nous avons préparé un guide rapide pour vous aider à configurer votre environnement, accéder à Portainer et sécuriser votre instance.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex gap-2 sm:justify-end">
+                        <Button variant="ghost" onClick={handleCloseDialog}>
+                            Plus tard
+                        </Button>
+                        <Button onClick={handleReadDocs}>
+                            Lire le guide
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div >
     );
 };
 

@@ -497,16 +497,16 @@ const InstanceDetails = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="flex flex-col gap-6">
                     {/* Main Content: Terminal */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="glass rounded-xl border border-border/50 overflow-hidden flex flex-col h-[500px]">
-                            <div className="bg-black/80 px-4 py-2 flex items-center justify-between border-b border-white/10">
+                    <div className="w-full space-y-6">
+                        <div className="glass rounded-xl border border-border/50 overflow-hidden flex flex-col h-[600px] shadow-2xl">
+                            <div className="bg-black/80 px-4 py-3 flex items-center justify-between border-b border-white/10">
                                 <div className="flex items-center gap-2">
                                     <Terminal className="w-4 h-4 text-muted-foreground" />
                                     <span className="text-xs text-muted-foreground font-mono">smp4@server:~</span>
                                 </div>
-                                <div className="flex gap-2 items-center">
+                                <div className="flex gap-3 items-center">
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -534,155 +534,31 @@ const InstanceDetails = () => {
                         </div>
                     </div>
 
-                    {/* Sidebar: Metrics & Actions */}
+                    {/* Widgets Section (Vertical Stack) */}
                     <div className="space-y-6">
 
-                        {/* Actions Card */}
-                        <div className="glass rounded-xl p-5 border border-border/50 space-y-4">
-                            <h3 className="font-semibold text-sm text-muted-foreground">Actions Rapides</h3>
-                            <div className="grid gap-3">
-                                <a
-                                    href={stats.ip ? `http://${stats.ip}:9000` : '#'}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={`w-full flex items-center justify-start h-auto py-3 px-4 rounded-md border border-border/50 transition-colors group ${stats.ip ? 'hover:bg-primary/5 hover:border-primary/50' : 'opacity-50 cursor-not-allowed'}`}
-                                >
-                                    <div className="p-2 rounded-lg bg-primary/10 text-primary mr-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                        <ExternalLink className="w-4 h-4" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-semibold text-sm">Accès Portainer</div>
-                                        <div className="text-xs text-muted-foreground">Gérer les conteneurs</div>
-                                    </div>
-                                </a>
-
-                                <Button variant="outline" className="w-full justify-start h-auto py-3 border-border/50 hover:bg-secondary/5 hover:border-secondary/50 group">
-                                    <div className="p-2 rounded-lg bg-secondary/10 text-secondary mr-3 group-hover:bg-secondary group-hover:text-primary-foreground transition-colors">
-                                        <Shield className="w-4 h-4" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-semibold text-sm">VPN Config</div>
-                                        <div className="text-xs text-muted-foreground">Télécharger .ovpn</div>
-                                    </div>
-                                </Button>
-
-                                <Button variant="outline" className="w-full justify-start h-auto py-3 border-border/50 hover:bg-warning/5 hover:border-warning/50 group">
-                                    <div className="p-2 rounded-lg bg-warning/10 text-warning mr-3 group-hover:bg-warning group-hover:text-primary-foreground transition-colors">
-                                        <Globe className="w-4 h-4" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-semibold text-sm">Sous-domaines</div>
-                                        <div className="text-xs text-muted-foreground">Configuration DNS</div>
-                                    </div>
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Backups Card */}
-                        <div className="glass rounded-xl p-5 border border-border/50 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
-                                    <Camera className="w-4 h-4" />
-                                    Backups
-                                </h3>
-                                <span className="text-xs text-muted-foreground bg-secondary/20 px-2 py-0.5 rounded-full">
-                                    {snapshots.length}/{maxSnapshots}
-                                </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground -mt-3">
-                                Prochain backup auto dans <span className="font-mono text-primary">{timeUntilSnapshot}</span>
-                            </p>
-
-                            {/* Backups List */}
-                            <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                                {snapshots.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground text-center py-4">
-                                        Aucun backup disponible
-                                    </p>
-                                ) : (
-                                    snapshots.map((snap) => (
-                                        <div
-                                            key={snap.id}
-                                            className="flex items-center justify-between p-2 rounded-lg bg-secondary/10 border border-border/30 hover:border-primary/30 transition-colors"
-                                        >
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium truncate">{snap.name}</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {new Date(snap.createdAt).toLocaleDateString('fr-FR', {
-                                                        day: 'numeric',
-                                                        month: 'short',
-                                                        year: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-1 ml-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-success hover:text-success hover:bg-success/10"
-                                                    onClick={() => handleRestoreSnapshot(snap.id, snap.name)}
-                                                    disabled={snapshotLoading}
-                                                    title="Restaurer"
-                                                >
-                                                    <History className="w-3.5 h-3.5" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-blue-500 hover:text-blue-500 hover:bg-blue-500/10"
-                                                    onClick={() => handleDownloadSnapshot(snap.id)}
-                                                    disabled={snapshotLoading}
-                                                    title="Télécharger"
-                                                >
-                                                    <Download className="w-3.5 h-3.5" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                    onClick={() => handleDeleteSnapshot(snap.id, snap.name)}
-                                                    disabled={snapshotLoading}
-                                                    title="Supprimer"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            {snapshots.length >= maxSnapshots && (
-                                <p className="text-xs text-amber-500 text-center">
-                                    ⚠️ Limite atteinte. Le prochain backup supprimera le plus ancien.
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Metrics Card */}
-                        <div className="glass rounded-xl p-5 border border-border/50 flex flex-col justify-between h-auto bg-card/30 backdrop-blur-sm">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-semibold text-sm text-card-foreground flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {/* Resources Card - Moved first for better visibility */}
+                        <div className="glass rounded-xl p-6 border border-border/50 flex flex-col justify-between h-auto bg-card/30 backdrop-blur-sm">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="font-semibold text-base text-card-foreground flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                     Ressources en direct
                                 </h3>
                             </div>
 
-                            <div className="space-y-4 flex-1 flex flex-col justify-center">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {/* CPU Graph */}
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="p-1 rounded bg-blue-500/10 text-blue-500">
-                                                <Cpu className="w-3.5 h-3.5" />
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 rounded bg-blue-500/10 text-blue-500">
+                                                <Cpu className="w-4 h-4" />
                                             </div>
                                             <span className="font-medium text-muted-foreground">CPU</span>
                                         </div>
                                         <span className="font-bold text-foreground font-mono">{stats.cpu}%</span>
                                     </div>
-                                    <div className="h-[60px] w-full rounded-md border border-white/10 bg-black/40 overflow-hidden relative shadow-inner">
+                                    <div className="h-[100px] w-full rounded-md border border-white/10 bg-black/40 overflow-hidden relative shadow-inner">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={cpuData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                                                 <defs>
@@ -706,17 +582,17 @@ const InstanceDetails = () => {
                                 </div>
 
                                 {/* RAM Graph */}
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="p-1 rounded bg-purple-500/10 text-purple-500">
-                                                <MemoryStick className="w-3.5 h-3.5" />
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 rounded bg-purple-500/10 text-purple-500">
+                                                <MemoryStick className="w-4 h-4" />
                                             </div>
                                             <span className="font-medium text-muted-foreground">RAM</span>
                                         </div>
                                         <span className="font-bold text-foreground font-mono">{stats.ram}%</span>
                                     </div>
-                                    <div className="h-[60px] w-full rounded-md border border-white/10 bg-black/40 overflow-hidden relative shadow-inner">
+                                    <div className="h-[100px] w-full rounded-md border border-white/10 bg-black/40 overflow-hidden relative shadow-inner">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={ramData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                                                 <defs>
@@ -740,29 +616,167 @@ const InstanceDetails = () => {
                                 </div>
 
                                 {/* Storage Bar */}
-                                <div className="space-y-2 pt-1">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="p-1 rounded bg-amber-500/10 text-amber-500">
-                                                <HardDrive className="w-3.5 h-3.5" />
+                                <div className="space-y-4 flex flex-col justify-center">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 rounded bg-amber-500/10 text-amber-500">
+                                                <HardDrive className="w-4 h-4" />
                                             </div>
                                             <span className="font-medium text-muted-foreground">Stockage</span>
                                         </div>
                                         <div className="flex items-baseline gap-1 font-mono">
                                             <span className="font-bold text-foreground">{formatBytes(stats.diskBytes || 0)}</span>
-                                            <span className="text-[10px] text-muted-foreground">/ {formatBytes(stats.maxDiskBytes || 0)}</span>
+                                            <span className="text-xs text-muted-foreground">/ {formatBytes(stats.maxDiskBytes || 0)}</span>
                                         </div>
                                     </div>
 
-                                    <div className="h-2.5 w-full bg-secondary/20 rounded-full overflow-hidden border border-white/5">
+                                    <div className="h-4 w-full bg-secondary/20 rounded-full overflow-hidden border border-white/5">
                                         <div
                                             className="h-full bg-gradient-to-r from-amber-500 to-orange-600 shadow-sm transition-all duration-700 ease-in-out"
                                             style={{ width: `${Math.min(stats.storage, 100)}%` }}
                                         />
                                     </div>
+                                    <p className="text-xs text-muted-foreground text-right">Espace utilisé sur le disque principal</p>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Backups Card - Full Width */}
+                        <div className="glass rounded-xl p-6 border border-border/50 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-semibold text-base text-muted-foreground flex items-center gap-2">
+                                    <Camera className="w-5 h-5" />
+                                    Backups
+                                </h3>
+                                <div className="flex items-center gap-4">
+                                    <p className="text-xs text-muted-foreground">
+                                        Prochain backup auto dans <span className="font-mono text-primary font-bold">{timeUntilSnapshot}</span>
+                                    </p>
+                                    <span className="text-xs text-muted-foreground bg-secondary/20 px-3 py-1 rounded-full">
+                                        {snapshots.length}/{maxSnapshots} slots utilisés
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Backups List */}
+                            <div className="space-y-2">
+                                {snapshots.length === 0 ? (
+                                    <div className="text-sm text-muted-foreground text-center py-8 border border-dashed border-border/50 rounded-lg">
+                                        Aucun backup disponible pour le moment
+                                    </div>
+                                ) : (
+                                    snapshots.map((snap) => (
+                                        <div
+                                            key={snap.id}
+                                            className="flex items-center justify-between p-3 rounded-lg bg-secondary/5 border border-border/30 hover:bg-secondary/10 hover:border-primary/30 transition-all"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2 rounded bg-primary/10 text-primary">
+                                                    <History className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium">{snap.name}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Créé le {new Date(snap.createdAt).toLocaleDateString('fr-FR', {
+                                                            day: 'numeric',
+                                                            month: 'long',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="gap-2 text-success hover:text-success hover:bg-success/10"
+                                                    onClick={() => handleRestoreSnapshot(snap.id, snap.name)}
+                                                    disabled={snapshotLoading}
+                                                >
+                                                    <History className="w-4 h-4" />
+                                                    <span className="hidden sm:inline">Restaurer</span>
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="gap-2 text-blue-500 hover:text-blue-500 hover:bg-blue-500/10"
+                                                    onClick={() => handleDownloadSnapshot(snap.id)}
+                                                    disabled={snapshotLoading}
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                    <span className="hidden sm:inline">Télécharger</span>
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    onClick={() => handleDeleteSnapshot(snap.id, snap.name)}
+                                                    disabled={snapshotLoading}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {snapshots.length >= maxSnapshots && (
+                                <p className="text-xs text-amber-500 text-center bg-amber-500/10 py-2 rounded">
+                                    ⚠️ Limite de backups atteinte. Le prochain backup automatique remplacera le plus ancien.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Actions Card - Grid Layout */}
+                        <div className="glass rounded-xl p-6 border border-border/50 space-y-4">
+                            <h3 className="font-semibold text-base text-muted-foreground">Actions Rapides</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <a
+                                    href={stats.ip ? `http://${stats.ip}:9000` : '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`flex items-center p-4 rounded-lg border border-border/50 transition-colors group ${stats.ip ? 'hover:bg-primary/5 hover:border-primary/50' : 'opacity-50 cursor-not-allowed'}`}
+                                >
+                                    <div className="p-3 rounded-lg bg-primary/10 text-primary mr-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                        <ExternalLink className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold text-sm">Accès Portainer</div>
+                                        <div className="text-xs text-muted-foreground">Gérer les conteneurs Docker</div>
+                                    </div>
+                                </a>
+
+                                <Button
+                                    variant="outline"
+                                    className="flex items-center justify-start h-auto p-4 border-border/50 hover:bg-secondary/5 hover:border-secondary/50 group"
+                                >
+                                    <div className="p-3 rounded-lg bg-secondary/10 text-secondary mr-4 group-hover:bg-secondary group-hover:text-primary-foreground transition-colors">
+                                        <Shield className="w-6 h-6" />
+                                    </div>
+                                    <div className="text-left">
+                                        <div className="font-semibold text-sm">VPN Config</div>
+                                        <div className="text-xs text-muted-foreground">Télécharger le profil .ovpn</div>
+                                    </div>
+                                </Button>
+
+                                <Button
+                                    variant="outline"
+                                    className="flex items-center justify-start h-auto p-4 border-border/50 hover:bg-warning/5 hover:border-warning/50 group"
+                                >
+                                    <div className="p-3 rounded-lg bg-warning/10 text-warning mr-4 group-hover:bg-warning group-hover:text-primary-foreground transition-colors">
+                                        <Globe className="w-6 h-6" />
+                                    </div>
+                                    <div className="text-left">
+                                        <div className="font-semibold text-sm">Sous-domaines</div>
+                                        <div className="text-xs text-muted-foreground">Configurer les DNS</div>
+                                    </div>
+                                </Button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>

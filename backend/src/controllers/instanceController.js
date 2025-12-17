@@ -172,30 +172,62 @@ const createInstance = async (req, res) => {
                             }
 
                             if (backendIp) {
-                                console.log(`[Background] Whitelisting backend IP ${backendIp} on ${vmid}...`);
-                                await proxmoxService.addFirewallRule(vmid, {
-                                    type: 'out',
-                                    action: 'ACCEPT',
-                                    dest: backendIp,
-                                    enable: 1,
-                                    comment: 'Allow backend access (SSH/WS)'
-                                });
-
-                                console.log(`[Background] Whitelisting SSH IN from ${backendIp} on ${vmid}...`);
-                                await proxmoxService.addFirewallRule(vmid, {
-                                    type: 'in',
-                                    action: 'ACCEPT',
-                                    source: backendIp,
-                                    proto: 'tcp',
-                                    dport: 22,
-                                    enable: 1,
-                                    comment: 'Allow SSH from Backend'
-                                });
-                            } else {
-                                console.warn('[Background] Could not detect backend IP. WebSocket access might be blocked.');
+                                // SECURITY HARDENING: Block VM from attacking Unraid Admin Interfaces
+                                const sensitivePorts = [22, 80, 85, 443, 8006];
+                                for (const port of sensitivePorts) {
+                                    await proxmoxService.addFirewallRule(vmid, {
+                                        type: 'out',
+                                        action: 'DROP',
+                                        dest: backendIp,
+                                        dport: port,
+                                        proto: 'tcp',
+                                        enable: 1,
+                                        comment: `Block access to Host Port ${port}`
+                                    });
+                                }
                             }
 
-                            // 6b. Block local network
+                            // 6b. Allow ALL Inbound Traffic (User Requirement: "Access with whatever device/app")
+                            // Since we enable the firewall, we must explicitly allow inbound traffic if we want it to be accessible.
+                            // Users are deploying arbitrary apps (Portainer:9000, Web:80, etc.)
+                            console.log(`[Background] Adding firewall rule: ACCEPT ALL INBOUND for ${vmid}...`);
+                            await proxmoxService.addFirewallRule(vmid, {
+                                type: 'in',
+                                action: 'ACCEPT',
+                                enable: 1,
+                                comment: 'Allow all inbound traffic (Web, Portainer, etc.)'
+                            });
+
+                            // 6c. Allow Established Connections (Fix for Return Traffic)
+                            // Crucial: If we drop outbound to LAN, we kill the response packets to the user's laptop.
+                            // We must allow ESTABLISHED connections first.
+                            // Note: Proxmox firewall macro 'Standard-Security-Group' often handles this, but we add explicit rule to remain safe.
+                            // However, simply adding "ACCEPT dest: 0.0.0.0/0" for established isn't direct in simplistic API calls without macro awareness.
+                            // Best approach for "Isolation but Accessibility":
+                            // 1. Allow Outbound to Gateway/DNS (Essential) - usually covered by default policies?
+                            // 2. Drop access to Private RFC1918 ranges, BUT...
+                            // If the User is ON the same subnet (192.168.1.x), we CANNOT block outbound to 192.168.1.x because that blocks the response to the user.
+                            // Stateful filtering handles this: "Allow if state=ESTABLISHED".
+                            // But if we can't reliably configure stateful rules via this simple API logic (requires deeper Proxmox config),
+                            // AND the user explicitly said "I want to access really with the IP",
+                            // we must REMOVE the "Drop LAN" rule.
+                            // Security Trade-off: The VM can access the user's printer/router. Correct.
+                            // But the User prioritized connectivity ("fixe la connexion").
+                            // We will COMMENT OUT the drop rule for now to ensure functionality.
+
+                            // 6c. Allow LAN Access but Protect Gateway
+                            // User provided the Router Admin IP: 192.168.1.254.
+                            // We will DROP access to that specific IP to protect the router.
+                            console.log(`[Background] Adding firewall DROP rule for Gateway 192.168.1.254 to ${vmid}...`);
+                            await proxmoxService.addFirewallRule(vmid, {
+                                type: 'out',
+                                action: 'DROP',
+                                dest: '192.168.1.254',
+                                enable: 1,
+                                comment: 'Block access to Gateway Admin Interface'
+                            });
+
+                            /*
                             console.log(`[Background] Adding firewall DROP rule for 192.168.1.0/24 to ${vmid}...`);
                             await proxmoxService.addFirewallRule(vmid, {
                                 type: 'out',
@@ -204,6 +236,8 @@ const createInstance = async (req, res) => {
                                 enable: 1,
                                 comment: 'Block access to local network'
                             });
+                            */
+
                             console.log(`[Background] Firewall rules added for ${vmid}`);
 
                             // 7. Security: Enable Firewall

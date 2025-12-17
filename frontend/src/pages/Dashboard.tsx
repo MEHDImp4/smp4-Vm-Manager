@@ -22,7 +22,8 @@ const Dashboard = () => {
       const userStr = localStorage.getItem("user");
       if (!userStr) return;
       const user = JSON.parse(userStr);
-      setTotalPoints(user.points || 0);
+      // Don't rely solely on valid local storage for points, but set initial state to avoid flicker if possible
+      // setTotalPoints(user.points || 0); 
 
       try {
         const response = await fetch("/api/instances", {
@@ -39,11 +40,7 @@ const Dashboard = () => {
       }
     };
 
-    // Initial fetch of instances
-    fetchInstances();
-
-    // Polling for real-time points update
-    const interval = setInterval(async () => {
+    const fetchUserData = async () => {
       const userStr = localStorage.getItem("user");
       if (!userStr) return;
       const user = JSON.parse(userStr);
@@ -58,14 +55,27 @@ const Dashboard = () => {
           const userData = await response.json();
           setTotalPoints(userData.points);
 
-          // Optionally update local storage (be careful not to overwrite token)
-          // const updatedUser = { ...user, points: userData.points };
-          // localStorage.setItem("user", JSON.stringify(updatedUser));
+          // Update local storage to keep it somewhat fresh
+          const updatedUser = { ...user, points: userData.points };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
         }
       } catch (error) {
         console.error("Failed to fetch fresh profile", error);
       }
-    }, 10000); // 10 seconds
+    };
+
+    // Initial fetches
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setTotalPoints(user.points || 0); // Set initial value from LS for immediate render
+    }
+
+    fetchInstances();
+    fetchUserData(); // <--- Immediate fetch
+
+    // Polling for real-time points update
+    const interval = setInterval(fetchUserData, 10000); // 10 seconds
 
     return () => clearInterval(interval);
   }, []);

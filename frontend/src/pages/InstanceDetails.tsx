@@ -38,6 +38,25 @@ const InstanceDetails = () => {
     const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
     const [maxSnapshots, setMaxSnapshots] = useState(3);
+    const [timeUntilSnapshot, setTimeUntilSnapshot] = useState("");
+
+    useEffect(() => {
+        const updateCountdown = () => {
+            const now = new Date();
+            const midnight = new Date(now);
+            midnight.setHours(24, 0, 0, 0); // Next midnight
+
+            const diff = midnight.getTime() - now.getTime();
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            setTimeUntilSnapshot(`${hours}h ${minutes}m`);
+        };
+
+        updateCountdown();
+        const interval = setInterval(updateCountdown, 60000); // Update every minute
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         if (!id) return;
@@ -128,7 +147,7 @@ const InstanceDetails = () => {
     }, [id]);
 
     const handleCreateSnapshot = async () => {
-        const name = prompt("Nom du snapshot (optionnel):");
+        const name = prompt("Nom du backup (optionnel):");
         if (name === null) return; // User cancelled
 
         const userStr = localStorage.getItem("user");
@@ -147,7 +166,7 @@ const InstanceDetails = () => {
             });
 
             if (response.ok) {
-                toast.success("Snapshot créé avec succès");
+                toast.success("Backup créé avec succès");
                 fetchSnapshots();
             } else {
                 const err = await response.json();
@@ -161,7 +180,7 @@ const InstanceDetails = () => {
     };
 
     const handleRestoreSnapshot = async (snapId: string, snapName: string) => {
-        if (!confirm(`Voulez-vous vraiment restaurer le snapshot "${snapName}" ?\n\nAttention: Le conteneur sera arrêté puis redémarré.`)) return;
+        if (!confirm(`Voulez-vous vraiment restaurer le backup "${snapName}" ?\n\nAttention: Le conteneur sera arrêté puis redémarré.`)) return;
 
         const userStr = localStorage.getItem("user");
         if (!userStr) return;
@@ -175,7 +194,7 @@ const InstanceDetails = () => {
             });
 
             if (response.ok) {
-                toast.success("Snapshot restauré avec succès");
+                toast.success("Backup restauré avec succès");
             } else {
                 const err = await response.json();
                 toast.error(err.error || "Erreur lors de la restauration");
@@ -188,7 +207,7 @@ const InstanceDetails = () => {
     };
 
     const handleDeleteSnapshot = async (snapId: string, snapName: string) => {
-        if (!confirm(`Voulez-vous vraiment supprimer le snapshot "${snapName}" ?`)) return;
+        if (!confirm(`Voulez-vous vraiment supprimer le backup "${snapName}" ?`)) return;
 
         const userStr = localStorage.getItem("user");
         if (!userStr) return;
@@ -202,7 +221,7 @@ const InstanceDetails = () => {
             });
 
             if (response.ok) {
-                toast.success("Snapshot supprimé");
+                toast.success("Backup supprimé");
                 fetchSnapshots();
             } else {
                 const err = await response.json();
@@ -547,23 +566,26 @@ const InstanceDetails = () => {
                             </div>
                         </div>
 
-                        {/* Snapshots Card */}
+                        {/* Backups Card */}
                         <div className="glass rounded-xl p-5 border border-border/50 space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
                                     <Camera className="w-4 h-4" />
-                                    Snapshots
+                                    Backups
                                 </h3>
                                 <span className="text-xs text-muted-foreground bg-secondary/20 px-2 py-0.5 rounded-full">
                                     {snapshots.length}/{maxSnapshots}
                                 </span>
                             </div>
+                            <p className="text-xs text-muted-foreground -mt-3">
+                                Prochain backup auto dans <span className="font-mono text-primary">{timeUntilSnapshot}</span>
+                            </p>
 
-                            {/* Snapshots List */}
+                            {/* Backups List */}
                             <div className="space-y-2 max-h-[200px] overflow-y-auto">
                                 {snapshots.length === 0 ? (
                                     <p className="text-xs text-muted-foreground text-center py-4">
-                                        Aucun snapshot disponible
+                                        Aucun backup disponible
                                     </p>
                                 ) : (
                                     snapshots.map((snap) => (
@@ -622,7 +644,7 @@ const InstanceDetails = () => {
 
                             {snapshots.length >= maxSnapshots && (
                                 <p className="text-xs text-amber-500 text-center">
-                                    ⚠️ Limite atteinte. Le prochain snapshot supprimera le plus ancien.
+                                    ⚠️ Limite atteinte. Le prochain backup supprimera le plus ancien.
                                 </p>
                             )}
                         </div>

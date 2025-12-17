@@ -4,7 +4,7 @@ services:
     container_name: smp4-backend
     restart: unless-stopped
     volumes:
-      - backend-data:/data
+      - /mnt/user/appdata/smp4-vm-manager/data:/data
     command: /bin/sh -c "npx prisma migrate deploy && npm start"
     environment:
       - DATABASE_URL=file:/data/dev.db
@@ -32,7 +32,7 @@ services:
     container_name: smp4-watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 300 --cleanup smp4-backend smp4-frontend
+    command: --interval 30 --cleanup smp4-backend smp4-frontend
     restart: unless-stopped
 
 volumes:

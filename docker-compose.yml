@@ -13,6 +13,8 @@ services:
       - PROXMOX_API_TOKEN=${PROXMOX_API_TOKEN}
       - PROXMOX_NODE=${PROXMOX_NODE}
       - LXC_SSH_PASSWORD=${LXC_SSH_PASSWORD}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
     networks:
       - smp4-net
 

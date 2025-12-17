@@ -143,28 +143,31 @@ const createInstance = async (req, res) => {
                         try {
                             // 6a. Whitelist Backend IP for WebSocket/SSH access
                             const networks = systemOs.networkInterfaces();
-                            let backendIp = null;
-                            // Priority: Find 192.168.x.x address first as it matches the blocked subnet
-                            for (const name of Object.keys(networks)) {
-                                for (const net of networks[name]) {
-                                    if (net.family === 'IPv4' && !net.internal && net.address.startsWith('192.168.')) {
-                                        backendIp = net.address;
-                                        break;
-                                    }
-                                }
-                                if (backendIp) break;
-                            }
+                            let backendIp = process.env.BACKEND_IP; // Use configured IP first
 
-                            // Fallback: take any external IPv4 if no 192.168.x.x found
                             if (!backendIp) {
+                                // Priority: Find 192.168.x.x address first as it matches the blocked subnet
                                 for (const name of Object.keys(networks)) {
                                     for (const net of networks[name]) {
-                                        if (net.family === 'IPv4' && !net.internal) {
+                                        if (net.family === 'IPv4' && !net.internal && net.address.startsWith('192.168.')) {
                                             backendIp = net.address;
                                             break;
                                         }
                                     }
                                     if (backendIp) break;
+                                }
+
+                                // Fallback: take any external IPv4 if no 192.168.x.x found
+                                if (!backendIp) {
+                                    for (const name of Object.keys(networks)) {
+                                        for (const net of networks[name]) {
+                                            if (net.family === 'IPv4' && !net.internal) {
+                                                backendIp = net.address;
+                                                break;
+                                            }
+                                        }
+                                        if (backendIp) break;
+                                    }
                                 }
                             }
 

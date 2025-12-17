@@ -1044,21 +1044,7 @@ const InstanceDetails = () => {
                                     </div>
                                 </Button>
 
-                                <Button
-                                    variant="outline"
-                                    className="h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-warning/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] justify-start"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-br from-warning/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <div className="relative z-10 flex flex-col gap-3 items-start text-left w-full">
-                                        <div className="p-3 w-fit rounded-lg bg-warning/20 text-warning">
-                                            <Globe className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <div className="font-bold text-base text-foreground">Sous-domaines</div>
-                                            <div className="text-sm text-muted-foreground">Configuration DNS</div>
-                                        </div>
-                                    </div>
-                                </Button>
+                                {/* Removed dummy subdomain button */}
                             </div>
                         </div>
 

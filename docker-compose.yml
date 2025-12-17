@@ -1,0 +1,41 @@
+services:
+  backend:
+    image: mehdimp4/smp4-vm-manager-backend:latest
+    container_name: smp4-backend
+    restart: unless-stopped
+    volumes:
+      - backend-data:/data
+    command: /bin/sh -c "npx prisma migrate deploy && npm start"
+    environment:
+      - DATABASE_URL=file:/data/dev.db
+      - JWT_SECRET=${JWT_SECRET}
+      # Add other environment variables here
+    networks:
+      - smp4-net
+
+  frontend:
+    image: mehdimp4/smp4-vm-manager-frontend:latest
+    container_name: smp4-frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8090}:80"
+    depends_on:
+      - backend
+    networks:
+      - smp4-net
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: smp4-watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup smp4-backend smp4-frontend
+    restart: unless-stopped
+
+volumes:
+  backend-data:
+
+
+networks:
+  smp4-net:
+    driver: bridge

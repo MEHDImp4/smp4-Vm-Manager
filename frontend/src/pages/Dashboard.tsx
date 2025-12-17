@@ -84,9 +84,21 @@ const Dashboard = () => {
     fetchInstances();
     fetchUserData();
 
-    const interval = setInterval(fetchUserData, 10000);
+    fetchInstances();
+    fetchUserData();
+
+    // Dynamic Polling Interval
+    // If any instance is provisioning, poll fast (2s). Otherwise poll slow (10s).
+    const hasProvisioning = instances.some(i => i.status === 'provisioning');
+    const pollInterval = hasProvisioning ? 2000 : 10000;
+
+    const interval = setInterval(() => {
+      fetchInstances();
+      fetchUserData();
+    }, pollInterval);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [instances.some(i => i.status === 'provisioning')]); // Re-run effect when provisioning state changes
 
   const maxPoints = 500;
   const dailyConsumption = instances

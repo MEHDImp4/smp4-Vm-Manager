@@ -145,6 +145,11 @@ const InstanceDetails = () => {
                     const instances = await response.json();
                     const found = instances.find((i: any) => i.id === id);
                     if (found) {
+                        if (found.status === 'provisioning') {
+                            toast.info("Instance en cours de création. Veuillez patienter.");
+                            navigate("/dashboard");
+                            return;
+                        }
                         setInstance(found);
                     } else {
                         // navigate("/dashboard"); 
@@ -515,7 +520,7 @@ const InstanceDetails = () => {
                                     <Cpu className="w-3.5 h-3.5" /> {instance?.cpu} vCPU
                                 </span>
                                 <span className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
-                                    <MemoryStick className="w-3.5 h-3.5" /> {formatBytes(instance?.ram || 0)}
+                                    <MemoryStick className="w-3.5 h-3.5" /> {formatBytes((parseInt(instance?.ram) || 0) * 1024 * 1024)}
                                 </span>
                                 <span className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
                                     <HardDrive className="w-3.5 h-3.5" /> {instance?.storage} GB

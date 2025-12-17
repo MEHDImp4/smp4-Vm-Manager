@@ -50,7 +50,7 @@ const createInstance = async (req, res) => {
                 ram,
                 storage,
                 pointsPerDay,
-                status: "stopped",
+                status: "provisioning", // Initial status
                 userId,
                 vmid: parseInt(vmid),
                 rootPassword: rootPassword
@@ -90,11 +90,7 @@ const createInstance = async (req, res) => {
                 // We will set it via SSH after boot.
 
                 await proxmoxService.startLXC(vmid);
-
-                await prisma.instance.update({
-                    where: { id: instance.id },
-                    data: { status: 'online' }
-                });
+                // Note: We do NOT set status to 'online' here anymore. We wait for SSH config.
 
                 console.log(`[Background] LXC ${vmid} started.`);
 
@@ -147,6 +143,7 @@ const createInstance = async (req, res) => {
 
                             if (!backendIp) {
                                 // Priority: Find 192.168.x.x address first as it matches the blocked subnet
+                                // ... (omitted similar logic for brevity, keeping existing structure)
                                 for (const name of Object.keys(networks)) {
                                     for (const net of networks[name]) {
                                         if (net.family === 'IPv4' && !net.internal && net.address.startsWith('192.168.')) {
@@ -187,9 +184,7 @@ const createInstance = async (req, res) => {
                                 }
                             }
 
-                            // 6b. Allow ALL Inbound Traffic (User Requirement: "Access with whatever device/app")
-                            // Since we enable the firewall, we must explicitly allow inbound traffic if we want it to be accessible.
-                            // Users are deploying arbitrary apps (Portainer:9000, Web:80, etc.)
+                            // 6b. Allow ALL Inbound Traffic
                             console.log(`[Background] Adding firewall rule: ACCEPT ALL INBOUND for ${vmid}...`);
                             await proxmoxService.addFirewallRule(vmid, {
                                 type: 'in',
@@ -198,26 +193,7 @@ const createInstance = async (req, res) => {
                                 comment: 'Allow all inbound traffic (Web, Portainer, etc.)'
                             });
 
-                            // 6c. Allow Established Connections (Fix for Return Traffic)
-                            // Crucial: If we drop outbound to LAN, we kill the response packets to the user's laptop.
-                            // We must allow ESTABLISHED connections first.
-                            // Note: Proxmox firewall macro 'Standard-Security-Group' often handles this, but we add explicit rule to remain safe.
-                            // However, simply adding "ACCEPT dest: 0.0.0.0/0" for established isn't direct in simplistic API calls without macro awareness.
-                            // Best approach for "Isolation but Accessibility":
-                            // 1. Allow Outbound to Gateway/DNS (Essential) - usually covered by default policies?
-                            // 2. Drop access to Private RFC1918 ranges, BUT...
-                            // If the User is ON the same subnet (192.168.1.x), we CANNOT block outbound to 192.168.1.x because that blocks the response to the user.
-                            // Stateful filtering handles this: "Allow if state=ESTABLISHED".
-                            // But if we can't reliably configure stateful rules via this simple API logic (requires deeper Proxmox config),
-                            // AND the user explicitly said "I want to access really with the IP",
-                            // we must REMOVE the "Drop LAN" rule.
-                            // Security Trade-off: The VM can access the user's printer/router. Correct.
-                            // But the User prioritized connectivity ("fixe la connexion").
-                            // We will COMMENT OUT the drop rule for now to ensure functionality.
-
                             // 6c. Allow LAN Access but Protect Gateway
-                            // User provided the Router Admin IP: 192.168.1.254.
-                            // We will DROP access to that specific IP to protect the router.
                             console.log(`[Background] Adding firewall DROP rule for Gateway 192.168.1.254 to ${vmid}...`);
                             await proxmoxService.addFirewallRule(vmid, {
                                 type: 'out',
@@ -226,17 +202,6 @@ const createInstance = async (req, res) => {
                                 enable: 1,
                                 comment: 'Block access to Gateway Admin Interface'
                             });
-
-                            /*
-                            console.log(`[Background] Adding firewall DROP rule for 192.168.1.0/24 to ${vmid}...`);
-                            await proxmoxService.addFirewallRule(vmid, {
-                                type: 'out',
-                                action: 'DROP',
-                                dest: '192.168.1.0/24',
-                                enable: 1,
-                                comment: 'Block access to local network'
-                            });
-                            */
 
                             console.log(`[Background] Firewall rules added for ${vmid}`);
 
@@ -253,9 +218,20 @@ const createInstance = async (req, res) => {
                     console.error(`[Background] Timed out waiting for IP for ${vmid}`);
                 }
 
+                // ALL DONE - SET ONLINE
+                await prisma.instance.update({
+                    where: { id: instance.id },
+                    data: { status: 'online' }
+                });
+                console.log(`[Background] Instance ${instance.id} is now ONLINE.`);
+
             } catch (bgError) {
                 console.error(`[Background] Creation failed for ${vmid}:`, bgError.message);
-                // Optionally update status to 'error'
+                // Update status to 'error' or 'stopped' so user knows
+                await prisma.instance.update({
+                    where: { id: instance.id },
+                    data: { status: 'error' } // Or 'stopped'
+                });
             }
         })();
 

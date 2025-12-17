@@ -9,10 +9,21 @@ interface Instance {
   id: string;
   name: string;
   template: string;
-  status: "online" | "stopped";
+  status: "online" | "stopped" | "provisioning" | "error";
   pointsPerDay: number;
   type: "ct" | "vm";
 }
+
+const LOADING_MESSAGES = [
+  "Initialisation du conteneur...",
+  "Configuration du réseau...",
+  "Sécurisation des accès...",
+  "Mise en place du pare-feu...",
+  "Démarrage des services...",
+  "Préparation de votre environnement...",
+  "Vérification des systèmes...",
+  "Presque prêt..."
+];
 
 const Dashboard = () => {
   const [instances, setInstances] = useState<Instance[]>([]);
@@ -335,85 +346,115 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="grid gap-4">
-              {instances.map((instance) => (
-                <div
-                  key={instance.id}
-                  className="glass p-1 rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300 group hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="bg-black/40 rounded-xl p-5 md:p-6 flex flex-col md:flex-row md:items-center gap-6 relative overflow-hidden">
-                    {/* Status Glow Blob */}
-                    <div className={`absolute top-0 right-0 w-[200px] h-[200px] rounded-full blur-[80px] pointer-events-none transition-colors duration-500 ${instance.status === 'online' ? 'bg-emerald-500/10' : 'bg-transparent'}`} />
-
-                    {/* Icon & Details */}
-                    <div className="flex items-center gap-5 flex-1 relative z-10">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-colors duration-500 ${instance.status === 'online' ? 'bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-400' : 'bg-white/5 text-muted-foreground'}`}>
-                        {instance.type === "ct" ? (
-                          <Container className="w-7 h-7" />
-                        ) : (
-                          <Server className="w-7 h-7" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-3 mb-1">
-                          <Link to={`/instance/${instance.id}`} className="text-lg font-bold hover:text-primary transition-colors flex items-center gap-2 group/link">
-                            {instance.name}
-                            <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover/link:opacity-100 group-hover/link:translate-x-0 transition-all" />
-                          </Link>
+              {instances.map((instance) => {
+                if (instance.status === 'provisioning') {
+                  return (
+                    <div key={instance.id} className="glass p-8 rounded-2xl border border-white/5 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-grid-pattern opacity-10" />
+                      <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-6">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-white/10 flex items-center justify-center relative z-10">
+                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground font-mono">
-                          <span className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${instance.status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-destructive'}`} />
-                            {instance.status === 'online' ? 'Running' : 'Stopped'}
-                          </span>
-                          <span className="w-1 h-1 rounded-full bg-white/20" />
-                          <span>Template {instance.template}</span>
+                        <div>
+                          <h3 className="text-xl font-bold mb-2">{instance.name}</h3>
+                          <div className="h-6 overflow-hidden relative">
+                            <p className="text-muted-foreground animate-fade-up text-sm font-mono">
+                              {LOADING_MESSAGES[Math.floor((Date.now() / 2000) % LOADING_MESSAGES.length)]}
+                            </p>
+                          </div>
                         </div>
+                        <div className="w-full max-w-xs bg-white/5 rounded-full h-1.5 overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-primary to-secondary animate-progress-indeterminate" />
+                        </div>
+                        <p className="text-xs text-muted-foreground/50 uppercase tracking-widest">Création en cours</p>
                       </div>
                     </div>
+                  );
+                }
 
-                    {/* Metrics */}
-                    <div className="flex items-center gap-6 relative z-10 pl-6 md:pl-0 border-l md:border-l-0 border-white/10">
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Coût</p>
-                        <div className={`font-mono font-bold flex items-center gap-1.5 ${instance.status === 'online' ? 'text-primary' : 'text-muted-foreground'}`}>
-                          <BarChart3 className="w-4 h-4" />
-                          {instance.pointsPerDay} <span className="text-xs opacity-70">pts/j</span>
+                return (
+                  <div
+                    key={instance.id}
+                    className="glass p-1 rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300 group hover:-translate-y-1 hover:shadow-xl"
+                  >
+                    <div className="bg-black/40 rounded-xl p-5 md:p-6 flex flex-col md:flex-row md:items-center gap-6 relative overflow-hidden">
+                      {/* Status Glow Blob */}
+                      <div className={`absolute top-0 right-0 w-[200px] h-[200px] rounded-full blur-[80px] pointer-events-none transition-colors duration-500 ${instance.status === 'online' ? 'bg-emerald-500/10' : 'bg-transparent'}`} />
+
+                      {/* Icon & Details */}
+                      <div className="flex items-center gap-5 flex-1 relative z-10">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-colors duration-500 ${instance.status === 'online' ? 'bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-400' : 'bg-white/5 text-muted-foreground'}`}>
+                          {instance.type === "ct" ? (
+                            <Container className="w-7 h-7" />
+                          ) : (
+                            <Server className="w-7 h-7" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3 mb-1">
+                            <Link to={`/instance/${instance.id}`} className="text-lg font-bold hover:text-primary transition-colors flex items-center gap-2 group/link">
+                              {instance.name}
+                              <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover/link:opacity-100 group-hover/link:translate-x-0 transition-all" />
+                            </Link>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground font-mono">
+                            <span className="flex items-center gap-1.5">
+                              <div className={`w-2 h-2 rounded-full ${instance.status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-destructive'}`} />
+                              {instance.status === 'online' ? 'Running' : 'Stopped'}
+                            </span>
+                            <span className="w-1 h-1 rounded-full bg-white/20" />
+                            <span>Template {instance.template}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Controls */}
-                    <div className="flex items-center gap-2 md:ml-4 relative z-10 pt-4 md:pt-0 border-t md:border-t-0 border-white/10 md:pl-6 md:border-l border-white/10">
-                      <Button
-                        onClick={() => toggleStatus(instance.id)}
-                        className={`rounded-lg transition-all border ${instance.status === 'online'
-                          ? 'bg-transparent border-white/10 hover:bg-white/5 text-muted-foreground hover:text-white'
-                          : 'bg-emerald-600 border-emerald-500 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20'}`}
-                      >
-                        {instance.status === "online" ? (
-                          <>
-                            <Square className="w-4 h-4 mr-2 fill-current" />
-                            Arrêter
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 mr-2 fill-current" />
-                            Démarrer
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                        onClick={(e) => handleDeleteClick(instance, e)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {/* Metrics */}
+                      <div className="flex items-center gap-6 relative z-10 pl-6 md:pl-0 border-l md:border-l-0 border-white/10">
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Coût</p>
+                          <div className={`font-mono font-bold flex items-center gap-1.5 ${instance.status === 'online' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <BarChart3 className="w-4 h-4" />
+                            {instance.pointsPerDay} <span className="text-xs opacity-70">pts/j</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Controls */}
+                      <div className="flex items-center gap-2 md:ml-4 relative z-10 pt-4 md:pt-0 border-t md:border-t-0 border-white/10 md:pl-6 md:border-l border-white/10">
+                        <Button
+                          onClick={() => toggleStatus(instance.id)}
+                          className={`rounded-lg transition-all border ${instance.status === 'online'
+                            ? 'bg-transparent border-white/10 hover:bg-white/5 text-muted-foreground hover:text-white'
+                            : 'bg-emerald-600 border-emerald-500 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20'}`}
+                        >
+                          {instance.status === "online" ? (
+                            <>
+                              <Square className="w-4 h-4 mr-2 fill-current" />
+                              Arrêter
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4 mr-2 fill-current" />
+                              Démarrer
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                          onClick={(e) => handleDeleteClick(instance, e)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

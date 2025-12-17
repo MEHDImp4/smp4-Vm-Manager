@@ -38,8 +38,11 @@ const Dashboard = () => {
       const user = JSON.parse(userStr);
 
       try {
-        const response = await fetch("/api/instances", {
-          headers: { "Authorization": `Bearer ${user.token}` }
+        const response = await fetch(`/api/instances?t=${Date.now()}`, {
+          headers: {
+            "Authorization": `Bearer ${user.token}`,
+            "Cache-Control": "no-cache"
+          }
         });
         if (response.ok) {
           const data = await response.json();

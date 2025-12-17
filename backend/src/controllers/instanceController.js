@@ -440,6 +440,7 @@ const getInstanceStats = async (req, res) => {
                 maxDiskBytes: parseInt(maxDiskBytes),
                 ip: ip,
                 status: status.status,
+                uptime: status.uptime,
                 rootPassword: instance.rootPassword
             });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Terminal, RotateCw, Cpu, MemoryStick, HardDrive, Camera, History, Download, Trash2, ExternalLink, Shield, Globe, BookOpen, ArrowLeft, Square, Play, Power, Loader2, Plus } from "lucide-react";
+import { Terminal, RotateCw, Cpu, MemoryStick, HardDrive, Camera, History, Download, Trash2, ExternalLink, Shield, Globe, BookOpen, ArrowLeft, Square, Play, Power, Loader2, Plus, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -28,10 +28,25 @@ const formatBytes = (bytes: number, decimals = 2) => {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 };
 
+const formatUptime = (seconds: number) => {
+    if (!seconds) return '0s';
+    const days = Math.floor(seconds / (3600 * 24));
+    const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}j`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (parts.length === 0) return `${Math.floor(seconds % 60)}s`;
+
+    return parts.join(' ');
+};
+
 const InstanceDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [stats, setStats] = useState({ cpu: 0, ram: 0, storage: 0, diskBytes: 0, maxDiskBytes: 0, ip: null, status: 'unknown', rootPassword: null });
+    const [stats, setStats] = useState({ cpu: 0, ram: 0, storage: 0, diskBytes: 0, maxDiskBytes: 0, ip: null, status: 'unknown', rootPassword: null, uptime: 0 });
     const [cpuData, setCpuData] = useState<any[]>([]);
     const [ramData, setRamData] = useState<any[]>([]);
     const [instance, setInstance] = useState<any>(null);
@@ -510,6 +525,12 @@ const InstanceDetails = () => {
                                         <Globe className="w-3.5 h-3.5" /> {stats.ip}
                                     </span>
                                 )}
+                                {stats.uptime > 0 && (
+                                    <span className="flex items-center gap-1.5 text-blue-400 bg-blue-500/10 px-2 py-1 rounded-md border border-blue-500/20">
+                                        <Clock className="w-3.5 h-3.5" /> {formatUptime(stats.uptime)}
+                                    </span>
+                                )}
+
                             </div>
                         </div>
                     </div>

@@ -101,11 +101,7 @@ const getProfile = async (req, res) => {
     }
 };
 
-    } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
-}
-};
+
 
 const updatePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;

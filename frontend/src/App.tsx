@@ -11,6 +11,8 @@ import Account from "./pages/Account";
 import CreateInstance from "./pages/CreateInstance";
 import InstanceDetails from "./pages/InstanceDetails";
 
+import DockerGuide from "./pages/DockerGuide";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -23,6 +25,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/guide" element={<DockerGuide />} />
           <Route path="/login" element={<Auth />} />
           <Route path="/register" element={<Auth />} />
           <Route path="/register" element={<Auth />} />

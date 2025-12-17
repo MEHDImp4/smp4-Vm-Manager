@@ -451,34 +451,7 @@ const InstanceDetails = () => {
         }
     };
 
-    const handleDelete = async () => {
-        if (!instance) return;
-        const confirmName = prompt(`Pour confirmer la suppression, tapez le nom de l'instance :\n${instance.name}`);
-        if (confirmName !== instance.name) {
-            if (confirmName !== null) toast.error("Nom incorrect. Suppression annulée.");
-            return;
-        }
 
-        const userStr = localStorage.getItem("user");
-        if (!userStr) return;
-        const user = JSON.parse(userStr);
-
-        try {
-            const res = await fetch(`/api/instances/${id}`, {
-                method: "DELETE",
-                headers: { "Authorization": `Bearer ${user.token}` }
-            });
-            if (res.ok) {
-                toast.success("Instance supprimée avec succès");
-                navigate("/dashboard");
-            } else {
-                toast.error("Erreur lors de la suppression");
-            }
-        } catch (e) {
-            console.error(e);
-            toast.error("Erreur de connexion");
-        }
-    };
 
     if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground"><Loader2 className="w-8 h-8 animate-spin" /></div>;
     if (!instance) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground">Instance non trouvée</div>;
@@ -498,9 +471,9 @@ const InstanceDetails = () => {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 animate-fade-up">
                     <div className="flex items-center gap-6">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => navigate('/dashboard')}
                             className="rounded-full hover:bg-white/5 hover:text-primary transition-colors"
                         >
@@ -512,14 +485,12 @@ const InstanceDetails = () => {
                                     {instance?.name || 'Chargement...'}
                                 </h1>
                                 {instance && (
-                                    <div className={`px-3 py-1 rounded-full border ${
-                                        instance.status === 'online' 
-                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]' 
-                                            : 'bg-destructive/10 border-destructive/20 text-destructive'
-                                    } text-xs font-semibold flex items-center gap-2 backdrop-blur-md`}>
-                                        <div className={`w-2 h-2 rounded-full ${
-                                            instance.status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-destructive'
-                                        }`} />
+                                    <div className={`px-3 py-1 rounded-full border ${instance.status === 'online'
+                                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+                                        : 'bg-destructive/10 border-destructive/20 text-destructive'
+                                        } text-xs font-semibold flex items-center gap-2 backdrop-blur-md`}>
+                                        <div className={`w-2 h-2 rounded-full ${instance.status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-destructive'
+                                            }`} />
                                         {instance.status === 'online' ? 'EN LIGNE' : 'HORS LIGNE'}
                                     </div>
                                 )}
@@ -547,43 +518,31 @@ const InstanceDetails = () => {
                         <Button
                             onClick={() => handlePowerAction("start")}
                             disabled={loading || instance?.status === "online"}
-                            className={`rounded-lg transition-all duration-300 ${
-                                instance?.status === "online" 
-                                    ? "bg-transparent text-muted-foreground hover:bg-white/5" 
-                                    : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                            }`}
+                            className={`rounded-lg transition-all duration-300 ${instance?.status === "online"
+                                ? "bg-transparent text-muted-foreground hover:bg-white/5"
+                                : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                                }`}
                         >
                             <Play className="w-4 h-4 mr-2" /> Démarrer
                         </Button>
                         <Button
                             onClick={() => handlePowerAction("stop")}
                             disabled={loading || instance?.status === "stopped"}
-                            className={`rounded-lg transition-all duration-300 ${
-                                instance?.status === "stopped"
-                                    ? "bg-transparent text-muted-foreground hover:bg-white/5"
-                                    : "bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20"
-                            }`}
+                            className={`rounded-lg transition-all duration-300 ${instance?.status === "stopped"
+                                ? "bg-transparent text-muted-foreground hover:bg-white/5"
+                                : "bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20"
+                                }`}
                         >
                             <Square className="w-4 h-4 mr-2" /> Arrêter
                         </Button>
                         <Button
                             onClick={() => handlePowerAction("restart")}
                             disabled={loading || instance?.status === "stopped"}
-                             className="bg-transparent hover:bg-white/10 text-foreground border border-white/10"
+                            className="bg-transparent hover:bg-white/10 text-foreground border border-white/10"
                         >
                             <RotateCw className="w-4 h-4 mr-2" /> Redémarrer
                         </Button>
-                        <div className="w-px h-8 bg-white/10 mx-1" />
-                        <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={handleDelete}
-                            disabled={loading}
-                            title="Supprimer la VM"
-                            className="rounded-lg hover:bg-red-500/20"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </Button>
+
                     </div>
                 </div>
 
@@ -631,10 +590,10 @@ const InstanceDetails = () => {
 
                     {/* Widgets Section (Vertical Stack) */}
                     <div className="space-y-8">
-                        
+
                         {/* Resources Card - Moved first for better visibility */}
                         <div className="glass rounded-xl p-6 md:p-8 border border-white/10 flex flex-col justify-between h-auto animate-fade-up-delay-2 relative overflow-hidden">
-                             <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[80px]" />
+                            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[80px]" />
                             <div className="flex items-center justify-between mb-8 relative z-10">
                                 <h3 className="font-bold text-lg text-foreground flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
@@ -738,7 +697,7 @@ const InstanceDetails = () => {
 
                         {/* Backups Card */}
                         <div className="glass rounded-xl p-6 md:p-8 border border-white/10 space-y-6 animate-fade-up-delay-2 relative overflow-hidden">
-                             <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[80px]" />
+                            <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[80px]" />
                             <div className="flex items-center justify-between relative z-10">
                                 <h3 className="font-bold text-lg text-foreground flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
@@ -746,26 +705,19 @@ const InstanceDetails = () => {
                                     </div>
                                     Backups & Instantanés
                                 </h3>
-                                <Button 
-                                    onClick={handleCreateSnapshot} 
-                                    disabled={snapshotLoading || snapshots.length >= maxSnapshots}
-                                    className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-                                >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Créer un backup
-                                </Button>
+
                             </div>
-                            
-                           <div className="flex items-center gap-6 text-sm text-muted-foreground relative z-10 pb-2 border-b border-border/50">
+
+                            <div className="flex items-center gap-6 text-sm text-muted-foreground relative z-10 pb-2 border-b border-border/50">
                                 <span className="flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-primary" />
                                     {snapshots.length} / {maxSnapshots} slots utilisés
                                 </span>
                                 <span className="flex items-center gap-2">
-                                     <History className="w-4 h-4" />
-                                     Prochain auto: <span className="text-foreground font-mono">{timeUntilSnapshot}</span>
+                                    <History className="w-4 h-4" />
+                                    Prochain auto: <span className="text-foreground font-mono">{timeUntilSnapshot}</span>
                                 </span>
-                           </div>
+                            </div>
 
                             {/* Backups List */}
                             <div className="grid gap-3 relative z-10">
@@ -834,7 +786,7 @@ const InstanceDetails = () => {
                             </div>
                         </div>
 
-                         {/* Actions Card - Grid Layout */}
+                        {/* Actions Card - Grid Layout */}
                         <div className="animate-fade-up-delay-3 space-y-4">
                             <h3 className="font-semibold text-lg text-muted-foreground pl-1">Actions Rapides</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -856,8 +808,8 @@ const InstanceDetails = () => {
                                     </div>
                                 </a>
 
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     className="h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-secondary/50  transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] justify-start"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -872,8 +824,8 @@ const InstanceDetails = () => {
                                     </div>
                                 </Button>
 
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     className="h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-warning/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] justify-start"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-br from-warning/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -889,8 +841,8 @@ const InstanceDetails = () => {
                                 </Button>
                             </div>
                         </div>
-                        
-                         {/* Documentation Section */}
+
+                        {/* Documentation Section */}
                         <div id="quick-guide" className="glass rounded-xl p-8 border border-white/10 animate-fade-up-delay-3">
                             <h3 className="text-lg font-bold mb-6 flex items-center gap-3">
                                 <BookOpen className="w-6 h-6 text-primary" />

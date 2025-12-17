@@ -38,6 +38,7 @@ const InstanceDetails = () => {
     const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
     const [maxSnapshots, setMaxSnapshots] = useState(3);
+    const [refreshKey, setRefreshKey] = useState(0);
     const [timeUntilSnapshot, setTimeUntilSnapshot] = useState("");
 
     useEffect(() => {
@@ -363,7 +364,7 @@ const InstanceDetails = () => {
             term.dispose();
             resizeObserver.disconnect();
         };
-    }, [instance?.vmid, stats.ip, stats.rootPassword]);
+    }, [instance?.vmid, stats.ip, stats.rootPassword, refreshKey]); // Added refreshKey dependency
 
     const handleRestart = async () => {
         if (!confirm("Voulez-vous vraiment redémarrer cette instance ?")) return;
@@ -505,10 +506,21 @@ const InstanceDetails = () => {
                                     <Terminal className="w-4 h-4 text-muted-foreground" />
                                     <span className="text-xs text-muted-foreground font-mono">smp4@server:~</span>
                                 </div>
-                                <div className="flex gap-1.5">
-                                    <div className="w-3 h-3 rounded-full bg-red-500/50" />
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-                                    <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                                <div className="flex gap-2 items-center">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        title="Refraîchir le Terminal"
+                                        className="h-6 w-6 p-0 hover:bg-white/10"
+                                        onClick={() => setRefreshKey(prev => prev + 1)}
+                                    >
+                                        <RotateCw className="w-3.5 h-3.5 text-muted-foreground hover:text-white" />
+                                    </Button>
+                                    <div className="flex gap-1.5 ml-2">
+                                        <div className="w-3 h-3 rounded-full bg-red-500/50" />
+                                        <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
+                                        <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex-1 bg-black p-1 font-mono text-sm overflow-hidden relative" ref={terminalRef}>

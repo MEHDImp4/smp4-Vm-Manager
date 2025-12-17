@@ -11,6 +11,8 @@ const PORT = process.env.PORT || 3000;
 
 // Start background jobs
 startConsumptionCron();
+const { startSnapshotCron } = require('./cron/snapshotCron');
+startSnapshotCron();
 
 // Seed templates on startup
 const { seedTemplates } = require('./scripts/seedTemplates');

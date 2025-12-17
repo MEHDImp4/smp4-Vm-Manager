@@ -559,22 +559,6 @@ const InstanceDetails = () => {
                                 </span>
                             </div>
 
-                            {/* Create Snapshot Button */}
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full justify-center gap-2 border-dashed border-primary/50 text-primary hover:bg-primary/10"
-                                onClick={handleCreateSnapshot}
-                                disabled={snapshotLoading}
-                            >
-                                {snapshotLoading ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <Camera className="w-4 h-4" />
-                                )}
-                                Créer un snapshot
-                            </Button>
-
                             {/* Snapshots List */}
                             <div className="space-y-2 max-h-[200px] overflow-y-auto">
                                 {snapshots.length === 0 ? (

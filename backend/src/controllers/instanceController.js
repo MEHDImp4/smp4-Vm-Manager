@@ -4,6 +4,7 @@ const proxmoxService = require('../services/proxmox.service');
 const sshService = require('../services/ssh.service');
 const crypto = require('crypto');
 const systemOs = require('os');
+const cloudflareService = require('../services/cloudflare.service');
 
 const createInstance = async (req, res) => {
     try {
@@ -438,4 +439,133 @@ const getInstanceStats = async (req, res) => {
     }
 };
 
-module.exports = { createInstance, getInstances, toggleInstanceStatus, restartInstance, deleteInstance, getInstanceStats };
+const createDomain = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { subdomain, port } = req.body;
+        const userId = req.user.id;
+
+        // Validation
+        if (!subdomain || !port) {
+            return res.status(400).json({ error: "Subdomain and port are required" });
+        }
+
+        if (!/^[a-z0-9-]+$/.test(subdomain)) {
+            return res.status(400).json({ error: "Subdomain must contain only lowercase letters, numbers, and dashes" });
+        }
+
+        // Check ownership
+        const instance = await prisma.instance.findUnique({
+            where: { id },
+            include: { domains: true }
+        });
+
+        if (!instance || instance.userId !== userId) {
+            return res.status(404).json({ error: "Instance not found" });
+        }
+
+        // Check limits (e.g. 2 domains per instance)
+        if (instance.domains.length >= 2) {
+            return res.status(400).json({ error: "Maximum of 2 domains per instance reached" });
+        }
+
+        // Check if subdomain is taken (global check)
+        const existingDomain = await prisma.domain.findUnique({
+            where: { subdomain }
+        });
+        if (existingDomain) {
+            return res.status(400).json({ error: "Subdomain is already taken" });
+        }
+
+        // Get Instance IP
+        const stats = await proxmoxService.getLXCStatus(instance.vmid);
+        if (!stats.ip) {
+            return res.status(400).json({ error: "Instance must have an IP address to bind a domain" });
+        }
+
+        const fullHostname = `${subdomain}.smp4.xyz`;
+        const serviceUrl = `http://${stats.ip}:${port}`;
+
+        // Add to Cloudflare
+        await cloudflareService.addTunnelIngress(fullHostname, serviceUrl);
+
+        // Save to DB
+        const domain = await prisma.domain.create({
+            data: {
+                subdomain,
+                port: parseInt(port),
+                instanceId: id
+            }
+        });
+
+        res.status(201).json(domain);
+    } catch (error) {
+        console.error("Create domain error:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const deleteDomain = async (req, res) => {
+    try {
+        const { id, domainId } = req.params;
+        const userId = req.user.id;
+
+        const domain = await prisma.domain.findUnique({
+            where: { id: domainId },
+            include: { instance: true }
+        });
+
+        if (!domain || domain.instance.id !== id || domain.instance.userId !== userId) {
+            return res.status(404).json({ error: "Domain not found" });
+        }
+
+        const fullHostname = `${domain.subdomain}.smp4.xyz`;
+
+        // Remove from Cloudflare
+        await cloudflareService.removeTunnelIngress(fullHostname);
+
+        // Remove from DB
+        await prisma.domain.delete({
+            where: { id: domainId }
+        });
+
+        res.json({ message: "Domain deleted successfully" });
+    } catch (error) {
+        console.error("Delete domain error:", error);
+        res.status(500).json({ error: "Failed to delete domain" });
+    }
+};
+
+const getDomains = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const instance = await prisma.instance.findUnique({
+            where: { id },
+            include: { domains: true }
+        });
+
+        if (!instance || instance.userId !== userId) {
+            return res.status(404).json({ error: "Instance not found" });
+        }
+
+        res.json(instance.domains);
+    } catch (error) {
+        console.error("Get domains error:", error);
+        res.status(500).json({ error: "Failed to fetch domains" });
+    }
+};
+
+
+module.exports = {
+    createInstance,
+    getInstances,
+    toggleInstanceStatus,
+    restartInstance,
+    deleteInstance,
+    getInstanceStats,
+    createDomain,
+    deleteDomain,
+    getDomains
+};

@@ -50,6 +50,7 @@ model Instance {
   created_at   DateTime @default(now())
 
   snapshots    Snapshot[]
+  domains      Domain[]
 
   @@map("instances")
 }
@@ -64,6 +65,18 @@ model Snapshot {
   createdAt       DateTime @default(now())
 
   @@map("snapshots")
+}
+
+model Domain {
+  id         String   @id @default(uuid())
+  subdomain  String   // e.g. "minecraft"
+  port       Int      // e.g. 25565
+  instanceId String
+  instance   Instance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([subdomain]) // Ensure unique subdomains globally
+  @@map("domains")
 }
 
 model Template {

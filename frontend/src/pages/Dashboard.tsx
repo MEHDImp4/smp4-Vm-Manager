@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Cloud, Play, Square, Trash2, Plus, Coins, TrendingDown, Lightbulb, Server, Container, BarChart3, Loader2, ArrowRight, Zap, Activity } from "lucide-react";
+import { Cloud, Play, Square, Trash2, Plus, Coins, TrendingDown, Lightbulb, Server, Container, BarChart3, Loader2, ArrowRight, Zap, Activity, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner"; // Assuming sonner is available as used in InstanceDetails
@@ -192,6 +192,13 @@ const Dashboard = () => {
             </span>
           </Link>
           <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" asChild className="hover:bg-white/5 hidden md:flex">
+              <Link to="/guide">
+                <BookOpen className="w-4 h-4 mr-2 text-blue-400" />
+                Guide Déploiement
+              </Link>
+            </Button>
+
             <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
               <div className="p-1 rounded-full bg-primary/20 text-primary">
                 <Coins className="w-3.5 h-3.5" />
@@ -279,7 +286,7 @@ const Dashboard = () => {
                 <h3 className="text-sm font-bold text-amber-500 mb-1">Astuce Pro</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Pour optimiser vos coûts, pensez à éteindre vos instances de développement la nuit.
-                  Utilisez <code className="text-foreground bg-white/10 px-1 py-0.5 rounded text-xs font-mono">docker-compose</code> sur les templates Medium+.
+                  Utilisez <Link to="/guide" className="hover:underline decoration-amber-500/50"><code className="text-foreground bg-white/10 px-1 py-0.5 rounded text-xs font-mono cursor-pointer hover:bg-white/20 transition-colors">docker-compose</code></Link> sur les templates Medium+.
                 </p>
               </div>
             </div>

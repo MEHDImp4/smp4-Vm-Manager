@@ -15,6 +15,7 @@ model User {
   password   String
   points     Float    @default(100.0)
   created_at DateTime @default(now())
+  avatarUrl  String?
 
   instances  Instance[]
 

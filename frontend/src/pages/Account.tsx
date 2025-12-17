@@ -1,26 +1,147 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Cloud, LogOut, User, Shield, Key, CreditCard, ChevronRight, LayoutDashboard, Coins, History, Settings } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Cloud, LogOut, User, Shield, Key, ChevronRight, LayoutDashboard, Coins, History, Settings, Loader2, Camera } from "lucide-react";
 import { toast } from "sonner";
 
 const Account = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState<any>(null);
+    const [avatarLoading, setAvatarLoading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Password Change State
+    const [passOpen, setPassOpen] = useState(false);
+    const [passLoading, setPassLoading] = useState(false);
+    const [passFormData, setPassFormData] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+    });
 
     useEffect(() => {
-        const userStr = localStorage.getItem('user');
-        if (!userStr) {
-            navigate("/login");
-            return;
-        }
-        setUser(JSON.parse(userStr));
+        const fetchUserData = async () => {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                navigate("/login");
+                return;
+            }
+            const localUser = JSON.parse(userStr);
+
+            // Fetch fresh profile data including avatar
+            try {
+                const res = await fetch('/api/auth/me', {
+                    headers: { "Authorization": `Bearer ${localUser.token}` }
+                });
+                if (res.ok) {
+                    const freshUser = await res.json();
+                    // Merge with token from local storage
+                    const updatedUser = { ...freshUser, token: localUser.token };
+                    setUser(updatedUser);
+                    localStorage.setItem('user', JSON.stringify(updatedUser)); // Update local storage
+                } else {
+                    setUser(localUser); // Fallback
+                }
+            } catch (e) {
+                setUser(localUser);
+            }
+        };
+        fetchUserData();
     }, [navigate]);
 
     const handleLogout = () => {
         localStorage.removeItem('user');
         toast.success("Déconnexion réussie");
         navigate("/");
+    };
+
+    // Avatar Upload Handler
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setAvatarLoading(true);
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        try {
+            const res = await fetch('/api/auth/avatar', {
+                method: 'POST',
+                headers: { "Authorization": `Bearer ${user.token}` },
+                body: formData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setUser((prev: any) => ({ ...prev, avatarUrl: data.avatarUrl }));
+
+                // Update local storage
+                const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+                localStorage.setItem('user', JSON.stringify({ ...localUser, avatarUrl: data.avatarUrl }));
+
+                toast.success("Photo de profil mise à jour");
+            } else {
+                toast.error("Erreur lors de l'upload");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Erreur de connexion");
+        } finally {
+            setAvatarLoading(false);
+        }
+    };
+
+    // Password Change Handler
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (passFormData.newPassword !== passFormData.confirmPassword) {
+            toast.error("Les nouveaux mots de passe ne correspondent pas");
+            return;
+        }
+
+        setPassLoading(true);
+        try {
+            const res = await fetch('/api/auth/password', {
+                method: 'PUT',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${user.token}`
+                },
+                body: JSON.stringify({
+                    currentPassword: passFormData.currentPassword,
+                    newPassword: passFormData.newPassword
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Mot de passe modifié avec succès");
+                setPassOpen(false);
+                setPassFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+            } else {
+                const data = await res.json();
+                toast.error(data.message || "Erreur lors du changement de mot de passe");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Erreur de connexion");
+        } finally {
+            setPassLoading(false);
+        }
     };
 
     if (!user) return null;
@@ -68,13 +189,37 @@ const Account = () => {
                         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
                         <div className="flex flex-col md:flex-row gap-8 items-start relative z-10">
-                            <div className="relative group/avatar">
-                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-white/10 shadow-xl overflow-hidden">
-                                    <User className="w-10 h-10 text-primary" />
+
+                            {/* Avatar Section */}
+                            <div className="relative group/avatar cursor-pointer" onClick={handleAvatarClick}>
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-white/10 shadow-xl overflow-hidden relative">
+                                    {user.avatarUrl ? (
+                                        <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User className="w-10 h-10 text-primary" />
+                                    )}
+
+                                    {/* Hosting overlay on hover */}
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                                        <Camera className="w-6 h-6 text-white" />
+                                    </div>
+
+                                    {avatarLoading && (
+                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-background rounded-full flex items-center justify-center border border-white/10 shadow-lg">
                                     <Settings className="w-4 h-4 text-muted-foreground" />
                                 </div>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                />
                             </div>
 
                             <div className="flex-1 space-y-4 w-full">
@@ -101,11 +246,63 @@ const Account = () => {
                                 </div>
 
                                 <div className="pt-4 flex flex-wrap gap-3">
-                                    <Button variant="outline" className="border-white/10 hover:bg-white/5 gap-2">
-                                        <Key className="w-4 h-4" />
-                                        Modifier le mot de passe
-                                    </Button>
-                                    <Button variant="outline" className="border-white/10 hover:bg-white/5 gap-2">
+                                    <Dialog open={passOpen} onOpenChange={setPassOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" className="border-white/10 hover:bg-white/5 gap-2">
+                                                <Key className="w-4 h-4" />
+                                                Modifier le mot de passe
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-md glass border-white/10">
+                                            <DialogHeader>
+                                                <DialogTitle>Changer le mot de passe</DialogTitle>
+                                                <DialogDescription>
+                                                    Entrez votre mot de passe actuel et le nouveau mot de passe souhaité.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <form onSubmit={handlePasswordChange} className="space-y-4 py-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="current">Mot de passe actuel</Label>
+                                                    <Input
+                                                        id="current"
+                                                        type="password"
+                                                        value={passFormData.currentPassword}
+                                                        onChange={(e) => setPassFormData({ ...passFormData, currentPassword: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="new">Nouveau mot de passe</Label>
+                                                    <Input
+                                                        id="new"
+                                                        type="password"
+                                                        value={passFormData.newPassword}
+                                                        onChange={(e) => setPassFormData({ ...passFormData, newPassword: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="confirm">Confirmer le nouveau mot de passe</Label>
+                                                    <Input
+                                                        id="confirm"
+                                                        type="password"
+                                                        value={passFormData.confirmPassword}
+                                                        onChange={(e) => setPassFormData({ ...passFormData, confirmPassword: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <DialogFooter>
+                                                    <Button type="button" variant="ghost" onClick={() => setPassOpen(false)}>Annuler</Button>
+                                                    <Button type="submit" disabled={passLoading}>
+                                                        {passLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                                        Enregistrer
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </DialogContent>
+                                    </Dialog>
+
+                                    <Button variant="outline" className="border-white/10 hover:bg-white/5 gap-2 opacity-50 cursor-not-allowed">
                                         <Shield className="w-4 h-4" />
                                         Sécurité 2FA (Bientôt)
                                     </Button>

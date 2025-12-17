@@ -92,7 +92,8 @@ const getProfile = async (req, res) => {
             id: user.id,
             name: user.name,
             email: user.email,
-            points: user.points
+            points: user.points,
+            avatarUrl: user.avatarUrl
         });
     } catch (error) {
         console.error(error);
@@ -100,4 +101,62 @@ const getProfile = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getProfile };
+    } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+}
+};
+
+const updatePassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Incorrect current password' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword }
+        });
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+const uploadAvatar = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const userId = req.user.id;
+    // Normalized path for frontend access (assuming /uploads is served statically)
+    const avatarUrl = `/uploads/${req.file.filename}`;
+
+    try {
+        await prisma.user.update({
+            where: { id: userId },
+            data: { avatarUrl }
+        });
+
+        res.json({ message: 'Avatar updated', avatarUrl });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+module.exports = { register, login, getProfile, updatePassword, uploadAvatar };

@@ -9,7 +9,10 @@ services:
     environment:
       - DATABASE_URL=file:/data/dev.db
       - JWT_SECRET=${JWT_SECRET}
-      # Add other environment variables here
+      - PROXMOX_URL=${PROXMOX_URL}
+      - PROXMOX_API_TOKEN=${PROXMOX_API_TOKEN}
+      - PROXMOX_NODE=${PROXMOX_NODE}
+      - LXC_SSH_PASSWORD=${LXC_SSH_PASSWORD}
     networks:
       - smp4-net
 

@@ -11,14 +11,27 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     exit 1
 fi
 
+# Determine which docker compose command to use
+if docker compose version > /dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker compose"
+elif command -v docker-compose > /dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+else
+    echo "❌ Error: Neither 'docker compose' nor 'docker-compose' found."
+    echo "Please install Docker Compose or the 'Docker Compose Manager' plugin in Unraid."
+    exit 1
+fi
+
+echo "ℹ️ Using command: $DOCKER_COMPOSE_CMD"
+
 # Pull latest images
 echo "📥 Pulling latest images..."
-docker compose pull
+$DOCKER_COMPOSE_CMD pull
 
 # Restart services
 echo "🔄 Restarting services..."
-docker compose up -d --remove-orphans
+$DOCKER_COMPOSE_CMD up -d --remove-orphans
 
 # Show status
 echo "✅ Deployment successful! Containers are running."
-docker compose ps
+$DOCKER_COMPOSE_CMD ps

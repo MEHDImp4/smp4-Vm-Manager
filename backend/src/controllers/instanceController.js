@@ -180,6 +180,17 @@ const createInstance = async (req, res) => {
                                     enable: 1,
                                     comment: 'Allow backend access (SSH/WS)'
                                 });
+
+                                console.log(`[Background] Whitelisting SSH IN from ${backendIp} on ${vmid}...`);
+                                await proxmoxService.addFirewallRule(vmid, {
+                                    type: 'in',
+                                    action: 'ACCEPT',
+                                    source: backendIp,
+                                    proto: 'tcp',
+                                    dport: 22,
+                                    enable: 1,
+                                    comment: 'Allow SSH from Backend'
+                                });
                             } else {
                                 console.warn('[Background] Could not detect backend IP. WebSocket access might be blocked.');
                             }

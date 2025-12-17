@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Terminal, RotateCw, Cpu, MemoryStick, HardDrive, Camera, History, Download, Trash2, ExternalLink, Shield, Globe, BookOpen, ArrowLeft, Square, Play, Power, Loader2 } from "lucide-react";
+import { Terminal, RotateCw, Cpu, MemoryStick, HardDrive, Camera, History, Download, Trash2, ExternalLink, Shield, Globe, BookOpen, ArrowLeft, Square, Play, Power, Loader2, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -402,153 +402,227 @@ const InstanceDetails = () => {
 
             if (response.ok) {
                 // toast.success("Redémarrage en cours..."); 
-                alert("Redémarrage en cours...");
+                toast.success("Redémarrage en cours...");
             } else {
-                alert("Erreur lors du redémarrage");
+                toast.error("Erreur lors du redémarrage");
             }
         } catch (error) {
             console.error("Restart error", error);
         }
     };
 
-    if (loading) return <div className="min-h-screen bg-background flex items-center justify-center">Chargement...</div>;
-    if (!instance) return <div className="min-h-screen bg-background flex items-center justify-center">Instance non trouvée</div>;
+    const handlePowerAction = async (action: "start" | "stop" | "restart") => {
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        // Optimistic UI update or loading state
+        setLoading(true); // Temporarily lock buttons
+
+        try {
+            let url = `/api/instances/${id}/toggle`; // Default for start/stop
+            let method = 'POST';
+
+            if (action === 'restart') {
+                url = `/api/instances/${id}/restart`;
+            } else {
+                url = `/api/instances/${id}/toggle`;
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+
+            if (response.ok) {
+                toast.success(`Action ${action} effectuée`);
+                // Force stats refresh
+                setRefreshKey(prev => prev + 1);
+            } else {
+                const err = await response.json();
+                toast.error(err.error || "Erreur lors de l'action");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Erreur de connexion");
+        } finally {
+            // Delay unlocking to allow status to propagate
+            setTimeout(() => setLoading(false), 2000);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!instance) return;
+        const confirmName = prompt(`Pour confirmer la suppression, tapez le nom de l'instance :\n${instance.name}`);
+        if (confirmName !== instance.name) {
+            if (confirmName !== null) toast.error("Nom incorrect. Suppression annulée.");
+            return;
+        }
+
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        try {
+            const res = await fetch(`/api/instances/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+            if (res.ok) {
+                toast.success("Instance supprimée avec succès");
+                navigate("/dashboard");
+            } else {
+                toast.error("Erreur lors de la suppression");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Erreur de connexion");
+        }
+    };
+
+    if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+    if (!instance) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground">Instance non trouvée</div>;
 
     const isOnline = stats.status === 'online' || stats.status === 'running';
 
     return (
-        <div className="min-h-screen bg-background p-4 md:p-8">
-            <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
-                            <ArrowLeft className="w-5 h-5" />
+        <div className="min-h-screen bg-background text-foreground relative overflow-hidden font-sans selection:bg-primary/20">
+            {/* Background Effects */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-20" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] animate-pulse-glow" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[100px] animate-pulse-glow" style={{ animationDelay: '2s' }} />
+            </div>
+
+            <div className="container mx-auto p-6 md:p-8 relative z-10 max-w-7xl">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 animate-fade-up">
+                    <div className="flex items-center gap-6">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => navigate('/dashboard')}
+                            className="rounded-full hover:bg-white/5 hover:text-primary transition-colors"
+                        >
+                            <ArrowLeft className="w-6 h-6" />
                         </Button>
                         <div>
-                            <h1 className="text-2xl font-bold flex items-center gap-2">
-                                {instance.name}
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isOnline ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
-                                    {isOnline ? '● En ligne' : '○ Arrêté'}
-                                </span>
-                            </h1>
-                            <p className="text-muted-foreground flex items-center gap-2 text-sm">
-                                ID: {instance.id} • IP: <span className="font-mono bg-secondary/10 px-1 rounded">{stats.ip || 'En attente...'}</span>
-                                {stats.rootPassword && (
-                                    <>
-                                        • Password: <span className="font-mono bg-secondary/10 px-1 rounded select-all cursor-text text-red-400">{stats.rootPassword}</span>
-                                    </>
+                            <div className="flex items-center gap-3 mb-1">
+                                <h1 className="text-4xl font-bold tracking-tight gradient-text">
+                                    {instance?.name || 'Chargement...'}
+                                </h1>
+                                {instance && (
+                                    <div className={`px-3 py-1 rounded-full border ${
+                                        instance.status === 'online' 
+                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]' 
+                                            : 'bg-destructive/10 border-destructive/20 text-destructive'
+                                    } text-xs font-semibold flex items-center gap-2 backdrop-blur-md`}>
+                                        <div className={`w-2 h-2 rounded-full ${
+                                            instance.status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-destructive'
+                                        }`} />
+                                        {instance.status === 'online' ? 'EN LIGNE' : 'HORS LIGNE'}
+                                    </div>
                                 )}
-                            </p>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground font-mono">
+                                <span className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                                    <Cpu className="w-3.5 h-3.5" /> {instance?.cpu} vCPU
+                                </span>
+                                <span className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                                    <MemoryStick className="w-3.5 h-3.5" /> {formatBytes(instance?.ram || 0)}
+                                </span>
+                                <span className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                                    <HardDrive className="w-3.5 h-3.5" /> {instance?.storage} GB
+                                </span>
+                                {stats.ip && (
+                                    <span className="flex items-center gap-1.5 text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
+                                        <Globe className="w-3.5 h-3.5" /> {stats.ip}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3 glass p-1.5 rounded-xl">
                         <Button
-                            variant="outline"
-                            size="sm"
-                            className={`gap-2 ${isOnline ? 'text-destructive border-destructive/50 hover:bg-destructive/10' : 'text-success border-success/50 hover:bg-success/10'}`}
-                            onClick={async () => {
-                                const userStr = localStorage.getItem("user");
-                                if (!userStr) return;
-                                const user = JSON.parse(userStr);
-                                try {
-                                    const res = await fetch(`/api/instances/${id}/toggle`, {
-                                        method: "POST",
-                                        headers: { "Authorization": `Bearer ${user.token}` }
-                                    });
-                                    if (res.ok) {
-                                        toast.success(isOnline ? "Arrêt en cours..." : "Démarrage en cours...");
-                                        // Optinally refresh stats immediately or wait for poll
-                                    }
-                                } catch (e) {
-                                    console.error(e);
-                                }
-                            }}
+                            onClick={() => handlePowerAction("start")}
+                            disabled={loading || instance?.status === "online"}
+                            className={`rounded-lg transition-all duration-300 ${
+                                instance?.status === "online" 
+                                    ? "bg-transparent text-muted-foreground hover:bg-white/5" 
+                                    : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                            }`}
                         >
-                            {isOnline ? <Square className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-                            {isOnline ? "Arrêter" : "Démarrer"}
+                            <Play className="w-4 h-4 mr-2" /> Démarrer
                         </Button>
-
                         <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-secondary/20 hover:bg-secondary/40 border-border/50 gap-2"
-                            onClick={handleRestart}
-                            disabled={!isOnline}
+                            onClick={() => handlePowerAction("stop")}
+                            disabled={loading || instance?.status === "stopped"}
+                            className={`rounded-lg transition-all duration-300 ${
+                                instance?.status === "stopped"
+                                    ? "bg-transparent text-muted-foreground hover:bg-white/5"
+                                    : "bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20"
+                            }`}
                         >
-                            <RotateCw className="w-4 h-4" />
-                            Redémarrer
+                            <Square className="w-4 h-4 mr-2" /> Arrêter
                         </Button>
-
+                        <Button
+                            onClick={() => handlePowerAction("restart")}
+                            disabled={loading || instance?.status === "stopped"}
+                             className="bg-transparent hover:bg-white/10 text-foreground border border-white/10"
+                        >
+                            <RotateCw className="w-4 h-4 mr-2" /> Redémarrer
+                        </Button>
+                        <div className="w-px h-8 bg-white/10 mx-1" />
                         <Button
                             variant="destructive"
-                            size="sm"
-                            className="gap-2"
-                            onClick={async () => {
-                                const confirmName = prompt(`Pour confirmer la suppression, tapez le nom de l'instance :\n${instance.name}`);
-                                if (confirmName !== instance.name) {
-                                    if (confirmName !== null) alert("Nom incorrect. Suppression annulée.");
-                                    return;
-                                }
-
-                                const userStr = localStorage.getItem("user");
-                                if (!userStr) return;
-                                const user = JSON.parse(userStr);
-
-                                try {
-                                    const res = await fetch(`/api/instances/${id}`, {
-                                        method: "DELETE",
-                                        headers: { "Authorization": `Bearer ${user.token}` }
-                                    });
-                                    if (res.ok) {
-                                        toast.success("Instance supprimée avec succès");
-                                        navigate("/dashboard");
-                                    } else {
-                                        alert("Erreur lors de la suppression");
-                                    }
-                                } catch (e) {
-                                    console.error(e);
-                                    alert("Erreur de connexion");
-                                }
-                            }}
+                            size="icon"
+                            onClick={handleDelete}
+                            disabled={loading}
+                            title="Supprimer la VM"
+                            className="rounded-lg hover:bg-red-500/20"
                         >
-                            Delete
+                            <Trash2 className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-8">
                     {/* Main Content: Terminal */}
-                    <div className="w-full space-y-6">
-                        <div className="glass rounded-xl border border-border/50 overflow-hidden flex flex-col h-[600px] shadow-2xl">
-                            <div className="bg-black/80 px-4 py-3 flex items-center justify-between border-b border-white/10">
-                                <div className="flex items-center gap-2">
-                                    <Terminal className="w-4 h-4 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground font-mono">smp4@server:~</span>
-                                </div>
-                                <div className="flex gap-3 items-center">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        title="Refraîchir le Terminal"
-                                        className="h-6 w-6 p-0 hover:bg-white/10"
-                                        onClick={() => setRefreshKey(prev => prev + 1)}
-                                    >
-                                        <RotateCw className="w-3.5 h-3.5 text-muted-foreground hover:text-white" />
-                                    </Button>
-                                    <div className="flex gap-1.5 ml-2">
-                                        <div className="w-3 h-3 rounded-full bg-red-500/50" />
-                                        <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-                                        <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                    <div className="w-full space-y-4 animate-fade-up-delay-1">
+                        <div className="glass rounded-xl border border-white/10 overflow-hidden flex flex-col h-[600px] shadow-2xl relative group">
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+                            <div className="bg-black/80 px-4 py-3 flex items-center justify-between border-b border-white/10 relative z-10 backdrop-blur-md">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex gap-1.5">
+                                        <div className="w-3 h-3 rounded-full bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
+                                        <div className="w-3 h-3 rounded-full bg-yellow-500/80 shadow-[0_0_8px_rgba(234,179,8,0.4)]" />
+                                        <div className="w-3 h-3 rounded-full bg-green-500/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                                    </div>
+                                    <div className="h-4 w-px bg-white/10 mx-2" />
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-white/5 border border-white/10">
+                                        <Terminal className="w-3.5 h-3.5 text-primary" />
+                                        <span className="text-xs text-muted-foreground font-mono">ssh smp4@{stats.ip || '...'}</span>
                                     </div>
                                 </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    title="Refraîchir le Terminal"
+                                    className="h-7 w-7 p-0 hover:bg-white/10 hover:text-white rounded-md transition-colors"
+                                    onClick={() => setRefreshKey(prev => prev + 1)}
+                                >
+                                    <RotateCw className="w-3.5 h-3.5" />
+                                </Button>
                             </div>
-                            <div className="flex-1 bg-black p-1 font-mono text-sm overflow-hidden relative" ref={terminalRef}>
+                            <div className="flex-1 bg-black/95 p-1 font-mono text-sm overflow-hidden relative" ref={terminalRef}>
                                 {(!isOnline || !stats.ip) && (
-                                    <div className="absolute inset-0 flex items-center justify-center flex-col opacity-50 z-10 select-none pointer-events-none">
-                                        <Terminal className="w-16 h-16 mb-4 text-muted-foreground" />
-                                        <p className="text-muted-foreground">En attente de connexion...</p>
+                                    <div className="absolute inset-0 flex items-center justify-center flex-col z-10 select-none pointer-events-none">
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+                                            <Loader2 className="w-12 h-12 text-primary animate-spin relative z-10" />
+                                        </div>
+                                        <p className="text-muted-foreground mt-4 font-mono animate-pulse">Initialisation de la connexion sécurisée...</p>
                                     </div>
                                 )}
                             </div>
@@ -556,30 +630,33 @@ const InstanceDetails = () => {
                     </div>
 
                     {/* Widgets Section (Vertical Stack) */}
-                    <div className="space-y-6">
-
+                    <div className="space-y-8">
+                        
                         {/* Resources Card - Moved first for better visibility */}
-                        <div className="glass rounded-xl p-6 border border-border/50 flex flex-col justify-between h-auto bg-card/30 backdrop-blur-sm">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="font-semibold text-base text-card-foreground flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    Ressources en direct
+                        <div className="glass rounded-xl p-6 md:p-8 border border-white/10 flex flex-col justify-between h-auto animate-fade-up-delay-2 relative overflow-hidden">
+                             <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[80px]" />
+                            <div className="flex items-center justify-between mb-8 relative z-10">
+                                <h3 className="font-bold text-lg text-foreground flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                                        <Cpu className="w-5 h-5" />
+                                    </div>
+                                    Monitoring en temps réel
                                 </h3>
+                                {/* <div className="text-xs font-mono text-muted-foreground bg-white/5 px-2 py-1 rounded border border-white/5">
+                                    LIVE
+                                </div> */}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
                                 {/* CPU Graph */}
-                                <div className="space-y-2">
+                                <div className="space-y-3 group">
                                     <div className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-1.5 rounded bg-blue-500/10 text-blue-500">
-                                                <Cpu className="w-4 h-4" />
-                                            </div>
-                                            <span className="font-medium text-muted-foreground">CPU</span>
-                                        </div>
-                                        <span className="font-bold text-foreground font-mono">{stats.cpu}%</span>
+                                        <span className="font-medium text-muted-foreground flex items-center gap-2">
+                                            CPU Usage
+                                        </span>
+                                        <span className="font-bold text-foreground font-mono bg-white/5 px-2 rounded text-base">{stats.cpu}%</span>
                                     </div>
-                                    <div className="h-[100px] w-full rounded-md border border-white/10 bg-black/40 overflow-hidden relative shadow-inner">
+                                    <div className="h-[120px] w-full rounded-xl border border-white/10 bg-black/40 overflow-hidden relative shadow-inner group-hover:border-primary/30 transition-colors">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={cpuData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                                                 <defs>
@@ -592,7 +669,7 @@ const InstanceDetails = () => {
                                                     type="monotone"
                                                     dataKey="value"
                                                     stroke="#3b82f6"
-                                                    strokeWidth={1.5}
+                                                    strokeWidth={2}
                                                     fill="url(#cpuGradient)"
                                                     isAnimationActive={false}
                                                 />
@@ -603,17 +680,12 @@ const InstanceDetails = () => {
                                 </div>
 
                                 {/* RAM Graph */}
-                                <div className="space-y-2">
+                                <div className="space-y-3 group">
                                     <div className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-1.5 rounded bg-purple-500/10 text-purple-500">
-                                                <MemoryStick className="w-4 h-4" />
-                                            </div>
-                                            <span className="font-medium text-muted-foreground">RAM</span>
-                                        </div>
-                                        <span className="font-bold text-foreground font-mono">{stats.ram}%</span>
+                                        <span className="font-medium text-muted-foreground">RAM Usage</span>
+                                        <span className="font-bold text-foreground font-mono bg-white/5 px-2 rounded text-base">{stats.ram}%</span>
                                     </div>
-                                    <div className="h-[100px] w-full rounded-md border border-white/10 bg-black/40 overflow-hidden relative shadow-inner">
+                                    <div className="h-[120px] w-full rounded-xl border border-white/10 bg-black/40 overflow-hidden relative shadow-inner group-hover:border-purple-500/30 transition-colors">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={ramData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                                                 <defs>
@@ -626,7 +698,7 @@ const InstanceDetails = () => {
                                                     type="monotone"
                                                     dataKey="value"
                                                     stroke="#a855f7"
-                                                    strokeWidth={1.5}
+                                                    strokeWidth={2}
                                                     fill="url(#ramGradient)"
                                                     isAnimationActive={false}
                                                 />
@@ -639,66 +711,83 @@ const InstanceDetails = () => {
                                 {/* Storage Bar */}
                                 <div className="space-y-4 flex flex-col justify-center">
                                     <div className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-1.5 rounded bg-amber-500/10 text-amber-500">
-                                                <HardDrive className="w-4 h-4" />
-                                            </div>
-                                            <span className="font-medium text-muted-foreground">Stockage</span>
-                                        </div>
+                                        <span className="font-medium text-muted-foreground">Disque NVMe</span>
                                         <div className="flex items-baseline gap-1 font-mono">
                                             <span className="font-bold text-foreground">{formatBytes(stats.diskBytes || 0)}</span>
                                             <span className="text-xs text-muted-foreground">/ {formatBytes(stats.maxDiskBytes || 0)}</span>
                                         </div>
                                     </div>
 
-                                    <div className="h-4 w-full bg-secondary/20 rounded-full overflow-hidden border border-white/5">
+                                    <div className="h-4 w-full bg-secondary/20 rounded-full overflow-hidden border border-white/5 relative">
                                         <div
-                                            className="h-full bg-gradient-to-r from-amber-500 to-orange-600 shadow-sm transition-all duration-700 ease-in-out"
-                                            style={{ width: `${Math.min(stats.storage, 100)}%` }}
+                                            className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-600 opacity-20"
                                         />
+                                        <div
+                                            className="h-full bg-gradient-to-r from-amber-500 to-orange-600 shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all duration-700 ease-in-out relative"
+                                            style={{ width: `${Math.min(stats.storage, 100)}%` }}
+                                        >
+                                            <div className="absolute right-0 top-0 bottom-0 w-px bg-white/50" />
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-muted-foreground text-right">Espace utilisé sur le disque principal</p>
+                                    <p className="text-xs text-muted-foreground text-right font-mono">
+                                        {Math.round(stats.storage)}% utilisés
+                                    </p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Backups Card - Full Width */}
-                        <div className="glass rounded-xl p-6 border border-border/50 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="font-semibold text-base text-muted-foreground flex items-center gap-2">
-                                    <Camera className="w-5 h-5" />
-                                    Backups
+                        {/* Backups Card */}
+                        <div className="glass rounded-xl p-6 md:p-8 border border-white/10 space-y-6 animate-fade-up-delay-2 relative overflow-hidden">
+                             <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[80px]" />
+                            <div className="flex items-center justify-between relative z-10">
+                                <h3 className="font-bold text-lg text-foreground flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                                        <Camera className="w-5 h-5" />
+                                    </div>
+                                    Backups & Instantanés
                                 </h3>
-                                <div className="flex items-center gap-4">
-                                    <p className="text-xs text-muted-foreground">
-                                        Prochain backup auto dans <span className="font-mono text-primary font-bold">{timeUntilSnapshot}</span>
-                                    </p>
-                                    <span className="text-xs text-muted-foreground bg-secondary/20 px-3 py-1 rounded-full">
-                                        {snapshots.length}/{maxSnapshots} slots utilisés
-                                    </span>
-                                </div>
+                                <Button 
+                                    onClick={handleCreateSnapshot} 
+                                    disabled={snapshotLoading || snapshots.length >= maxSnapshots}
+                                    className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+                                >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Créer un backup
+                                </Button>
                             </div>
+                            
+                           <div className="flex items-center gap-6 text-sm text-muted-foreground relative z-10 pb-2 border-b border-border/50">
+                                <span className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-primary" />
+                                    {snapshots.length} / {maxSnapshots} slots utilisés
+                                </span>
+                                <span className="flex items-center gap-2">
+                                     <History className="w-4 h-4" />
+                                     Prochain auto: <span className="text-foreground font-mono">{timeUntilSnapshot}</span>
+                                </span>
+                           </div>
 
                             {/* Backups List */}
-                            <div className="space-y-2">
+                            <div className="grid gap-3 relative z-10">
                                 {snapshots.length === 0 ? (
-                                    <div className="text-sm text-muted-foreground text-center py-8 border border-dashed border-border/50 rounded-lg">
+                                    <div className="text-sm text-muted-foreground text-center py-12 border border-dashed border-white/10 rounded-xl bg-white/5">
+                                        <Camera className="w-8 h-8 mx-auto mb-3 opacity-50" />
                                         Aucun backup disponible pour le moment
                                     </div>
                                 ) : (
                                     snapshots.map((snap) => (
                                         <div
                                             key={snap.id}
-                                            className="flex items-center justify-between p-3 rounded-lg bg-secondary/5 border border-border/30 hover:bg-secondary/10 hover:border-primary/30 transition-all"
+                                            className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-primary/30 transition-all hover:bg-white/10 group"
                                         >
                                             <div className="flex items-center gap-4">
-                                                <div className="p-2 rounded bg-primary/10 text-primary">
-                                                    <History className="w-4 h-4" />
+                                                <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                                                    <History className="w-5 h-5" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-medium">{snap.name}</p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Créé le {new Date(snap.createdAt).toLocaleDateString('fr-FR', {
+                                                    <p className="text-base font-semibold text-foreground">{snap.name}</p>
+                                                    <p className="text-xs text-muted-foreground font-mono">
+                                                        {new Date(snap.createdAt).toLocaleDateString('fr-FR', {
                                                             day: 'numeric',
                                                             month: 'long',
                                                             year: 'numeric',
@@ -708,21 +797,21 @@ const InstanceDetails = () => {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="gap-2 text-success hover:text-success hover:bg-success/10"
+                                                    className="gap-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10"
                                                     onClick={() => handleRestoreSnapshot(snap.id, snap.name)}
                                                     disabled={snapshotLoading}
                                                 >
-                                                    <History className="w-4 h-4" />
+                                                    <RotateCw className="w-4 h-4" />
                                                     <span className="hidden sm:inline">Restaurer</span>
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="gap-2 text-blue-500 hover:text-blue-500 hover:bg-blue-500/10"
+                                                    className="gap-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
                                                     onClick={() => handleDownloadSnapshot(snap.id)}
                                                     disabled={snapshotLoading}
                                                 >
@@ -732,7 +821,7 @@ const InstanceDetails = () => {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    className="gap-2 text-red-400 hover:text-red-300 hover:bg-red-400/10"
                                                     onClick={() => handleDeleteSnapshot(snap.id, snap.name)}
                                                     disabled={snapshotLoading}
                                                 >
@@ -743,121 +832,97 @@ const InstanceDetails = () => {
                                     ))
                                 )}
                             </div>
-
-                            {snapshots.length >= maxSnapshots && (
-                                <p className="text-xs text-amber-500 text-center bg-amber-500/10 py-2 rounded">
-                                    ⚠️ Limite de backups atteinte. Le prochain backup automatique remplacera le plus ancien.
-                                </p>
-                            )}
                         </div>
 
-                        {/* Actions Card - Grid Layout */}
-                        <div className="glass rounded-xl p-6 border border-border/50 space-y-4">
-                            <h3 className="font-semibold text-base text-muted-foreground">Actions Rapides</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                         {/* Actions Card - Grid Layout */}
+                        <div className="animate-fade-up-delay-3 space-y-4">
+                            <h3 className="font-semibold text-lg text-muted-foreground pl-1">Actions Rapides</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <a
                                     href={stats.ip ? `http://${stats.ip}:9000` : '#'}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`flex items-center p-4 rounded-lg border border-border/50 transition-colors group ${stats.ip ? 'hover:bg-primary/5 hover:border-primary/50' : 'opacity-50 cursor-not-allowed'}`}
+                                    className={`relative overflow-hidden group p-6 rounded-xl border border-white/10 glass transition-all hover:-translate-y-1 hover:shadow-glow ${!stats.ip && 'opacity-50 cursor-not-allowed'}`}
                                 >
-                                    <div className="p-3 rounded-lg bg-primary/10 text-primary mr-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                        <ExternalLink className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <div className="font-semibold text-sm">Accès Portainer</div>
-                                        <div className="text-xs text-muted-foreground">Gérer les conteneurs Docker</div>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="relative z-10 flex flex-col gap-3">
+                                        <div className="p-3 w-fit rounded-lg bg-primary/20 text-primary">
+                                            <ExternalLink className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-base text-foreground">Accès Portainer</div>
+                                            <div className="text-sm text-muted-foreground">Interface Docker UI</div>
+                                        </div>
                                     </div>
                                 </a>
 
-                                <Button
-                                    variant="outline"
-                                    className="flex items-center justify-start h-auto p-4 border-border/50 hover:bg-secondary/5 hover:border-secondary/50 group"
+                                <Button 
+                                    variant="outline" 
+                                    className="h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-secondary/50  transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] justify-start"
                                 >
-                                    <div className="p-3 rounded-lg bg-secondary/10 text-secondary mr-4 group-hover:bg-secondary group-hover:text-primary-foreground transition-colors">
-                                        <Shield className="w-6 h-6" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-semibold text-sm">VPN Config</div>
-                                        <div className="text-xs text-muted-foreground">Télécharger le profil .ovpn</div>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="relative z-10 flex flex-col gap-3 items-start text-left w-full">
+                                        <div className="p-3 w-fit rounded-lg bg-secondary/20 text-secondary">
+                                            <Shield className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-base text-foreground">VPN Config</div>
+                                            <div className="text-sm text-muted-foreground">Accès distant sécurisé</div>
+                                        </div>
                                     </div>
                                 </Button>
 
-                                <Button
-                                    variant="outline"
-                                    className="flex items-center justify-start h-auto p-4 border-border/50 hover:bg-warning/5 hover:border-warning/50 group"
+                                <Button 
+                                    variant="outline" 
+                                    className="h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-warning/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] justify-start"
                                 >
-                                    <div className="p-3 rounded-lg bg-warning/10 text-warning mr-4 group-hover:bg-warning group-hover:text-primary-foreground transition-colors">
-                                        <Globe className="w-6 h-6" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-semibold text-sm">Sous-domaines</div>
-                                        <div className="text-xs text-muted-foreground">Configurer les DNS</div>
+                                    <div className="absolute inset-0 bg-gradient-to-br from-warning/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="relative z-10 flex flex-col gap-3 items-start text-left w-full">
+                                        <div className="p-3 w-fit rounded-lg bg-warning/20 text-warning">
+                                            <Globe className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-base text-foreground">Sous-domaines</div>
+                                            <div className="text-sm text-muted-foreground">Configuration DNS</div>
+                                        </div>
                                     </div>
                                 </Button>
                             </div>
                         </div>
+                        
+                         {/* Documentation Section */}
+                        <div id="quick-guide" className="glass rounded-xl p-8 border border-white/10 animate-fade-up-delay-3">
+                            <h3 className="text-lg font-bold mb-6 flex items-center gap-3">
+                                <BookOpen className="w-6 h-6 text-primary" />
+                                Guide de démarrage rapide
+                            </h3>
 
-                    </div>
-                </div>
-            </div>
+                            <div className="grid gap-4">
+                                <div className="flex gap-4 p-4 rounded-lg bg-white/5 border border-white/5">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">1</div>
+                                    <div>
+                                        <h4 className="font-medium mb-1 text-foreground">Connexion SSH</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                            Authentifiez-vous avec l'utilisateur <code className="bg-black/50 px-1.5 py-0.5 rounded text-xs text-primary font-mono">smp4</code>. Le mot de passe root initial vous a été fourni.
+                                        </p>
+                                    </div>
+                                </div>
 
-            {/* Documentation Section */}
-            <div id="quick-guide" className="glass rounded-2xl p-6 border border-border/50 mt-8">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-primary" />
-                    Guide de démarrage rapide
-                </h3>
-
-                <div className="space-y-4">
-                    {/* Step 1 */}
-                    <div className="flex gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">1</div>
-                        <div>
-                            <h4 className="font-medium mb-1">Connexion SSH</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Utilisez le terminal ci-dessus ou connectez-vous via SSH avec l'utilisateur <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">smp4</code> et le mot de passe affiché.
-                            </p>
+                                <div className="flex gap-4 p-4 rounded-lg bg-white/5 border border-white/5">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">2</div>
+                                    <div>
+                                        <h4 className="font-medium mb-1 text-foreground">Accéder à Portainer</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                            Interface disponible sur <code className="bg-black/50 px-1.5 py-0.5 rounded text-xs text-primary font-mono">http://{stats.ip || 'IP'}:9000</code>.
+                                            <span className="block mt-2 text-amber-400/90 text-xs font-medium bg-amber-400/10 p-2 rounded border border-amber-400/20">
+                                                ⚠️ Si Portainer ne répond pas immédiatement, essayez de redémarrer la VM via le bouton en haut.
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Step 2 */}
-                    <div className="flex gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">2</div>
-                        <div>
-                            <h4 className="font-medium mb-1">Changer votre mot de passe</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Lors de la première connexion, vous serez invité à changer votre mot de passe. Choisissez un mot de passe sécurisé que vous n'oublierez pas.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Step 3 */}
-                    <div className="flex gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">3</div>
-                        <div>
-                            <h4 className="font-medium mb-1">Accéder à Portainer</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Portainer est préinstallé. Accédez-y via <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">http://{stats.ip || 'IP'}:9000</code> pour gérer vos containers Docker visuellement.
-                                <span className="block mt-2 text-warning/80 text-xs font-medium">
-                                    ⚠️ Si Portainer ne marche pas la première fois, redémarrez la VM.
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Step 4 - Placeholder */}
-                    <div className="flex gap-4 opacity-60">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold text-sm">4</div>
-                        <div>
-                            <h4 className="font-medium mb-1 flex items-center gap-2">
-                                Sous-domaines personnalisés
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">Bientôt</span>
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                                Créez des sous-domaines personnalisés pour accéder à vos services. Cette fonctionnalité sera bientôt disponible.
-                            </p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -883,7 +948,7 @@ const InstanceDetails = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div >
+        </div>
     );
 };
 

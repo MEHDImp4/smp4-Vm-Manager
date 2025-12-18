@@ -3,9 +3,10 @@ const axios = require('axios');
 const CF_API_URL = 'https://api.cloudflare.com/client/v4';
 
 // Credentials from environment variables
-const ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
-const API_TOKEN = process.env.CF_API_TOKEN;
-const TUNNEL_ID = process.env.CF_TUNNEL_ID;
+// Credentials from environment variables
+const ACCOUNT_ID = process.env.CF_ACCOUNT_ID ? process.env.CF_ACCOUNT_ID.trim().replace(/\.$/, '') : null;
+const API_TOKEN = process.env.CF_API_TOKEN ? process.env.CF_API_TOKEN.trim() : null;
+const TUNNEL_ID = process.env.CF_TUNNEL_ID ? process.env.CF_TUNNEL_ID.trim() : null;
 
 const client = axios.create({
     baseURL: CF_API_URL,

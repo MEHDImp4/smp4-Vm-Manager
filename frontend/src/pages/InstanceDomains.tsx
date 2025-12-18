@@ -8,7 +8,7 @@ const InstanceDomains = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [domains, setDomains] = useState<any[]>([]);
-    const [newDomain, setNewDomain] = useState({ subdomain: "", port: "" });
+    const [newDomain, setNewDomain] = useState({ port: "" });
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [instanceName, setInstanceName] = useState("");
@@ -54,8 +54,8 @@ const InstanceDomains = () => {
     }, [id, navigate]);
 
     const handleCreateDomain = async () => {
-        if (!newDomain.subdomain || !newDomain.port) {
-            toast.error("Veuillez remplir tous les champs");
+        if (!newDomain.port) {
+            toast.error("Veuillez indiquer un port");
             return;
         }
 
@@ -74,14 +74,13 @@ const InstanceDomains = () => {
                     "Authorization": `Bearer ${user.token}`
                 },
                 body: JSON.stringify({
-                    subdomain: newDomain.subdomain,
                     port: parseInt(newDomain.port)
                 })
             });
 
             if (response.ok) {
                 toast.success("Domaine configuré avec succès !", { id: toastId });
-                setNewDomain({ subdomain: "", port: "" });
+                setNewDomain({ port: "" });
 
                 // Refresh list
                 const domRes = await fetch(`/api/instances/${id}/domains`, {
@@ -177,20 +176,11 @@ const InstanceDomains = () => {
                             </h2>
 
                             <div className="space-y-4 relative z-10">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-muted-foreground">Sous-domaine</label>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            placeholder="myapp"
-                                            value={newDomain.subdomain}
-                                            onChange={(e) => setNewDomain({ ...newDomain, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-                                            className="w-full bg-black/40 border border-white/10 rounded-lg pl-4 pr-24 py-3 text-sm focus:outline-none focus:border-primary/50 transition-colors"
-                                        />
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono bg-white/5 px-2 py-1 rounded">
-                                            .smp4.xyz
-                                        </div>
-                                    </div>
+                                <div className="p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                                    <h3 className="text-sm font-medium text-indigo-400 mb-1">Format de domaine automatique</h3>
+                                    <p className="text-xs text-muted-foreground font-mono">
+                                        [utilisateur]-[instance].smp4.xyz
+                                    </p>
                                 </div>
 
                                 <div className="space-y-2">
@@ -207,7 +197,7 @@ const InstanceDomains = () => {
 
                                 <Button
                                     onClick={handleCreateDomain}
-                                    disabled={actionLoading || !newDomain.subdomain || !newDomain.port}
+                                    disabled={actionLoading || !newDomain.port}
                                     className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white shadow-lg shadow-primary/20 py-6"
                                 >
                                     {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Créer l'accès"}

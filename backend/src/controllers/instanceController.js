@@ -442,39 +442,48 @@ const getInstanceStats = async (req, res) => {
 const createDomain = async (req, res) => {
     try {
         const { id } = req.params;
-        const { subdomain, port } = req.body;
+        const { port } = req.body; // Subdomain is now auto-generated
         const userId = req.user.id;
 
         // Validation
-        if (!subdomain || !port) {
-            return res.status(400).json({ error: "Subdomain and port are required" });
+        if (!port) {
+            return res.status(400).json({ error: "Port is required" });
         }
 
-        if (!/^[a-z0-9-]+$/.test(subdomain)) {
-            return res.status(400).json({ error: "Subdomain must contain only lowercase letters, numbers, and dashes" });
-        }
-
-        // Check ownership
+        // Fetch Instance AND User
         const instance = await prisma.instance.findUnique({
             where: { id },
             include: { domains: true }
         });
 
-        if (!instance || instance.userId !== userId) {
-            return res.status(404).json({ error: "Instance not found" });
+        const user = await prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        if (!instance || instance.userId !== userId || !user) {
+            return res.status(404).json({ error: "Instance or User not found" });
         }
 
-        // Check limits (e.g. 2 domains per instance)
+        // Check limits (e.g. 1 domain per instance now? or allow multiple ports on same name? No, name is unique)
+        // If the user wants multiple ports, they can't with this scheme unless we append port to name
+        // For now, let's stick to the generated name. If it exists, prevent duplicate (or maybe return existing?)
         if (instance.domains.length >= 2) {
             return res.status(400).json({ error: "Maximum of 2 domains per instance reached" });
         }
+
+        // Generate Subdomain: [username]-[instancename]
+        // Sanitize: lowercase, only alphanumeric, replace spaces with dash
+        const cleanUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanInstance = instance.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        // Remove consecutive dashes and trailing/leading dashes
+        const subdomain = `${cleanUser}-${cleanInstance}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
 
         // Check if subdomain is taken (global check)
         const existingDomain = await prisma.domain.findUnique({
             where: { subdomain }
         });
         if (existingDomain) {
-            return res.status(400).json({ error: "Subdomain is already taken" });
+            return res.status(400).json({ error: `Domain ${subdomain} is already active` });
         }
 
         // Get Instance IP

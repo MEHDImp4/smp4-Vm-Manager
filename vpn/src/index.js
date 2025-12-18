@@ -151,7 +151,7 @@ app.post('/client', async (req, res) => {
         const clientConfig = `[Interface]
 PrivateKey = ${clientPrivateKey}
 Address = ${clientIp}/32
-DNS = 1.1.1.1
+DNS = 192.168.1.254
 
 [Peer]
 PublicKey = ${serverPublicKey}

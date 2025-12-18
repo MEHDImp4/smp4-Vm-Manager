@@ -32,7 +32,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
 
     // Play win sound
     const playWinSound = (points: number) => {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const audioContext = new (window.AudioContext || (window as unknown as Window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -99,12 +99,6 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
         }
     };
 
-    useEffect(() => {
-        if (isOpen) {
-            checkSpinStatus();
-        }
-    }, [isOpen]);
-
     const checkSpinStatus = async () => {
         try {
             const userStr = localStorage.getItem("user");
@@ -127,6 +121,12 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
             console.error("Error checking spin status:", error);
         }
     };
+
+    useEffect(() => {
+        if (isOpen) {
+            checkSpinStatus();
+        }
+    }, [isOpen, checkSpinStatus]);
 
     const updateNextSpinTime = (milliseconds: number) => {
         const hours = Math.floor(milliseconds / (1000 * 60 * 60));

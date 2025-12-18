@@ -1,4 +1,45 @@
-# Copilot Instructions – SMP4 VM Manager
+# Copilot Instructions – Auto-Provisioning VM Platform
+
+## Overview
+This project automates the creation and management of isolated virtual machines using **Proxmox**, **WireGuard**, and **Cloudflare**. It provides a self-service platform for users to create VMs, manage VPN configurations, and expose services securely.
+
+## Architecture
+- **Backend**: Built with Node.js and Express, the backend orchestrates interactions with Proxmox, WireGuard, and Cloudflare.
+  - **Key Components**:
+    - **Controllers**: Handle incoming requests and orchestrate business logic (e.g., `src/controllers/instanceController.js`).
+    - **Services**: Encapsulate external API interactions (e.g., `src/services/proxmox.service.js` for Proxmox API, `src/services/vpn.service.js` for VPN management).
+    - **Routes**: Define API endpoints (e.g., `src/routes/authRoutes.js`).
+    - **Cron Jobs**: Manage background tasks (e.g., `src/cron/consumptionCron.js` for point consumption).
+
+- **Frontend**: Developed with React and Vite, it communicates with the backend via RESTful APIs and WebSockets for real-time updates.
+
+## Developer Workflows
+- **Starting the Application**:
+  - Use `npm run dev` in the backend directory to start the server.
+  - Ensure environment variables are set in a `.env` file, including `PROXMOX_URL`, `PROXMOX_API_TOKEN`, `CF_ACCOUNT_ID`, etc.
+
+- **Testing**: 
+  - Implement unit tests in the `tests` directory (not provided in the current structure, but recommended for future development).
+
+- **Debugging**:
+  - Use console logs strategically in service methods to trace API interactions (e.g., `console.log` in `src/services/vpn.service.js`).
+
+## Project-Specific Conventions
+- **Environment Variables**: All sensitive configurations are managed via environment variables. Ensure to check `.env.example` for required variables.
+- **Error Handling**: Use try-catch blocks in service methods to handle API errors gracefully, logging errors for debugging.
+- **Data Flow**: The backend communicates with Proxmox to manage VM lifecycles, while WireGuard configurations are generated per VM to ensure isolated access.
+
+## Integration Points
+- **Proxmox API**: Interactions are handled in `src/services/proxmox.service.js`. Ensure the Proxmox server is accessible and the API token is valid.
+- **WireGuard**: Managed in `src/services/vpn.service.js`, which creates and deletes VPN clients based on VM lifecycle events.
+- **Cloudflare**: Ingress rules for exposed services are managed in `src/services/cloudflare.service.js`. Ensure Cloudflare credentials are set correctly.
+
+## Examples
+- **Creating a VM**: Use the endpoint `POST /api/instances` with the required parameters to provision a new VM.
+- **Managing VPN**: Call `createClient(targetIp)` in `vpn.service.js` to generate a WireGuard configuration for a new VM.
+
+## Conclusion
+This document serves as a guide for AI agents to navigate the codebase effectively. For any unclear sections or additional details needed, please provide feedback for further iterations.
 
 Purpose: Equip AI agents to work productively in this repo by explaining architecture, flows, conventions, and run/debug tips grounded in current code.
 

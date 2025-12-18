@@ -20,9 +20,15 @@ class SSHService {
             console.log('[SSH] New WebSocket connection');
 
             // Parse query params for connection info
-            const url = new URL(req.url, 'http://localhost');
-            const vmid = url.searchParams.get('vmid');
-            const host = url.searchParams.get('host');
+            const rawUrl = (req && typeof req.url === 'string') ? req.url : '';
+            let url;
+            try {
+                url = new URL(rawUrl || '/ws/ssh', 'http://localhost');
+            } catch {
+                url = new URL('/ws/ssh', 'http://localhost');
+            }
+            const vmid = url && url.searchParams ? url.searchParams.get('vmid') : null;
+            const host = url && url.searchParams ? url.searchParams.get('host') : null;
 
             if (!vmid || !host) {
                 ws.send(JSON.stringify({ type: 'error', message: 'Missing vmid or host parameter' }));

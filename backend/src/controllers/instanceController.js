@@ -521,8 +521,8 @@ const createDomain = async (req, res) => {
         // Check limits (e.g. 1 domain per instance now? or allow multiple ports on same name? No, name is unique)
         // If the user wants multiple ports, they can't with this scheme unless we append port to name
         // For now, let's stick to the generated name. If it exists, prevent duplicate (or maybe return existing?)
-        if (instance.domains.length >= 2) {
-            return res.status(400).json({ error: "Maximum of 2 domains per instance reached" });
+        if (instance.domains.length >= 3) {
+            return res.status(400).json({ error: "Maximum of 3 domains per instance reached" });
         }
 
         // Generate Subdomain: [username]-[instancename]
@@ -634,11 +634,41 @@ const getVpnConfig = async (req, res) => {
             return res.status(404).json({ error: "Instance not found" });
         }
 
-        if (!instance.vpnConfig) {
-            return res.status(404).json({ error: "VPN not configured for this instance" });
+        // If config exists, return it
+        if (instance.vpnConfig) {
+            return res.json({ config: instance.vpnConfig });
         }
 
-        res.json({ config: instance.vpnConfig });
+        // If missing, try to generate it (only if VM is running/has IP)
+        if (!instance.vmid) {
+            return res.status(400).json({ error: "Instance has no VMID" });
+        }
+
+        try {
+            const interfaces = await proxmoxService.getLXCInterfaces(instance.vmid);
+            const eth0 = interfaces.find(i => i.name === 'eth0');
+            const ip = eth0 && eth0.inet ? eth0.inet.split('/')[0] : null;
+
+            if (!ip || ip === '127.0.0.1') {
+                return res.status(400).json({ error: "Instance must be running to generate VPN config" });
+            }
+
+            console.log(`[VPN] Generating missing config for ${instance.id} (${ip})...`);
+            const vpnData = await vpnService.createClient(ip);
+
+            // Save to DB
+            await prisma.instance.update({
+                where: { id: instance.id },
+                data: { vpnConfig: vpnData.config }
+            });
+
+            return res.json({ config: vpnData.config });
+
+        } catch (genError) {
+            console.error("Auto-generate VPN error:", genError);
+            return res.status(500).json({ error: "Failed to generate VPN config. Ensure VM is running." });
+        }
+
     } catch (error) {
         console.error("Get VPN config error:", error);
         res.status(500).json({ error: "Failed to fetch VPN config" });

@@ -975,9 +975,8 @@ const InstanceDetails = () => {
                                 <Button
                                     variant="outline"
                                     onClick={() => handleDownloadVpnConfig()}
-                                    disabled={!instance.vpnConfig}
-                                    title={!instance.vpnConfig ? "VPN non configuré" : "Télécharger la config VPN"}
-                                    className={`h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-secondary/50  transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] justify-start ${!instance.vpnConfig ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title="Télécharger la config VPN (Générée automatiquement)"
+                                    className="h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-secondary/50  transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] justify-start"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                     <div className="relative z-10 flex flex-col gap-3 items-start text-left w-full">
@@ -1003,7 +1002,7 @@ const InstanceDetails = () => {
                                         </div>
                                         <div>
                                             <div className="font-bold text-base text-foreground">Sous-domaines</div>
-                                            <div className="text-sm text-muted-foreground">Configuration DNS</div>
+                                            <div className="text-sm text-muted-foreground">Configuration DNS ({domains.length}/3 utilisés)</div>
                                         </div>
                                     </div>
                                 </Button>

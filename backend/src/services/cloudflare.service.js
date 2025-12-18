@@ -29,10 +29,6 @@ const CloudflareService = {
 
         try {
             // 1. Get current configuration
-            // Defensive check for client before calling .get()
-            if (!client || typeof client.get !== 'function') {
-                throw new Error('Cloudflare API client is not properly initialized');
-            }
             const configResponse = await client.get(`/accounts/${ACCOUNT_ID}/cfd_tunnel/${TUNNEL_ID}/configurations`);
             const currentConfig = configResponse.data.result.config || {};
 
@@ -83,10 +79,6 @@ const CloudflareService = {
         }
 
         try {
-            // Defensive check for client before calling .get()
-            if (!client || typeof client.get !== 'function') {
-                throw new Error('Cloudflare API client is not properly initialized');
-            }
             const configResponse = await client.get(`/accounts/${ACCOUNT_ID}/cfd_tunnel/${TUNNEL_ID}/configurations`);
             const currentConfig = configResponse.data.result.config;
 

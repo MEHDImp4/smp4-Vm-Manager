@@ -21,12 +21,6 @@ class SSHService {
 
             // Parse query params for connection info
             const url = new URL(req.url, 'http://localhost');
-            // Defensive check to ensure searchParams exists
-            if (!url || !url.searchParams || typeof url.searchParams.get !== 'function') {
-                ws.send(JSON.stringify({ type: 'error', message: 'Invalid URL parameters' }));
-                ws.close();
-                return;
-            }
             const vmid = url.searchParams.get('vmid');
             const host = url.searchParams.get('host');
 
@@ -232,11 +226,6 @@ class SSHService {
     }
 
     cleanupSession(sessionId) {
-        // Defensive check to ensure sessions Map exists
-        if (!this.sessions || typeof this.sessions.get !== 'function') {
-            console.warn('[SSH] Sessions map is undefined or invalid');
-            return;
-        }
         const session = this.sessions.get(sessionId);
         if (session) {
             try {

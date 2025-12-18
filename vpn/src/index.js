@@ -55,6 +55,7 @@ const init = async () => {
         console.log(`Server Public Key: ${serverPublicKey}`);
 
         // Create Config File if not exists
+        // Create or Update Config File
         if (!fs.existsSync(WG_CONF)) {
             const config = `[Interface]
 Address = ${BASE_SUBNET}.1/24
@@ -65,19 +66,44 @@ ListenPort = ${WG_PORT}
 PrivateKey = ${serverPrivateKey}
 `;
             fs.writeFileSync(WG_CONF, config);
+        } else {
+            console.log('Ensuring config matches environment...');
+            // Need to update ListenPort and Address if changed
+            let configC = fs.readFileSync(WG_CONF, 'utf8');
+
+            // Check/Update Port
+            if (!configC.includes(`ListenPort = ${WG_PORT}`)) {
+                console.log(`Updating ListenPort to ${WG_PORT}`);
+                configC = configC.replace(/ListenPort = \d+/, `ListenPort = ${WG_PORT}`);
+            }
+
+            // Check/Update Address
+            // Regex to find Address = x.y.z.1/24 and replace
+            const addressRegex = /Address = [\d\.]+\/24/;
+            if (!configC.includes(`Address = ${BASE_SUBNET}.1/24`)) {
+                console.log(`Updating Address to ${BASE_SUBNET}.1/24`);
+                configC = configC.replace(addressRegex, `Address = ${BASE_SUBNET}.1/24`);
+            }
+
+            fs.writeFileSync(WG_CONF, configC);
         }
 
         // Start Interface
         try {
             await run(`wg-quick up ${WG_INTERFACE}`);
         } catch (e) {
-            console.log('Interface might be already up, reloading...');
+            console.log('Interface might be already up, attempting reload/restart...');
             try {
-                // await run(`wg-quick down ${WG_INTERFACE}`);
-                // await run(`wg-quick up ${WG_INTERFACE}`);
+                // First try syncconf
                 await run(`wg syncconf ${WG_INTERFACE} <(wg-quick strip ${WG_INTERFACE})`);
             } catch (e2) {
-                console.warn('Failed to reload interface:', e2.message);
+                console.log('Syncconf failed (likely port change), restarting interface...');
+                try {
+                    await run(`wg-quick down ${WG_INTERFACE}`);
+                    await run(`wg-quick up ${WG_INTERFACE}`);
+                } catch (e3) {
+                    console.error('Failed to restart interface:', e3.message);
+                }
             }
         }
 

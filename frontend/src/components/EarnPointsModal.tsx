@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, Sparkles, Gift, DollarSign, Twitter, Github, Linkedin, TrendingUp, Coins, Clock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -99,7 +99,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
         }
     };
 
-    const checkSpinStatus = async () => {
+    const checkSpinStatus = useCallback(async () => {
         try {
             const userStr = localStorage.getItem("user");
             if (!userStr) return;
@@ -112,7 +112,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
             if (response.ok) {
                 const data = await response.json();
                 setCanSpin(data.canSpin);
-                
+
                 if (!data.canSpin && data.nextSpinIn) {
                     updateNextSpinTime(data.nextSpinIn);
                 }
@@ -120,7 +120,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
         } catch (error) {
             console.error("Error checking spin status:", error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (isOpen) {

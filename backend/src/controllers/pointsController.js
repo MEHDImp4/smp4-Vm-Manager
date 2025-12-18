@@ -1,6 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const SPIN_PRIZES = [10, 25, 50, 75, 100, 150, 200];
+const SPIN_WEIGHTS = [30, 25, 20, 12, 8, 4, 1]; // Higher chance for lower prizes
+
 // Daily Spin Wheel
 const spinWheel = async (req, res) => {
     try {
@@ -20,20 +23,20 @@ const spinWheel = async (req, res) => {
         });
 
         if (existingSpin) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: "Vous avez déjà tourné la roue aujourd'hui !",
                 nextSpinIn: getTimeUntilMidnight()
             });
         }
 
-        // Generate random points (10, 25, 50, 75, 100, 150, 200)
-        const possiblePrizes = [10, 25, 50, 75, 100, 150, 200];
-        const weights = [30, 25, 20, 12, 8, 4, 1]; // Higher chance for lower prizes
+        // Generate random points using weighted prizes
+        const possiblePrizes = SPIN_PRIZES;
+        const weights = SPIN_WEIGHTS;
         const totalWeight = weights.reduce((a, b) => a + b, 0);
-        
+
         let random = Math.random() * totalWeight;
         let wonPoints = possiblePrizes[0];
-        
+
         for (let i = 0; i < possiblePrizes.length; i++) {
             random -= weights[i];
             if (random <= 0) {
@@ -63,8 +66,8 @@ const spinWheel = async (req, res) => {
             })
         ]);
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             points: wonPoints,
             message: `Félicitations ! Vous avez gagné ${wonPoints} points !`
         });
@@ -92,7 +95,7 @@ const canSpinToday = async (req, res) => {
             }
         });
 
-        res.json({ 
+        res.json({
             canSpin: !existingSpin,
             nextSpinIn: existingSpin ? getTimeUntilMidnight() : 0,
             lastSpin: existingSpin ? existingSpin.spinDate : null
@@ -118,15 +121,13 @@ const purchasePoints = async (req, res) => {
 
         const pointsToAdd = amount * 200; // 1$ = 200 points
 
-        // TODO: Integrate Stripe payment here
-        // For now, this is a placeholder that simulates the purchase
-
-        res.json({ 
+        // Placeholder response until payment integration is added
+        res.json({
             success: true,
-            message: "Intégration de paiement à venir",
+            message: "Paiement non disponible, intégration à venir",
             amount,
             points: pointsToAdd,
-            paymentUrl: "#" // Replace with Stripe checkout URL
+            paymentUrl: null
         });
 
     } catch (error) {
@@ -182,8 +183,8 @@ const claimSocialBonus = async (req, res) => {
             })
         ]);
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             points: bonusPoints,
             message: `+${bonusPoints} points pour avoir suivi sur ${platform} !`
         });

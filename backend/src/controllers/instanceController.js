@@ -7,6 +7,12 @@ const systemOs = require('os');
 const cloudflareService = require('../services/cloudflare.service');
 const vpnService = require('../services/vpn.service');
 
+const ROOT_PASSWORD_BYTES = 8; // yields 16 hex chars
+const IP_MAX_ATTEMPTS = 30; // poll limit for VM IP
+const IP_POLL_DELAY_MS = 2000;
+const SSH_READY_DELAY_MS = 10000;
+const SSH_RESTART_DELAY_MS = 2000;
+
 const debugLog = (...args) => {
     if (process.env.NODE_ENV !== 'production') {
         console.log(...args);
@@ -48,7 +54,7 @@ const createInstance = async (req, res) => {
         // The final hostname will be set after instance creation
 
         // Generate Root Password
-        const rootPassword = crypto.randomBytes(8).toString('hex'); // 16 chars hex
+        const rootPassword = crypto.randomBytes(ROOT_PASSWORD_BYTES).toString('hex'); // 16 chars hex
 
         // 3. Create Database Record
         const instance = await prisma.instance.create({
@@ -107,8 +113,8 @@ const createInstance = async (req, res) => {
                 let ip = null;
                 let attempts = 0;
                 // Sequential polling is intentional: Proxmox needs time to report a non-loopback IP
-                while (!ip && attempts < 30) { // Wait up to 60s
-                    await new Promise(r => setTimeout(r, 2000));
+                while (!ip && attempts < IP_MAX_ATTEMPTS) { // Wait up to 60s
+                    await new Promise(r => setTimeout(r, IP_POLL_DELAY_MS));
                     const interfaces = await proxmoxService.getLXCInterfaces(vmid);
                     const eth0 = interfaces.find(i => i.name === 'eth0');
                     if (eth0 && eth0.inet) {
@@ -123,14 +129,14 @@ const createInstance = async (req, res) => {
                     debugLog(`[Background] VM ${vmid} is up at ${ip}. Configuring 'smp4' user...`);
 
                     // Allow SSH to come up fully (sometimes IP is ready before SSHd)
-                    await new Promise(r => setTimeout(r, 10000));
+                    await new Promise(r => setTimeout(r, SSH_READY_DELAY_MS));
 
                     try {
                         // 1. Enable Password Authentication & Root Login
                         await sshService.execCommand(ip, `sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config && sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && service ssh restart`);
 
                         // Wait for SSH to restart
-                        await new Promise(r => setTimeout(r, 2000));
+                        await new Promise(r => setTimeout(r, SSH_RESTART_DELAY_MS));
 
                         // 2. Create smp4 user if not exists
                         await sshService.execCommand(ip, 'id -u smp4 &>/dev/null || useradd -m -s /bin/bash smp4');

@@ -106,17 +106,19 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
       };
     }, [api, onSelect]);
 
+    const resolvedOrientation = React.useMemo(() => {
+      if (orientation !== undefined) return orientation;
+      if (opts?.axis === "y") return "vertical";
+      return "horizontal";
+    }, [orientation, opts?.axis]);
+
     return (
       <CarouselContext.Provider
         value={{
           carouselRef,
           api: api,
           opts,
-          orientation: (() => {
-            if (orientation !== undefined) return orientation;
-            if (opts?.axis === "y") return "vertical";
-            return "horizontal";
-          })(),
+          orientation: resolvedOrientation,
           scrollPrev,
           scrollNext,
           canScrollPrev,

@@ -403,6 +403,43 @@ const InstanceDetails = () => {
         }
     };
 
+    const handleDownloadVpnConfig = async () => {
+        try {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+
+            const toastId = toast.loading("Récupération de la configuration VPN...");
+
+            const response = await fetch(`/api/instances/${id}/vpn`, {
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                // Create Blob and download
+                const blob = new Blob([data.config], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vpn-${instance.name.toLowerCase()}.conf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                toast.success("Configuration téléchargée", { id: toastId });
+            } else {
+                toast.error("Impossible de récupérer la configuration", { id: toastId });
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Erreur de téléchargement");
+        }
+    };
+
+
     // Terminal Logic
     const terminalRef = useRef<HTMLDivElement>(null);
     const xtermRef = useRef<XTerminal | null>(null);
@@ -937,7 +974,10 @@ const InstanceDetails = () => {
 
                                 <Button
                                     variant="outline"
-                                    className="h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-secondary/50  transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] justify-start"
+                                    onClick={() => handleDownloadVpnConfig()}
+                                    disabled={!instance.vpnConfig}
+                                    title={!instance.vpnConfig ? "VPN non configuré" : "Télécharger la config VPN"}
+                                    className={`h-auto relative overflow-hidden group p-6 rounded-xl border-white/10 glass hover:bg-transparent hover:border-secondary/50  transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] justify-start ${!instance.vpnConfig ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                     <div className="relative z-10 flex flex-col gap-3 items-start text-left w-full">

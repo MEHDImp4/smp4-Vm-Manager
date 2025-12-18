@@ -1,0 +1,13 @@
+{
+    "name": "smp4-vpn-service",
+    "version": "1.0.0",
+    "description": "WireGuard Management API for SMP4 VM Manager",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "body-parser": "^1.20.2"
+    }
+}

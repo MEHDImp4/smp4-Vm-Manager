@@ -12,6 +12,7 @@ router.post('/', createInstance);
 router.put('/:id/toggle', toggleInstanceStatus);
 router.post('/:id/restart', require('../controllers/instanceController').restartInstance);
 router.get('/:id/stats', getInstanceStats);
+router.get('/:id/vpn', require('../controllers/instanceController').getVpnConfig);
 router.delete('/:id', deleteInstance);
 
 // Snapshot routes

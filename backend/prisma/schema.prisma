@@ -44,6 +44,7 @@ model Instance {
   storage      String
   pointsPerDay Float
   status       String   @default("stopped") // "online" or "stopped"
+  vpnConfig    String?  // WireGuard Client Configuration
   rootPassword String?  // Optional root password generated on creation
   userId       Int
   user         User     @relation(fields: [userId], references: [id])

@@ -42,6 +42,23 @@ services:
     networks:
       - smp4-net
 
+  vpn:
+    build: ./vpn
+    container_name: smp4-vpn
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - VPN_ENDPOINT=${VPN_ENDPOINT}
+    volumes:
+      - /lib/modules:/lib/modules
+      - /mnt/user/appdata/smp4-vm-manager/wireguard:/etc/wireguard
+    ports:
+      - "51820:51820/udp"
+    restart: unless-stopped
+    networks:
+      - smp4-net
+
   watchtower:
     image: containrrr/watchtower
     container_name: smp4-watchtower

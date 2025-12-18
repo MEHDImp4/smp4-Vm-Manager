@@ -13,15 +13,27 @@ const createClient = async (targetIp) => {
     }
 };
 
-const deleteClient = async (publicKey) => {
+const deleteClient = async (vpnConfig) => {
     try {
-        if (!publicKey) return;
-        const encodedKey = encodeURIComponent(publicKey);
-        console.log(`[VPN] Deleting client with key: ${publicKey}`);
-        await axios.delete(`${VPN_API_URL}/client/${encodedKey}`);
+        if (!vpnConfig) return;
+
+        // Parse PrivateKey from config string
+        // Format: PrivateKey = <key>
+        const match = vpnConfig.match(/PrivateKey\s*=\s*(.*)/);
+        if (!match || !match[1]) {
+            console.warn('[VPN] Could not find PrivateKey in config to perform deletion');
+            return;
+        }
+
+        const privateKey = match[1].trim();
+
+        console.log(`[VPN] Deleting client...`);
+        // Use data payload for privateKey
+        await axios.delete(`${VPN_API_URL}/client`, { data: { privateKey } });
+        
     } catch (error) {
         console.error('[VPN] Failed to delete client:', error.message);
-        // Don't throw, we want deletion to proceed even if VPN cleanup fails
+        // Don't throw, we want deletion to proceed
     }
 };
 

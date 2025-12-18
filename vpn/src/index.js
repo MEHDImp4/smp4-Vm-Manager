@@ -214,16 +214,32 @@ PersistentKeepalive = 25
 });
 
 // API: Delete Client
-app.delete('/client/:publicKey', async (req, res) => {
+app.delete('/client', async (req, res) => {
     try {
-        const { publicKey } = req.params;
+        let publicKey;
+
+        // Option 1: Passed directly via query or body
+        if (req.body.publicKey || req.query.publicKey) {
+            publicKey = req.body.publicKey || req.query.publicKey;
+        }
+        // Option 2: Derive from Private Key (preferred for backend integration)
+        else if (req.body.privateKey) {
+            console.log('Deriving Public Key from provided Private Key...');
+            publicKey = await run(`echo "${req.body.privateKey}" | wg pubkey`);
+        }
+
+        if (!publicKey) {
+            return res.status(400).json({ error: 'publicKey or privateKey is required' });
+        }
+
         const decodedKey = decodeURIComponent(publicKey);
 
         console.log(`Removing peer ${decodedKey}...`);
         await run(`wg set ${WG_INTERFACE} peer "${decodedKey}" remove`);
 
-        // Cleanup IPTables (Optional/Hard to track without ID)
-        // Ideally we'd remove the specific rule we added.
+        // PERSISTENCE FIX: Force save config immediately
+        console.log('Persisting configuration...');
+        await run(`wg showconf ${WG_INTERFACE} > ${WG_CONF}`);
 
         res.json({ message: 'Peer removed' });
     } catch (error) {

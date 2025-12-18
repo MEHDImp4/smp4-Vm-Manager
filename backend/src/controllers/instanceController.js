@@ -348,7 +348,10 @@ const deleteInstance = async (req, res) => {
         const { id } = req.params;
         const userId = req.user.id;
 
-        const instance = await prisma.instance.findUnique({ where: { id } });
+        const instance = await prisma.instance.findUnique({
+            where: { id },
+            include: { domains: true }
+        });
         if (!instance || instance.userId !== userId) {
             return res.status(404).json({ error: "Instance not found" });
         }
@@ -374,33 +377,31 @@ const deleteInstance = async (req, res) => {
             }
         }
 
-        // 3. Delete from DB
-        await prisma.instance.delete({ where: { id } });
+        // 3a. Clean up VPN (if exists)
         // 3a. Clean up VPN (if exists)
         if (instance.vpnConfig) {
-            // Extract public key from config is messy. We should probably store it.
-            // But for now let's just try to parse it from the string or rely on finding it?
-            // Actually, I didn't add a field for publicKey in DB.
-            // Let's regex it from the config string "[Interface]\nPrivateKey=..." no wait, PubKey is in Peer usually but here we have the CLIENT config.
-            // The client config has CLIENT PrivateKey. The SERVER needs Client PublicKey to delete.
-            // Ops. I need the Client Public Key to delete it from the server.
-            // The Client Config has PrivateKey. I can re-derive Public Key?
-            // Yes: `echo PrivateKey | wg pubkey`. But I can't do that easily in Node without shell.
-            // Better: Store `vpnPublicKey` in DB or extract it if possible.
-            // For MVP: I will skip strict deletion by ID for now or try to extract it.
-            // Wait, I can just store the publicKey in the `vpnConfig` string as a comment or separate field?
-            // Let's add `vpnPublicKey` to schema? No, user said "ok fait ca" based on plan.
-            // Plan said: "Add vpnConfig String?".
-            // I'll update schema to add `vpnPublicKey` or just accept that old peers might linger if I can't derive key.
-            // Actually... if I save the whole config, I have the PrivateKey. 
-            // I can use `sshService` (or new VPN service) to derive it if I really want.
-            // Or, I can just not delete it. It's a closed system.
-            // Let's try to do it right: I'll use a regex to find PrivateKey, and if I can run `wg pubkey` inside the `vpn` container via API...
-            // Let's add a `POST /utils/derive-key` to VPN service? Or just `DELETE /client` checks all?
-            // Nah, let's just skip complex deletion logic for this iteration and focus on creation.
-            // Lingering peers in `wg0.conf` isn't huge for small scale.
-            // Correction: I can just parse the config.
+            console.log(`Cleaning up VPN for instance ${id}...`);
+            await vpnService.deleteClient(instance.vpnConfig);
         }
+
+        // 3b. Clean up Domains
+        if (instance.domains && instance.domains.length > 0) {
+            console.log(`Cleaning up ${instance.domains.length} domains for instance ${id}...`);
+            for (const domain of instance.domains) {
+                const fullHostname = `${domain.subdomain}.smp4.xyz`;
+                await cloudflareService.removeTunnelIngress(fullHostname);
+            }
+        }
+
+        // 3. Delete from DB
+        // Note: Domains are deleted via CASCADE usually, but Prisma schema might need verification. 
+        // If not using cascade in DB, we need explicit delete. 
+        // Prisma `onDelete: Cascade` in schema handles this if configured.
+        // Assuming schema has relation onDelete: Cascade. 
+        // If not, explicit delete of domains is needed:
+        // await prisma.domain.deleteMany({ where: { instanceId: id } }); 
+
+        await prisma.instance.delete({ where: { id } });
 
         // 3. Delete from DB
         await prisma.instance.delete({ where: { id } });

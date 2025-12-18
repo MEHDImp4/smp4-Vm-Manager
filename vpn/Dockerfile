@@ -18,7 +18,7 @@ RUN mkdir -p /etc/wireguard
 
 # Expose ports
 EXPOSE 3001
-EXPOSE 51820/udp
+EXPOSE 51821/udp
 
 # Start script
 CMD ["node", "src/index.js"]

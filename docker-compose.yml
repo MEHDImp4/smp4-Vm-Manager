@@ -32,6 +32,16 @@ services:
     networks:
       - smp4-net
 
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: smp4-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CF_TUNNEL_TOKEN}
+    networks:
+      - smp4-net
+
   watchtower:
     image: containrrr/watchtower
     container_name: smp4-watchtower

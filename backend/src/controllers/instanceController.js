@@ -421,10 +421,11 @@ const deleteInstance = async (req, res) => {
         // 3b. Clean up Domains
         if (instance.domains && instance.domains.length > 0) {
             debugLog(`Cleaning up ${instance.domains.length} domains for instance ${id}...`);
-            for (const domain of instance.domains) {
+            // Parallelize domain deletion to improve cleanup speed
+            await Promise.all(instance.domains.map(domain => {
                 const fullHostname = `${domain.subdomain}.smp4.xyz`;
-                await cloudflareService.removeTunnelIngress(fullHostname);
-            }
+                return cloudflareService.removeTunnelIngress(fullHostname);
+            }));
         }
 
         // 3. Delete from DB

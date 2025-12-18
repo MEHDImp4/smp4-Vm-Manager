@@ -124,7 +124,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
 
     useEffect(() => {
         if (isOpen) {
-            checkSpinStatus();
+            void checkSpinStatus();
         }
     }, [isOpen, checkSpinStatus]);
 

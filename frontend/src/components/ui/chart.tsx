@@ -129,10 +129,12 @@ const ChartTooltipContent = React.forwardRef<
       const [item] = payload;
       const key = `${labelKey || item.dataKey || item.name || "value"}`;
       const itemConfig = getPayloadConfigFromPayload(config, item, key);
-      const value =
-        !labelKey && typeof label === "string"
-          ? config[label as keyof typeof config]?.label || label
-          : itemConfig?.label;
+
+      let value: React.ReactNode | undefined = itemConfig?.label;
+      if (!labelKey && typeof label === "string") {
+        const fallbackLabel = config[label as keyof typeof config]?.label;
+        value = fallbackLabel ?? label;
+      }
 
       if (labelFormatter) {
         return <div className={cn("font-medium", labelClassName)}>{labelFormatter(value, payload)}</div>;
@@ -166,6 +168,10 @@ const ChartTooltipContent = React.forwardRef<
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
             const indicatorColor = color || item.payload.fill || item.color;
 
+            const renderFormatted = formatter && item?.value !== undefined && item.name;
+            const showIndicator = !renderFormatted && !itemConfig?.icon && !hideIndicator;
+            const hasValue = item.value !== undefined && item.value !== null;
+
             return (
               <div
                 key={item.dataKey}
@@ -174,14 +180,12 @@ const ChartTooltipContent = React.forwardRef<
                   indicator === "dot" && "items-center",
                 )}
               >
-                {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
-                ) : (
-                  <>
-                    {itemConfig?.icon ? (
-                      <itemConfig.icon />
-                    ) : (
-                      !hideIndicator && (
+                {renderFormatted
+                  ? formatter!(item.value as number, item.name as string, item, index, item.payload)
+                  : (
+                    <>
+                      {itemConfig?.icon && <itemConfig.icon />}
+                      {showIndicator && (
                         <div
                           className={cn("shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]", {
                             "h-2.5 w-2.5": indicator === "dot",
@@ -196,26 +200,25 @@ const ChartTooltipContent = React.forwardRef<
                             } as React.CSSProperties
                           }
                         />
-                      )
-                    )}
-                    <div
-                      className={cn(
-                        "flex flex-1 justify-between leading-none",
-                        nestLabel ? "items-end" : "items-center",
                       )}
-                    >
-                      <div className="grid gap-1.5">
-                        {nestLabel ? tooltipLabel : null}
-                        <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
+                      <div
+                        className={cn(
+                          "flex flex-1 justify-between leading-none",
+                          nestLabel ? "items-end" : "items-center",
+                        )}
+                      >
+                        <div className="grid gap-1.5">
+                          {nestLabel ? tooltipLabel : null}
+                          <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
+                        </div>
+                        {hasValue && (
+                          <span className="font-mono font-medium tabular-nums text-foreground">
+                            {Number(item.value).toLocaleString()}
+                          </span>
+                        )}
                       </div>
-                      {item.value && (
-                        <span className="font-mono font-medium tabular-nums text-foreground">
-                          {item.value.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
               </div>
             );
           })}

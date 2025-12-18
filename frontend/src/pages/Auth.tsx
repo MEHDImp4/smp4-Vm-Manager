@@ -168,19 +168,19 @@ const Auth = () => {
           <div className="flex gap-2 p-1 rounded-lg bg-muted mb-8">
             <button
               onClick={() => { navigate("/login"); setErrors({}); }}
-              className={`flex-1 py-2.5 rounded-md text-sm font-medium transition-all ${isLogin
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-                }`}
+              className={cn(
+                "flex-1 py-2.5 rounded-md text-sm font-medium transition-all",
+                isLogin ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
             >
               Connexion
             </button>
             <button
               onClick={() => { navigate("/register"); setErrors({}); }}
-              className={`flex-1 py-2.5 rounded-md text-sm font-medium transition-all ${!isLogin
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-                }`}
+              className={cn(
+                "flex-1 py-2.5 rounded-md text-sm font-medium transition-all",
+                !isLogin ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
             >
               Inscription
             </button>

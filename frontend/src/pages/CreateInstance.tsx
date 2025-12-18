@@ -22,6 +22,7 @@ const CreateInstance = () => {
     const [name, setName] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [templates, setTemplates] = useState<Template[]>([]);
+    const selectedTemplateData = templates.find((template) => template.id === selectedTemplate);
 
     useEffect(() => {
         const fetchTemplates = async () => {
@@ -242,7 +243,7 @@ const CreateInstance = () => {
                                                 <Cpu className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <div className="font-bold text-lg font-mono">{templates.find(t => t.id === selectedTemplate)?.cpu}</div>
+                                                <div className="font-bold text-lg font-mono">{selectedTemplateData?.cpu}</div>
                                                 <div className="text-[10px] text-muted-foreground uppercase tracking-wide">vCPU</div>
                                             </div>
                                         </div>
@@ -251,7 +252,7 @@ const CreateInstance = () => {
                                                 <MemoryStick className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <div className="font-bold text-lg font-mono">{templates.find(t => t.id === selectedTemplate)?.ram}</div>
+                                                <div className="font-bold text-lg font-mono">{selectedTemplateData?.ram}</div>
                                                 <div className="text-[10px] text-muted-foreground uppercase tracking-wide">RAM</div>
                                             </div>
                                         </div>
@@ -260,7 +261,7 @@ const CreateInstance = () => {
                                                 <HardDrive className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <div className="font-bold text-lg font-mono">{templates.find(t => t.id === selectedTemplate)?.storage}</div>
+                                                <div className="font-bold text-lg font-mono">{selectedTemplateData?.storage}</div>
                                                 <div className="text-[10px] text-muted-foreground uppercase tracking-wide">SSD</div>
                                             </div>
                                         </div>

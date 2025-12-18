@@ -60,11 +60,15 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
     }, []);
 
     const scrollPrev = React.useCallback(() => {
-      api?.scrollPrev();
+      if (api) {
+        api.scrollPrev();
+      }
     }, [api]);
 
     const scrollNext = React.useCallback(() => {
-      api?.scrollNext();
+      if (api) {
+        api.scrollNext();
+      }
     }, [api]);
 
     const handleKeyDown = React.useCallback(
@@ -108,7 +112,12 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
           carouselRef,
           api: api,
           opts,
-          orientation: orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
+          orientation:
+            orientation !== undefined
+              ? orientation
+              : opts?.axis === "y"
+                ? "vertical"
+                : "horizontal",
           scrollPrev,
           scrollNext,
           canScrollPrev,

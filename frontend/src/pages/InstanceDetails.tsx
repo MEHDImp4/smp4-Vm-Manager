@@ -140,7 +140,6 @@ const InstanceDetails = () => {
             const user = JSON.parse(userStr);
 
             try {
-                // const response = await fetch("http://localhost:3001/api/instances", {
                 const response = await fetch("/api/instances", {
                     headers: { "Authorization": `Bearer ${user.token}` }
                 });

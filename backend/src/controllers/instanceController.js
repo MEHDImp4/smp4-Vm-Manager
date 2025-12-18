@@ -394,16 +394,7 @@ const deleteInstance = async (req, res) => {
         }
 
         // 3. Delete from DB
-        // Note: Domains are deleted via CASCADE usually, but Prisma schema might need verification. 
-        // If not using cascade in DB, we need explicit delete. 
-        // Prisma `onDelete: Cascade` in schema handles this if configured.
-        // Assuming schema has relation onDelete: Cascade. 
-        // If not, explicit delete of domains is needed:
-        // await prisma.domain.deleteMany({ where: { instanceId: id } }); 
-
-        await prisma.instance.delete({ where: { id } });
-
-        // 3. Delete from DB
+        // Note: Domains are deleted via CASCADE; configured in Prisma schema.
         await prisma.instance.delete({ where: { id } });
         res.json({ message: "Instance deleted" });
 

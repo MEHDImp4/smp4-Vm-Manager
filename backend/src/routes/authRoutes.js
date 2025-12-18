@@ -11,10 +11,12 @@ const fs = require('fs');
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = '/data/uploads/';
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
+        fs.mkdir(uploadDir, { recursive: true }, (err) => {
+            if (err) {
+                return cb(err);
+            }
+            cb(null, uploadDir);
+        });
     },
     filename: (req, file, cb) => {
         // Unique filename: user-{id}-{timestamp}.ext

@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { prisma } = require('../db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_change_me';
+const BCRYPT_SALT_ROUNDS = 10;
 
 const register = async (req, res) => {
     const { name, email, password } = req.body;
@@ -19,7 +20,7 @@ const register = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
         const user = await prisma.user.create({
             data: {
                 name,
@@ -120,7 +121,7 @@ const updatePassword = async (req, res) => {
             return res.status(400).json({ message: 'Incorrect current password' });
         }
 
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
         await prisma.user.update({
             where: { id: userId },
             data: { password: hashedPassword }
@@ -130,11 +131,9 @@ const updatePassword = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });
-    }
-};
+    };
 
-const uploadAvatar = async (req, res) => {
-    if (!req.file) {
+    const updatePassword = async (req, res) => {
         return res.status(400).json({ message: 'No file uploaded' });
     }
 

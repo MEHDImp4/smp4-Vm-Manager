@@ -502,7 +502,7 @@ const Dashboard = () => {
             <div className="absolute top-0 left-0 w-full h-1 bg-destructive" />
 
             <div className="p-6 md:p-8">
-              {deleteConfirm.step === 1 ? (
+              {deleteConfirm.step === 1 && (
                 <>
                   <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-6 text-destructive mx-auto">
                     <Trash2 className="w-6 h-6" />
@@ -521,7 +521,9 @@ const Dashboard = () => {
                     </Button>
                   </div>
                 </>
-              ) : (
+              )}
+
+              {deleteConfirm.step !== 1 && (
                 <>
                   <h3 className="text-xl font-bold mb-4 text-destructive flex items-center gap-2">
                     <Activity className="w-5 h-5 animate-pulse" />

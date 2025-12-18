@@ -52,7 +52,7 @@ services:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
     environment:
-      - VPN_ENDPOINT=${VPN_ENDPOINT:-smp4.smp4.xyz:51821}
+      - VPN_ENDPOINT=${VPN_ENDPOINT:-azeur-ptero-node.smp4.xyz:51821}
     volumes:
       - /lib/modules:/lib/modules
       - /mnt/user/appdata/smp4-vm-manager/wireguard:/etc/wireguard

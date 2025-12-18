@@ -154,7 +154,7 @@ app.post('/client', async (req, res) => {
         // Generate Client Config
         // We need the server's public IP or hostname. We'll read it from ENV or auto-detect?
         // For localhost dev, it's localhost. For prod, it's the domain.
-        const endpoint = process.env.VPN_ENDPOINT || 'smp4.smp4.xyz:51821'; // Default placeholder
+        const endpoint = process.env.VPN_ENDPOINT || 'azeur-ptero-node.smp4.xyz:51821'; // Default placeholder
 
         const clientConfig = `[Interface]
 PrivateKey = ${clientPrivateKey}

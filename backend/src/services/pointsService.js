@@ -19,6 +19,13 @@ const deductPoints = async () => {
                 instances: {
                     where: {
                         status: 'online'
+                    },
+                    include: {
+                        domains: {
+                            where: {
+                                isPaid: true
+                            }
+                        }
                     }
                 }
             }
@@ -28,6 +35,9 @@ const deductPoints = async () => {
             let totalDailyCost = 0;
             for (const instance of user.instances) {
                 totalDailyCost += instance.pointsPerDay;
+                // Add cost for paid domains (2 points/day each)
+                const paidDomainsCount = instance.domains?.length || 0;
+                totalDailyCost += paidDomainsCount * 2;
             }
 
             // Calculate cost per minute

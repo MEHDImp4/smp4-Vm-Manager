@@ -19,6 +19,7 @@ model User {
 
   instances  Instance[]
   transactions PointTransaction[]
+  dailySpins DailySpin[]
 
   @@map("users")
 }
@@ -28,10 +29,20 @@ model PointTransaction {
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   amount    Float    // Negative for deduction, Positive for recharge
-  type      String   // "usage", "recharge", "bonus"
+  type      String   // "usage", "recharge", "bonus", "spin", "social", "purchase"
   createdAt DateTime @default(now())
 
   @@map("point_transactions")
+}
+
+model DailySpin {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  points    Float    // Points won (10-200)
+  spinDate  DateTime @default(now())
+
+  @@map("daily_spins")
 }
 
 model Instance {
@@ -72,6 +83,7 @@ model Domain {
   id         String   @id @default(uuid())
   subdomain  String   // e.g. "minecraft"
   port       Int      // e.g. 25565
+  isPaid     Boolean  @default(false) // Premium domain (2pts/day) beyond free limit
   instanceId String
   instance   Instance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())

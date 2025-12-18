@@ -273,9 +273,27 @@ const getInstances = async (req, res) => {
         const instances = await prisma.instance.findMany({
             where: { userId },
             orderBy: { created_at: 'desc' },
+            include: {
+                domains: {
+                    where: {
+                        isPaid: true
+                    },
+                    select: {
+                        id: true,
+                        isPaid: true
+                    }
+                }
+            }
         });
 
-        res.json(instances);
+        // Add paidDomainsCount to each instance
+        const instancesWithCosts = instances.map(inst => ({
+            ...inst,
+            paidDomainsCount: inst.domains?.length || 0,
+            domains: undefined // Don't send full domain list to dashboard
+        }));
+
+        res.json(instancesWithCosts);
     } catch (error) {
         console.error("Get instances error:", error);
         res.status(500).json({ error: "Failed to fetch instances" });
@@ -519,9 +537,16 @@ const createDomain = async (req, res) => {
             return res.status(404).json({ error: "Instance or User not found" });
         }
 
-        // Check limits
-        if (instance.domains.length >= 3) {
-            return res.status(400).json({ error: "Maximum of 3 domains per instance reached" });
+        // Check limits: 3 free, unlimited paid (with isPaid flag)
+        const freeDomains = instance.domains.filter(d => !d.isPaid);
+        const isPaidDomain = freeDomains.length >= 3;
+        
+        if (isPaidDomain && req.body.isPaid !== true) {
+            return res.status(400).json({ 
+                error: "Maximum of 3 free domains reached",
+                requiresPurchase: true,
+                message: "You can purchase additional domains for 2 points/day"
+            });
         }
 
         // Generate Subdomain: [username]-[instancename]-[suffix]
@@ -558,6 +583,7 @@ const createDomain = async (req, res) => {
             data: {
                 subdomain,
                 port: parseInt(port),
+                isPaid: isPaidDomain,
                 instanceId: id
             }
         });
@@ -607,7 +633,17 @@ const getDomains = async (req, res) => {
 
         const instance = await prisma.instance.findUnique({
             where: { id },
-            include: { domains: true }
+            include: { 
+                domains: {
+                    select: {
+                        id: true,
+                        subdomain: true,
+                        port: true,
+                        isPaid: true,
+                        createdAt: true
+                    }
+                }
+            }
         });
 
         if (!instance || instance.userId !== userId) {

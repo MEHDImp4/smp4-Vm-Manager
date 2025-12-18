@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Cloud, Play, Square, Trash2, Plus, Coins, TrendingDown, Lightbulb, Server, Container, BarChart3, Loader2, ArrowRight, Zap, Activity, BookOpen } from "lucide-react";
+import { Cloud, Play, Square, Trash2, Plus, Coins, TrendingDown, Lightbulb, Server, Container, BarChart3, Loader2, ArrowRight, Zap, Activity, BookOpen, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner"; // Assuming sonner is available as used in InstanceDetails
+import EarnPointsModal from "@/components/EarnPointsModal";
 
 interface Instance {
   id: string;
@@ -11,6 +12,7 @@ interface Instance {
   template: string;
   status: "online" | "stopped" | "provisioning" | "error";
   pointsPerDay: number;
+  paidDomainsCount?: number;
   type: "ct" | "vm";
 }
 
@@ -25,11 +27,40 @@ const LOADING_MESSAGES = [
   "Presque prêt..."
 ];
 
+const PRO_TIPS = [
+  {
+    text: "Pour optimiser vos coûts, pensez à éteindre vos instances de développement la nuit. Utilisez ",
+    linkText: "docker-compose",
+    linkTo: "/guide",
+    suffix: " sur les templates Medium+."
+  },
+  {
+    text: "Besoin d'héberger votre application web ? Suivez notre ",
+    linkText: "guide de déploiement",
+    linkTo: "/guide",
+    suffix: " complet pour configurer votre environnement."
+  },
+  {
+    text: "N'oubliez pas d'éteindre vos machines quand vous ne développez pas ! Cela évite de consommer des points inutilement."
+  }
+];
+
 const Dashboard = () => {
   const [instances, setInstances] = useState<Instance[]>([]);
   const [totalPoints, setTotalPoints] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+  const [showEarnModal, setShowEarnModal] = useState(false);
   const hasProvisioning = instances.some(i => i.status === 'provisioning');
+
+  // Rotate Pro Tips
+  useEffect(() => {
+    const tipInterval = setInterval(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % PRO_TIPS.length);
+    }, 10000); // Change every 10 seconds
+
+    return () => clearInterval(tipInterval);
+  }, []);
 
   // Authentication & Data Fetching
   useEffect(() => {
@@ -106,7 +137,11 @@ const Dashboard = () => {
   const maxPoints = 500;
   const dailyConsumption = instances
     .filter((i) => i.status === "online")
-    .reduce((acc, i) => acc + i.pointsPerDay, 0);
+    .reduce((acc, i) => {
+      const instanceCost = i.pointsPerDay;
+      const domainsCost = (i.paidDomainsCount || 0) * 2; // 2 points/day per paid domain
+      return acc + instanceCost + domainsCost;
+    }, 0);
 
   // Actions
   const toggleStatus = async (id: string) => {
@@ -225,6 +260,16 @@ const Dashboard = () => {
               </Link>
             </Button>
 
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowEarnModal(true)}
+              className="hover:bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:text-amber-300"
+            >
+              <Gift className="w-4 h-4 mr-2" />
+              Gagner des Points
+            </Button>
+
             <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
               <div className="p-1 rounded-full bg-primary/20 text-primary">
                 <Coins className="w-3.5 h-3.5" />
@@ -310,11 +355,21 @@ const Dashboard = () => {
               <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
                 <Lightbulb className="w-6 h-6" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="text-sm font-bold text-amber-500 mb-1">Astuce Pro</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Pour optimiser vos coûts, pensez à éteindre vos instances de développement la nuit.
-                  Utilisez <Link to="/guide" className="hover:underline decoration-amber-500/50"><code className="text-foreground bg-white/10 px-1 py-0.5 rounded text-xs font-mono cursor-pointer hover:bg-white/20 transition-colors">docker-compose</code></Link> sur les templates Medium+.
+                <p className="text-sm text-muted-foreground leading-relaxed transition-opacity duration-500" key={currentTipIndex}>
+                  {PRO_TIPS[currentTipIndex].text}
+                  {PRO_TIPS[currentTipIndex].linkText && (
+                    <Link 
+                      to={PRO_TIPS[currentTipIndex].linkTo!} 
+                      className="hover:underline decoration-amber-500/50"
+                    >
+                      <code className="text-foreground bg-white/10 px-1 py-0.5 rounded text-xs font-mono cursor-pointer hover:bg-white/20 transition-colors">
+                        {PRO_TIPS[currentTipIndex].linkText}
+                      </code>
+                    </Link>
+                  )}
+                  {PRO_TIPS[currentTipIndex].suffix}
                 </p>
               </div>
             </div>
@@ -570,6 +625,35 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Earn Points Modal */}
+      <EarnPointsModal 
+        isOpen={showEarnModal} 
+        onClose={() => setShowEarnModal(false)} 
+        onPointsEarned={() => {
+          // Refresh user data
+          const fetchUserData = async () => {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+
+            try {
+              const response = await fetch("/api/auth/me", {
+                headers: { "Authorization": `Bearer ${user.token}` }
+              });
+              if (response.ok) {
+                const userData = await response.json();
+                setTotalPoints(userData.points);
+                const updatedUser = { ...user, points: userData.points };
+                localStorage.setItem("user", JSON.stringify(updatedUser));
+              }
+            } catch (error) {
+              console.error("Failed to fetch fresh profile", error);
+            }
+          };
+          fetchUserData();
+        }}
+      />
     </div>
   );
 };

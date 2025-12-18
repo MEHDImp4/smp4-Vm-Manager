@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Globe, Plus, Loader2, Trash2, ExternalLink, Link as LinkIcon, ShieldCheck, AlertCircle } from "lucide-react";
+import { ArrowLeft, Globe, Plus, Loader2, Trash2, ExternalLink, Link as LinkIcon, ShieldCheck, AlertCircle, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -62,6 +62,19 @@ const InstanceDomains = () => {
             return;
         }
 
+        const freeDomains = domains.filter(d => !d.isPaid);
+        const isPaidDomain = freeDomains.length >= 3;
+
+        // If it's a paid domain, ask for confirmation
+        if (isPaidDomain) {
+            const confirmed = confirm(
+                "Vous avez déjà 3 sous-domaines gratuits.\n\n" +
+                "Ce domaine supplémentaire coûtera 2 points/jour tant qu'il existe.\n\n" +
+                "Voulez-vous continuer ?"
+            );
+            if (!confirmed) return;
+        }
+
         setActionLoading(true);
         const toastId = toast.loading("Configuration de Cloudflare...");
 
@@ -78,7 +91,8 @@ const InstanceDomains = () => {
                 },
                 body: JSON.stringify({
                     port: parseInt(newDomain.port),
-                    customSuffix: newDomain.suffix
+                    customSuffix: newDomain.suffix,
+                    isPaid: isPaidDomain
                 })
             });
 
@@ -174,10 +188,15 @@ const InstanceDomains = () => {
                         <div className="glass rounded-xl p-6 border border-white/10 relative overflow-hidden group hover:border-primary/30 transition-all duration-500">
                             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                            <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                                <Plus className="w-5 h-5 text-primary" />
-                                Nouveau Domaine
-                            </h2>
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-lg font-semibold flex items-center gap-2">
+                                    <Plus className="w-5 h-5 text-primary" />
+                                    Nouveau Domaine
+                                </h2>
+                                <span className="text-xs font-mono bg-white/5 px-2 py-1 rounded-full border border-white/10">
+                                    {domains.filter(d => !d.isPaid).length}/3 gratuits
+                                </span>
+                            </div>
 
                             <div className="space-y-4 relative z-10">
                                 <div className="p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
@@ -215,8 +234,23 @@ const InstanceDomains = () => {
                                     disabled={actionLoading || !newDomain.port || !newDomain.suffix}
                                     className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white shadow-lg shadow-primary/20 py-6"
                                 >
-                                    {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Créer l'accès"}
+                                    {actionLoading ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : domains.filter(d => !d.isPaid).length >= 3 ? (
+                                        "Acheter (+2 pts/jour)"
+                                    ) : (
+                                        "Créer l'accès"
+                                    )}
                                 </Button>
+
+                                {domains.filter(d => !d.isPaid).length >= 3 && (
+                                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                                        <p className="text-xs text-amber-200/80">
+                                            Les domaines suivants seront payants : <strong>2 points/jour</strong> par domaine supplémentaire.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -233,10 +267,17 @@ const InstanceDomains = () => {
                     {/* Right Column: List */}
                     <div className="md:col-span-2 space-y-6 animate-fade-up-delay-2">
                         <div className="glass rounded-xl p-6 md:p-8 border border-white/10 min-h-[400px]">
-                            <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                                <Globe className="w-5 h-5 text-indigo-400" />
-                                Domaines Actifs
-                            </h2>
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-lg font-semibold flex items-center gap-2">
+                                    <Globe className="w-5 h-5 text-indigo-400" />
+                                    Domaines Actifs
+                                </h2>
+                                {domains.length > 0 && (
+                                    <span className="text-sm text-muted-foreground">
+                                        3 gratuits, puis 2 pts/jour
+                                    </span>
+                                )}
+                            </div>
 
                             <div className="space-y-4">
                                 {loading ? (
@@ -273,6 +314,17 @@ const InstanceDomains = () => {
                                                         </a>
                                                         <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground font-mono">
                                                             <span className="bg-white/5 px-2 py-0.5 rounded">Port: {dom.port}</span>
+                                                            <span>•</span>
+                                                            {dom.isPaid ? (
+                                                                <span className="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                                                                    <Coins className="w-3 h-3" />
+                                                                    2 pts/jour
+                                                                </span>
+                                                            ) : (
+                                                                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs font-semibold">
+                                                                    Gratuit
+                                                                </span>
+                                                            )}
                                                             <span>•</span>
                                                             <span className="text-emerald-400 flex items-center gap-1.5">
                                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>

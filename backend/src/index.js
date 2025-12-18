@@ -4,6 +4,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const instanceRoutes = require('./routes/instanceRoutes');
 const templateRoutes = require('./routes/templateRoutes');
+const pointsRoutes = require('./routes/pointsRoutes');
 const { startConsumptionCron } = require('./cron/consumptionCron');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/uploads', express.static('/data/uploads'));
 app.use('/api/auth', authRoutes);
 app.use('/api/instances', instanceRoutes);
 app.use('/api/templates', templateRoutes);
+app.use('/api/points', pointsRoutes);
 
 app.get('/', (req, res) => {
     res.send('MiniCloud Web Backend is running');

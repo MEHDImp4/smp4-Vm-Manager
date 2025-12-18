@@ -15,7 +15,30 @@ yarn-error.log*
 logs/
 *.log
 
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+jest-results.json
+test.db
+
+# Database
+web-backend/database.sqlite
+database.sqlite
+database.sqlite-journal
+
 # OS
 .DS_Store
 Thumbs.db
-web-backend/database.sqlite
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo

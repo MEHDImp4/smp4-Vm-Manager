@@ -1,0 +1,87 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Backend - Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Backend - Run linter
+        working-directory: backend
+        run: npm run lint || true
+
+      - name: Frontend - Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Frontend - Run linter
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Check for security vulnerabilities
+        run: |
+          npm audit --workspaces --audit-level=high || true
+
+  test-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Backend - Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Backend - Generate coverage
+        working-directory: backend
+        env:
+          JWT_SECRET: test-secret
+          DATABASE_URL: file:./test.db
+          PROXMOX_URL: https://proxmox.test:8006
+          PROXMOX_API_TOKEN: test-token
+          PROXMOX_NODE: pve
+          LXC_SSH_PASSWORD: test-password
+          BACKEND_IP: 127.0.0.1
+          CF_ACCOUNT_ID: test-account
+          CF_API_TOKEN: test-cf-token
+          CF_TUNNEL_ID: test-tunnel
+          CF_TUNNEL_TOKEN: test-tunnel-token
+          VPN_ENDPOINT: test-vpn.com
+        run: npm test -- --coverage
+
+      - name: Frontend - Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Frontend - Generate coverage
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Upload combined coverage
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./
+          flags: unittests
+          fail_ci_if_error: false

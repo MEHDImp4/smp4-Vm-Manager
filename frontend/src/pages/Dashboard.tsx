@@ -229,7 +229,7 @@ const Dashboard = () => {
               <div className="p-1 rounded-full bg-primary/20 text-primary">
                 <Coins className="w-3.5 h-3.5" />
               </div>
-              <span className="font-mono font-bold text-sm">{totalPoints.toFixed(0)}</span>
+              <span className="font-mono font-bold text-sm">{totalPoints.toFixed(2)}</span>
               <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold">pts</span>
             </div>
             <Button variant="ghost" size="sm" asChild className="hover:bg-white/5">
@@ -264,9 +264,11 @@ const Dashboard = () => {
                   <span>{Math.round((totalPoints / maxPoints) * 100)}%</span>
                 </div>
                 <Progress value={(totalPoints / maxPoints) * 100} className="h-1.5 bg-white/10" indicatorClassName="bg-gradient-to-r from-primary to-secondary" />
-                <p className="text-xs text-muted-foreground mt-2 font-mono">
-                  ≈ {Math.floor(totalPoints / (dailyConsumption || 1))} jours d'autonomie
-                </p>
+                {dailyConsumption > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2 font-mono">
+                    ≈ {Math.floor(totalPoints / (dailyConsumption || 1))} jours d'autonomie
+                  </p>
+                )}
               </div>
             </div>
           </div>

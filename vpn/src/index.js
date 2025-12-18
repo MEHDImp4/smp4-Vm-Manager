@@ -11,7 +11,7 @@ const WG_INTERFACE = 'wg0';
 const WG_PORT = 51821;
 const WG_DIR = '/etc/wireguard';
 const WG_CONF = path.join(WG_DIR, `${WG_INTERFACE}.conf`);
-const BASE_SUBNET = '10.253.0';
+const BASE_SUBNET = '10.13.37';
 
 // Ensure config dir exists
 if (!fs.existsSync(WG_DIR)) {
@@ -130,9 +130,9 @@ app.post('/client', async (req, res) => {
         // Note: 'wg set' needs PresharedKey passed as a file or safe method?
         // Actually `wg set wg0 peer <key> preshared-key <file>`
         // Let's write PSK to temp file
-        const pskFile = path.join('/tmp', `psk-${clientPublicKey.slice(0,8)}`);
+        const pskFile = path.join('/tmp', `psk-${clientPublicKey.slice(0, 8)}`);
         fs.writeFileSync(pskFile, clientPresharedKey);
-        
+
         await run(`wg set ${WG_INTERFACE} peer ${clientPublicKey} allowed-ips ${clientIp}/32 preshared-key ${pskFile}`);
         fs.unlinkSync(pskFile);
 

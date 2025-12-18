@@ -24,6 +24,10 @@ class ProxmoxService {
 
     async getLXCList() {
         try {
+            // Defensive check for client before calling .get()
+            if (!this.client || typeof this.client.get !== 'function') {
+                throw new Error('Proxmox API client is not properly initialized');
+            }
             const response = await this.client.get(`/api2/json/nodes/${this.node}/lxc`);
             return response.data.data;
         } catch (error) {
@@ -34,6 +38,10 @@ class ProxmoxService {
 
     async getNextVmid() {
         try {
+            // Defensive check for client before calling .get()
+            if (!this.client || typeof this.client.get !== 'function') {
+                throw new Error('Proxmox API client is not properly initialized');
+            }
             const response = await this.client.get('/api2/json/cluster/nextid');
             return response.data.data;
         } catch (error) {
@@ -72,6 +80,10 @@ class ProxmoxService {
     async getLXCConfig(vmid) {
         try {
             // Endpoint: /nodes/{node}/lxc/{vmid}/config
+            // Defensive check for client before calling .get()
+            if (!this.client || typeof this.client.get !== 'function') {
+                throw new Error('Proxmox API client is not properly initialized');
+            }
             const response = await this.client.get(`/api2/json/nodes/${this.node}/lxc/${vmid}/config`);
             return response.data.data;
         } catch (error) {
@@ -112,6 +124,10 @@ class ProxmoxService {
 
     async getLXCStatus(vmid) {
         try {
+            // Defensive check for client before calling .get()
+            if (!this.client || typeof this.client.get !== 'function') {
+                throw new Error('Proxmox API client is not properly initialized');
+            }
             const response = await this.client.get(`/api2/json/nodes/${this.node}/lxc/${vmid}/status/current`);
             return response.data.data;
         } catch (error) {
@@ -123,6 +139,10 @@ class ProxmoxService {
     async getLXCInterfaces(vmid) {
         try {
             // Retrieve network interfaces to find IP
+            // Defensive check for client before calling .get()
+            if (!this.client || typeof this.client.get !== 'function') {
+                throw new Error('Proxmox API client is not properly initialized');
+            }
             const response = await this.client.get(`/api2/json/nodes/${this.node}/lxc/${vmid}/interfaces`);
             return response.data.data;
         } catch (error) {

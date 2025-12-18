@@ -28,6 +28,11 @@ echo "ℹ️ Using command: $DOCKER_COMPOSE_CMD"
 echo "📥 Pulling latest images..."
 $DOCKER_COMPOSE_CMD pull
 
+
+# Build local images (like vpn)
+echo "🔨 Building local images..."
+$DOCKER_COMPOSE_CMD build
+
 # Restart services
 echo "🔄 Restarting services..."
 $DOCKER_COMPOSE_CMD up -d --remove-orphans

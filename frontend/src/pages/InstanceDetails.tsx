@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Terminal, RotateCw, Cpu, MemoryStick, HardDrive, Camera, History, Download, Trash2, ExternalLink, Shield, Globe, BookOpen, ArrowLeft, Square, Play, Power, Loader2, Plus, Clock, Link as LinkIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -168,7 +169,7 @@ const InstanceDetails = () => {
     }, [id, navigate]);
 
     // Fetch snapshots
-    const fetchSnapshots = async () => {
+    const fetchSnapshots = useCallback(async () => {
         const userStr = localStorage.getItem("user");
         if (!userStr || !id) return;
         const user = JSON.parse(userStr);
@@ -185,11 +186,11 @@ const InstanceDetails = () => {
         } catch (e) {
             console.error("Failed to fetch snapshots", e);
         }
-    };
+    }, [id]);
 
     useEffect(() => {
         if (id) fetchSnapshots();
-    }, [id]);
+    }, [id, fetchSnapshots]);
 
     const handleCreateSnapshot = async () => {
         const name = prompt("Nom du backup (optionnel):");
@@ -308,7 +309,7 @@ const InstanceDetails = () => {
     };
 
     // --- Domain Management ---
-    const fetchDomains = async () => {
+    const fetchDomains = useCallback(async () => {
         try {
             const userStr = localStorage.getItem("user");
             if (!userStr) return;
@@ -324,11 +325,11 @@ const InstanceDetails = () => {
         } catch (error) {
             console.error("Failed to fetch domains", error);
         }
-    };
+    }, [id]);
 
     useEffect(() => {
         if (id) fetchDomains();
-    }, [id]);
+    }, [id, fetchDomains]);
 
     const handleCreateDomain = async () => {
         if (!newDomain.subdomain || !newDomain.port) {
@@ -577,7 +578,7 @@ const InstanceDetails = () => {
 
         try {
             let url = `/api/instances/${id}/toggle`; // Default for start/stop
-            let method = 'POST';
+            const method = 'POST';
 
             if (action === 'restart') {
                 url = `/api/instances/${id}/restart`;

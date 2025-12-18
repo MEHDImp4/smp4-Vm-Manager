@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Globe, Plus, Loader2, Trash2, ExternalLink, Link as LinkIcon, ShieldCheck, AlertCircle } from "lucide-react";

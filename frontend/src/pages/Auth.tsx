@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Cloud, Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";

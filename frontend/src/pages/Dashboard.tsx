@@ -29,6 +29,7 @@ const Dashboard = () => {
   const [instances, setInstances] = useState<Instance[]>([]);
   const [totalPoints, setTotalPoints] = useState(0);
   const [loading, setLoading] = useState(true);
+  const hasProvisioning = instances.some(i => i.status === 'provisioning');
 
   // Authentication & Data Fetching
   useEffect(() => {
@@ -92,7 +93,6 @@ const Dashboard = () => {
 
     // Dynamic Polling Interval
     // If any instance is provisioning, poll fast (2s). Otherwise poll slow (10s).
-    const hasProvisioning = instances.some(i => i.status === 'provisioning');
     const pollInterval = hasProvisioning ? 2000 : 10000;
 
     const interval = setInterval(() => {
@@ -101,7 +101,7 @@ const Dashboard = () => {
     }, pollInterval);
 
     return () => clearInterval(interval);
-  }, [instances.some(i => i.status === 'provisioning')]); // Re-run effect when provisioning state changes
+  }, [hasProvisioning]); // Re-run effect when provisioning state changes
 
   const maxPoints = 500;
   const dailyConsumption = instances

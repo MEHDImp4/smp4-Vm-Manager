@@ -642,10 +642,9 @@ const getVpnConfig = async (req, res) => {
         }
 
         // If config exists, return it
-        // FORCE REGENERATE (Temporary fix for sync issue)
-        // if (instance.vpnConfig) {
-        //    return res.json({ config: instance.vpnConfig });
-        // }
+        if (instance.vpnConfig) {
+            return res.json({ config: instance.vpnConfig });
+        }
 
         // If missing, try to generate it (only if VM is running/has IP)
         if (!instance.vmid) {

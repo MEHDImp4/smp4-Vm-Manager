@@ -188,142 +188,148 @@ const Auth = () => {
           </div>
 
           {/* Forms */}
-          {isLogin ? (
-            <form onSubmit={handleLoginSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="vous@exemple.com"
-                    className="pl-10"
-                    value={loginForm.email}
-                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                  />
-                </div>
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
+          {(() => {
+            if (isLogin) {
+              return (
+                <form onSubmit={handleLoginSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="vous@exemple.com"
+                        className="pl-10"
+                        value={loginForm.email}
+                        onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                      />
+                    </div>
+                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                  </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label htmlFor="login-password">Mot de passe</Label>
-                  <a href="#" className="text-sm text-primary hover:underline">
-                    Mot de passe oublié ?
-                  </a>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-              </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label htmlFor="login-password">Mot de passe</Label>
+                      <a href="#" className="text-sm text-primary hover:underline">
+                        Mot de passe oublié ?
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="pl-10 pr-10"
+                        value={loginForm.password}
+                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                  </div>
 
-              <Button variant="hero" size="lg" className="w-full" disabled={isLoading}>
-                {isLoading ? "Connexion..." : "Se connecter"}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegisterSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="register-name">Nom complet</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="register-name"
-                    type="text"
-                    placeholder="Jean Dupont"
-                    className="pl-10"
-                    value={registerForm.name}
-                    onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
-                  />
+                  <Button variant="hero" size="lg" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Connexion..." : "Se connecter"}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </form>
+              );
+            }
+
+            return (
+              <form onSubmit={handleRegisterSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="register-name">Nom complet</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="register-name"
+                      type="text"
+                      placeholder="Jean Dupont"
+                      className="pl-10"
+                      value={registerForm.name}
+                      onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                    />
+                  </div>
+                  {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                 </div>
-                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="register-email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="register-email"
-                    type="email"
-                    placeholder="vous@exemple.com"
-                    className="pl-10"
-                    value={registerForm.email}
-                    onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="register-email"
+                      type="email"
+                      placeholder="vous@exemple.com"
+                      className="pl-10"
+                      value={registerForm.email}
+                      onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                    />
+                  </div>
+                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="register-password">Mot de passe</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="register-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
-                    value={registerForm.password}
-                    onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
+                <div className="space-y-2">
+                  <Label htmlFor="register-password">Mot de passe</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="register-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10"
+                      value={registerForm.password}
+                      onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
-                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="register-confirm">Confirmer le mot de passe</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="register-confirm"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10"
-                    value={registerForm.confirmPassword}
-                    onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="register-confirm">Confirmer le mot de passe</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="register-confirm"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10"
+                      value={registerForm.confirmPassword}
+                      onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                    />
+                  </div>
+                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
                 </div>
-                {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
-              </div>
 
-              <Button variant="hero" size="lg" className="w-full" disabled={isLoading}>
-                {isLoading ? "Création..." : "Créer mon compte"}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+                <Button variant="hero" size="lg" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Création..." : "Créer mon compte"}
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
 
-              <p className="text-xs text-muted-foreground text-center">
-                En créant un compte, vous acceptez nos{" "}
-                <a href="#" className="text-primary hover:underline">CGU</a> et{" "}
-                <a href="#" className="text-primary hover:underline">politique de confidentialité</a>.
-              </p>
-            </form>
-          )}
+                <p className="text-xs text-muted-foreground text-center">
+                  En créant un compte, vous acceptez nos{" "}
+                  <a href="#" className="text-primary hover:underline">CGU</a> et{" "}
+                  <a href="#" className="text-primary hover:underline">politique de confidentialité</a>.
+                </p>
+              </form>
+            );
+          })()}
         </div>
       </div>
 

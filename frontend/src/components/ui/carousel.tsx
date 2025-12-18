@@ -112,12 +112,11 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
           carouselRef,
           api: api,
           opts,
-          orientation:
-            orientation !== undefined
-              ? orientation
-              : opts?.axis === "y"
-                ? "vertical"
-                : "horizontal",
+          orientation: (() => {
+            if (orientation !== undefined) return orientation;
+            if (opts?.axis === "y") return "vertical";
+            return "horizontal";
+          })(),
           scrollPrev,
           scrollNext,
           canScrollPrev,

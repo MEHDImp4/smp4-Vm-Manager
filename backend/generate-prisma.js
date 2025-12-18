@@ -4,7 +4,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const logInfo = (...args) => {
     if (process.env.NODE_ENV !== 'production') {
-        console.info(...args);
+        process.stdout.write(`${args.join(' ')}\n`);
     }
 };
 

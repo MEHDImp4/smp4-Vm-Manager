@@ -129,11 +129,12 @@ const ChartTooltipContent = React.forwardRef<
       const [item] = payload;
       const key = `${labelKey || item.dataKey || item.name || "value"}`;
       const itemConfig = getPayloadConfigFromPayload(config, item, key);
-
       let value: React.ReactNode | undefined = itemConfig?.label;
+
+      // Prefer explicit labelKey/label overrides before falling back to config label
       if (!labelKey && typeof label === "string") {
         const fallbackLabel = config[label as keyof typeof config]?.label;
-        value = fallbackLabel ?? label;
+        value = fallbackLabel !== undefined ? fallbackLabel : label;
       }
 
       if (labelFormatter) {
@@ -209,7 +210,9 @@ const ChartTooltipContent = React.forwardRef<
                       >
                         <div className="grid gap-1.5">
                           {nestLabel ? tooltipLabel : null}
-                          <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
+                          <span className="text-muted-foreground">
+                            {itemConfig?.label ? itemConfig.label : item.name}
+                          </span>
                         </div>
                         {hasValue && (
                           <span className="font-mono font-medium tabular-nums text-foreground">
@@ -245,10 +248,12 @@ const ChartLegendContent = React.forwardRef<
     return null;
   }
 
+  const alignClass = verticalAlign === "top" ? "pb-3" : "pt-3";
+
   return (
     <div
       ref={ref}
-      className={cn("flex items-center justify-center gap-4", verticalAlign === "top" ? "pb-3" : "pt-3", className)}
+      className={cn("flex items-center justify-center gap-4", alignClass, className)}
     >
       {payload.map((item) => {
         const key = `${nameKey || item.dataKey || "value"}`;

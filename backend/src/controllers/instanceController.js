@@ -7,6 +7,12 @@ const systemOs = require('os');
 const cloudflareService = require('../services/cloudflare.service');
 const vpnService = require('../services/vpn.service');
 
+const debugLog = (...args) => {
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(...args);
+    }
+};
+
 
 const createInstance = async (req, res) => {
     try {
@@ -33,7 +39,7 @@ const createInstance = async (req, res) => {
 
         // 2. Get Next VMID from Proxmox
         const vmid = await proxmoxService.getNextVmid();
-        console.log(`Allocated VMID ${vmid} for instance ${name}`);
+        debugLog(`Allocated VMID ${vmid} for instance ${name}`);
 
         // Generate Technical Hostname: [UserID]-[UserName]-[Template]-[InstanceID]
         // Sanitize user name (remove spaces, special chars)
@@ -72,17 +78,17 @@ const createInstance = async (req, res) => {
         // 4. Background Process: Clone, Start, Configure
         (async () => {
             try {
-                console.log(`[Background] Cloning VM ${vmid} from template ${templateVersion.proxmoxId} as ${technicalHostname}...`);
+                debugLog(`[Background] Cloning VM ${vmid} from template ${templateVersion.proxmoxId} as ${technicalHostname}...`);
                 // Use technicalHostname for Proxmox
                 const upid = await proxmoxService.cloneLXC(templateVersion.proxmoxId, vmid, technicalHostname);
 
                 await proxmoxService.waitForTask(upid);
-                console.log(`[Background] Clone complete for ${vmid}. Starting...`);
+                debugLog(`[Background] Clone complete for ${vmid}. Starting...`);
 
                 // Set User & Date Tag
                 try {
                     const dateTag = new Date().toISOString().split('T')[0];
-                    console.log(`[Background] Setting tags '${sanitizedUser},${template},${dateTag}' for ${vmid}...`);
+                    debugLog(`[Background] Setting tags '${sanitizedUser},${template},${dateTag}' for ${vmid}...`);
                     await proxmoxService.configureLXC(vmid, { tags: `${sanitizedUser},${template},${dateTag}` });
                 } catch (tagError) {
                     console.warn(`[Background] Failed to set tag for ${vmid}:`, tagError.message);
@@ -95,24 +101,26 @@ const createInstance = async (req, res) => {
                 await proxmoxService.startLXC(vmid);
                 // Note: We do NOT set status to 'online' here anymore. We wait for SSH config.
 
-                console.log(`[Background] LXC ${vmid} started.`);
+                debugLog(`[Background] LXC ${vmid} started.`);
 
                 // Wait for IP and Configure 'smp4' user
                 let ip = null;
                 let attempts = 0;
+                // Sequential polling is intentional: Proxmox needs time to report a non-loopback IP
                 while (!ip && attempts < 30) { // Wait up to 60s
                     await new Promise(r => setTimeout(r, 2000));
                     const interfaces = await proxmoxService.getLXCInterfaces(vmid);
                     const eth0 = interfaces.find(i => i.name === 'eth0');
                     if (eth0 && eth0.inet) {
-                        ip = eth0.inet.split('/')[0];
-                        if (ip === '127.0.0.1') ip = null; // Ignore loopback if reported incorrectly
+                        const candidateIp = eth0.inet.split('/')[0];
+                        // Ignore loopback addresses that Proxmox may temporarily report
+                        ip = candidateIp && !candidateIp.startsWith('127.') ? candidateIp : null;
                     }
                     attempts++;
                 }
 
                 if (ip) {
-                    console.log(`[Background] VM ${vmid} is up at ${ip}. Configuring 'smp4' user...`);
+                    debugLog(`[Background] VM ${vmid} is up at ${ip}. Configuring 'smp4' user...`);
 
                     // Allow SSH to come up fully (sometimes IP is ready before SSHd)
                     await new Promise(r => setTimeout(r, 10000));
@@ -136,7 +144,7 @@ const createInstance = async (req, res) => {
                         // 5. Set Password for root (LAST - changes root password, locks us out)
                         await sshService.execCommand(ip, `echo "root:${rootPassword}" | chpasswd`);
 
-                        console.log(`[Background] User 'smp4' configured successfully for ${vmid}`);
+                        debugLog(`[Background] User 'smp4' configured successfully for ${vmid}`);
 
                         // 6. Security: Configure Firewall
                         try {
@@ -174,21 +182,23 @@ const createInstance = async (req, res) => {
                             if (backendIp) {
                                 // SECURITY HARDENING: Block VM from attacking Unraid Admin Interfaces
                                 const sensitivePorts = [22, 80, 85, 443, 8006];
-                                for (const port of sensitivePorts) {
-                                    await proxmoxService.addFirewallRule(vmid, {
-                                        type: 'out',
-                                        action: 'DROP',
-                                        dest: backendIp,
-                                        dport: port,
-                                        proto: 'tcp',
-                                        enable: 1,
-                                        comment: `Block access to Host Port ${port}`
-                                    });
-                                }
+                                await Promise.all(
+                                    sensitivePorts.map((port) =>
+                                        proxmoxService.addFirewallRule(vmid, {
+                                            type: 'out',
+                                            action: 'DROP',
+                                            dest: backendIp,
+                                            dport: port,
+                                            proto: 'tcp',
+                                            enable: 1,
+                                            comment: `Block access to Host Port ${port}`
+                                        })
+                                    )
+                                );
                             }
 
                             // 6b. Allow ALL Inbound Traffic
-                            console.log(`[Background] Adding firewall rule: ACCEPT ALL INBOUND for ${vmid}...`);
+                            debugLog(`[Background] Adding firewall rule: ACCEPT ALL INBOUND for ${vmid}...`);
                             await proxmoxService.addFirewallRule(vmid, {
                                 type: 'in',
                                 action: 'ACCEPT',
@@ -197,7 +207,7 @@ const createInstance = async (req, res) => {
                             });
 
                             // 6c. Allow LAN Access but Protect Gateway
-                            console.log(`[Background] Adding firewall DROP rule for Gateway 192.168.1.254 to ${vmid}...`);
+                            debugLog(`[Background] Adding firewall DROP rule for Gateway 192.168.1.254 to ${vmid}...`);
                             await proxmoxService.addFirewallRule(vmid, {
                                 type: 'out',
                                 action: 'DROP',
@@ -206,10 +216,10 @@ const createInstance = async (req, res) => {
                                 comment: 'Block access to Gateway Admin Interface'
                             });
 
-                            console.log(`[Background] Firewall rules added for ${vmid}`);
+                            debugLog(`[Background] Firewall rules added for ${vmid}`);
 
                             // 7. Security: Enable Firewall
-                            console.log(`[Background] Enabling firewall for ${vmid}...`);
+                            debugLog(`[Background] Enabling firewall for ${vmid}...`);
                             await proxmoxService.setFirewallOptions(vmid, { enable: 1 });
                         } catch (fwError) {
                             console.warn(`[Background] Failed to add firewall rule via API:`, fwError.message);
@@ -224,7 +234,7 @@ const createInstance = async (req, res) => {
                 // Create VPN Client
                 try {
                     if (ip) {
-                        console.log(`[Background] Creating WireGuard VPN access for ${ip}...`);
+                        debugLog(`[Background] Creating WireGuard VPN access for ${ip}...`);
                         const vpnData = await vpnService.createClient(ip);
 
                         // Parse VPN Config to get PublicKey (simple helper)
@@ -236,7 +246,7 @@ const createInstance = async (req, res) => {
                                 vpnConfig: vpnData.config
                             }
                         });
-                        console.log(`[Background] VPN configured for ${vmid}`);
+                        debugLog(`[Background] VPN configured for ${vmid}`);
                     }
                 } catch (vpnError) {
                     console.error(`[Background] VPN creation failed for ${vmid}:`, vpnError.message);
@@ -248,7 +258,7 @@ const createInstance = async (req, res) => {
                     where: { id: instance.id },
                     data: { status: 'online' }
                 });
-                console.log(`[Background] Instance ${instance.id} is now ONLINE.`);
+                debugLog(`[Background] Instance ${instance.id} is now ONLINE.`);
 
 
             } catch (bgError) {
@@ -318,11 +328,11 @@ const toggleInstanceStatus = async (req, res) => {
         let newStatus;
 
         if (currentStatus === "online" || currentStatus === "running") {
-            console.log(`Stopping instance ${instance.vmid}...`);
+            debugLog(`Stopping instance ${instance.vmid}...`);
             await proxmoxService.stopLXC(instance.vmid);
             newStatus = "stopped";
         } else {
-            console.log(`Starting instance ${instance.vmid}...`);
+            debugLog(`Starting instance ${instance.vmid}...`);
             await proxmoxService.startLXC(instance.vmid);
             newStatus = "online";
         }
@@ -377,7 +387,7 @@ const deleteInstance = async (req, res) => {
         // 1. Stop if running (with wait)
         if (instance.vmid) {
             try {
-                console.log(`Ensuring VM ${instance.vmid} is stopped before deletion...`);
+                debugLog(`Ensuring VM ${instance.vmid} is stopped before deletion...`);
                 await proxmoxService.stopLXC(instance.vmid);
                 // Wait for stop to complete
                 await new Promise(r => setTimeout(r, 3000));
@@ -387,7 +397,7 @@ const deleteInstance = async (req, res) => {
 
             // 2. Delete from Proxmox
             try {
-                console.log(`Deleting VM ${instance.vmid} from Proxmox...`);
+                debugLog(`Deleting VM ${instance.vmid} from Proxmox...`);
                 await proxmoxService.deleteLXC(instance.vmid);
             } catch (e) {
                 console.warn(`Proxmox delete failed (VM may not exist): ${e.message}`);
@@ -398,13 +408,13 @@ const deleteInstance = async (req, res) => {
         // 3a. Clean up VPN (if exists)
         // 3a. Clean up VPN (if exists)
         if (instance.vpnConfig) {
-            console.log(`Cleaning up VPN for instance ${id}...`);
+            debugLog(`Cleaning up VPN for instance ${id}...`);
             await vpnService.deleteClient(instance.vpnConfig);
         }
 
         // 3b. Clean up Domains
         if (instance.domains && instance.domains.length > 0) {
-            console.log(`Cleaning up ${instance.domains.length} domains for instance ${id}...`);
+            debugLog(`Cleaning up ${instance.domains.length} domains for instance ${id}...`);
             for (const domain of instance.domains) {
                 const fullHostname = `${domain.subdomain}.smp4.xyz`;
                 await cloudflareService.removeTunnelIngress(fullHostname);
@@ -449,29 +459,32 @@ const getInstanceStats = async (req, res) => {
             const status = await proxmoxService.getLXCStatus(instance.vmid);
             const interfaces = await proxmoxService.getLXCInterfaces(instance.vmid);
 
-            // Calculate metrics
-            // CPU: returns standard linux load or similar? Proxmox 'cpu' is typically usage ratio (0.0 to 1.0) or percentage?
-            // "cpu": 0.00288204680856082
-            // We'll treat it as ratio 0-1 and multiply on frontend or here. Let's return percentage (0-100)
-            const cpuPercent = (status.cpu * 100) || 0;
+            // Calculate metrics with explicit guards for readability
+            let cpuPercent = 0;
+            if (typeof status.cpu === 'number') {
+                cpuPercent = status.cpu * 100;
+            }
 
-            // RAM
-            const ramPercent = status.maxmem ? (status.mem / status.maxmem) * 100 : 0;
+            let ramPercent = 0;
+            if (status.maxmem) {
+                ramPercent = (status.mem / status.maxmem) * 100;
+            }
 
-            // Storage
             // Use instance.storage (GB) from DB as the source of truth for total size
-            // Parse int to handle potential string formats like "12GB" or "12"
-            const storageGB = instance.storage ? parseInt(instance.storage) : 0;
-            const maxDiskBytes = storageGB > 0
-                ? storageGB * 1024 * 1024 * 1024
-                : status.maxdisk;
+            const storageGB = instance.storage ? parseInt(instance.storage, 10) : 0;
+            let maxDiskBytes = status.maxdisk;
+            if (storageGB > 0) {
+                maxDiskBytes = storageGB * 1024 * 1024 * 1024;
+            }
 
             const storagePercent = maxDiskBytes ? (status.disk / maxDiskBytes) * 100 : 0;
 
-            // IP
             // interfaces is array. Find eth0.
+            let ip = null;
             const eth0 = interfaces.find(i => i.name === 'eth0');
-            const ip = eth0 && eth0.inet ? eth0.inet.split('/')[0] : null;
+            if (eth0?.inet) {
+                ip = eth0.inet.split('/')[0];
+            }
 
             res.json({
                 cpu: parseFloat(cpuPercent.toFixed(1)),
@@ -683,11 +696,11 @@ const getVpnConfig = async (req, res) => {
             const eth0 = interfaces.find(i => i.name === 'eth0');
             const ip = eth0 && eth0.inet ? eth0.inet.split('/')[0] : null;
 
-            if (!ip || ip === '127.0.0.1') {
+            if (!ip || ip.startsWith('127.')) {
                 return res.status(400).json({ error: "Instance must be running to generate VPN config" });
             }
 
-            console.log(`[VPN] Generating missing config for ${instance.id} (${ip})...`);
+            debugLog(`[VPN] Generating missing config for ${instance.id} (${ip})...`);
             const vpnData = await vpnService.createClient(ip);
 
             // Save to DB

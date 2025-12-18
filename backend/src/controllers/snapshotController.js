@@ -4,10 +4,7 @@ const proxmoxService = require('../services/proxmox.service');
 
 const MAX_SNAPSHOTS = 3;
 
-/**
- * Create a snapshot for an instance
- * POST /instances/:id/snapshots
- */
+// Create a snapshot for an instance (POST /instances/:id/snapshots)
 const createSnapshot = async (req, res) => {
     try {
         const { id } = req.params;
@@ -81,10 +78,7 @@ const createSnapshot = async (req, res) => {
     }
 };
 
-/**
- * Get all snapshots for an instance
- * GET /instances/:id/snapshots
- */
+// Get all snapshots for an instance (GET /instances/:id/snapshots)
 const getSnapshots = async (req, res) => {
     try {
         const { id } = req.params;
@@ -116,10 +110,7 @@ const getSnapshots = async (req, res) => {
     }
 };
 
-/**
- * Restore an instance to a snapshot
- * POST /instances/:id/snapshots/:snapId/restore
- */
+// Restore an instance to a snapshot (POST /instances/:id/snapshots/:snapId/restore)
 const restoreSnapshot = async (req, res) => {
     try {
         const { id, snapId } = req.params;
@@ -177,10 +168,7 @@ const restoreSnapshot = async (req, res) => {
     }
 };
 
-/**
- * Delete a snapshot
- * DELETE /instances/:id/snapshots/:snapId
- */
+// Delete a snapshot (DELETE /instances/:id/snapshots/:snapId)
 const deleteSnapshot = async (req, res) => {
     try {
         const { id, snapId } = req.params;
@@ -224,10 +212,7 @@ const deleteSnapshot = async (req, res) => {
     }
 };
 
-/**
- * Download a snapshot (creates a backup and provides download)
- * GET /instances/:id/snapshots/:snapId/download
- */
+// Download a snapshot: create backup and return metadata (GET /instances/:id/snapshots/:snapId/download)
 const downloadSnapshot = async (req, res) => {
     try {
         const { id, snapId } = req.params;

@@ -30,7 +30,7 @@ const CloudflareService = {
         try {
             // 1. Get current configuration
             const configResponse = await client.get(`/accounts/${ACCOUNT_ID}/cfd_tunnel/${TUNNEL_ID}/configurations`);
-            const currentConfig = configResponse.data.result.config;
+            const currentConfig = configResponse.data.result.config || {};
 
             // 2. Prepare new ingress rule
             const newIngressRule = {
@@ -38,21 +38,19 @@ const CloudflareService = {
                 service: serviceUrl
             };
 
-            // 3. Insert before the last rule (catch-all 404)
-            const ingress = [...currentConfig.ingress];
-            // Assuming the last rule is the catch-all. We insert effectively at second to last position? 
-            // Or just check if the last one is catch-all.
-            // Safest: Insert at the beginning or before the catch-all.
-            // Let's insert at the beginning to ensure precedence (or usually specific matches win anyway).
-            // Cloudflare evaluates top-down. Specific hostnames should be fine anywhere before catch-all.
+            // 3. Insert or Init Ingress
+            let ingress = currentConfig.ingress ? [...currentConfig.ingress] : [];
 
             // Find 404 rule index
             const catchAllIndex = ingress.findIndex(r => r.service === 'http_status:404');
+
             if (catchAllIndex !== -1) {
+                // Insert before catch-all
                 ingress.splice(catchAllIndex, 0, newIngressRule);
             } else {
-                // Determine if there is a catch-all at all, if not, append.
-                ingress.unshift(newIngressRule);
+                // If no catch-all, append rule AND add catch-all
+                ingress.push(newIngressRule);
+                ingress.push({ service: 'http_status:404' });
             }
 
             // 4. Update configuration

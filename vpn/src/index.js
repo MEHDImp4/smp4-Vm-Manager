@@ -162,6 +162,10 @@ app.post('/client', async (req, res) => {
         await run(`wg set ${WG_INTERFACE} peer ${clientPublicKey} allowed-ips ${clientIp}/32 preshared-key ${pskFile}`);
         fs.unlinkSync(pskFile);
 
+        // PERSISTENCE FIX: Force save config immediately
+        console.log('Persisting configuration...');
+        await run(`wg showconf ${WG_INTERFACE} > ${WG_CONF}`);
+
         // Add Firewall Rule: Allow this client IP to access ONLY the target VM IP
         // We rely on the generic FORWARD ACCEPT, but we want to restrict.
         // Actually, the default config has `PostUp = iptables -A FORWARD -i ${WG_INTERFACE} -j ACCEPT` which allows ALL.

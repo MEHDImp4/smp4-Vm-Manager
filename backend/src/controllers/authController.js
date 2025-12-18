@@ -131,9 +131,11 @@ const updatePassword = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });
-    };
+    }
+};
 
-    const updatePassword = async (req, res) => {
+const uploadAvatar = async (req, res) => {
+    if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
     }
 

@@ -1,13 +1,14 @@
-import '@testing-library/jest-dom';
-import { vi } from 'vitest';
-
 // jsdom (in Vitest) does not expose SharedArrayBuffer by default, but some deps
 // (whatwg-url → webidl-conversions) expect it. Provide a minimal shim to keep
 // their feature detection from throwing during test startup.
-if (!('SharedArrayBuffer' in globalThis)) {
+// We use a more robust check to ensure it's properly shimmed.
+if (typeof globalThis.SharedArrayBuffer === 'undefined' || !globalThis.SharedArrayBuffer.prototype) {
   // @ts-expect-error - assign shim for tests only
   globalThis.SharedArrayBuffer = ArrayBuffer;
 }
+
+import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

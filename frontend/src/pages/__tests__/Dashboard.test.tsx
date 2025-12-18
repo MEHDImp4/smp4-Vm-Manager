@@ -50,15 +50,19 @@ describe('Dashboard Page', () => {
     });
   });
 
-  it('should render dashboard title', () => {
+  it('should render dashboard title', async () => {
     render(<Dashboard />);
-    expect(screen.getByText(/mes instances/i)).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText(/mes instances/i)).toBeTruthy();
+    });
   });
 
-  it('should display create instance link', () => {
+  it('should display create instance link', async () => {
     render(<Dashboard />);
-    // The action uses Link asChild, so the accessible element is a link
-    expect(screen.getByRole('link', { name: /nouvelle vm/i })).toBeTruthy();
+    await waitFor(() => {
+      // The action uses Link asChild, so the accessible element is a link
+      expect(screen.getByRole('link', { name: /nouvelle vm/i })).toBeTruthy();
+    });
   });
 
   it('should load and display instances', async () => {

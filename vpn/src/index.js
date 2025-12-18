@@ -8,10 +8,10 @@ const app = express();
 app.use(bodyParser.json());
 
 const WG_INTERFACE = 'wg0';
-const WG_PORT = 51820;
+const WG_PORT = 51821;
 const WG_DIR = '/etc/wireguard';
 const WG_CONF = path.join(WG_DIR, `${WG_INTERFACE}.conf`);
-const BASE_SUBNET = '10.8.0';
+const BASE_SUBNET = '10.253.0';
 
 // Ensure config dir exists
 if (!fs.existsSync(WG_DIR)) {
@@ -98,9 +98,10 @@ app.post('/client', async (req, res) => {
             return res.status(400).json({ error: 'targetIp is required' });
         }
 
-        // Generate Client Keys
+        // Generate Client Keys & PSK
         const clientPrivateKey = await run('wg genkey');
         const clientPublicKey = await run(`echo "${clientPrivateKey}" | wg pubkey`);
+        const clientPresharedKey = await run('wg genpsk');
 
         // Allocate IP
         // Find next available IP. This is naive for now: just random or sequential.
@@ -126,7 +127,14 @@ app.post('/client', async (req, res) => {
         console.log(` Creating client ${clientPublicKey.slice(0, 8)}... IP: ${clientIp} -> Target: ${targetIp}`);
 
         // Add Peer to WireGuard
-        await run(`wg set ${WG_INTERFACE} peer ${clientPublicKey} allowed-ips ${clientIp}/32`);
+        // Note: 'wg set' needs PresharedKey passed as a file or safe method?
+        // Actually `wg set wg0 peer <key> preshared-key <file>`
+        // Let's write PSK to temp file
+        const pskFile = path.join('/tmp', `psk-${clientPublicKey.slice(0,8)}`);
+        fs.writeFileSync(pskFile, clientPresharedKey);
+        
+        await run(`wg set ${WG_INTERFACE} peer ${clientPublicKey} allowed-ips ${clientIp}/32 preshared-key ${pskFile}`);
+        fs.unlinkSync(pskFile);
 
         // Add Firewall Rule: Allow this client IP to access ONLY the target VM IP
         // We rely on the generic FORWARD ACCEPT, but we want to restrict.
@@ -146,7 +154,7 @@ app.post('/client', async (req, res) => {
         // Generate Client Config
         // We need the server's public IP or hostname. We'll read it from ENV or auto-detect?
         // For localhost dev, it's localhost. For prod, it's the domain.
-        const endpoint = process.env.VPN_ENDPOINT || 'vpn.smp4.xyz:51820'; // Default placeholder
+        const endpoint = process.env.VPN_ENDPOINT || 'smp4.smp4.xyz:51821'; // Default placeholder
 
         const clientConfig = `[Interface]
 PrivateKey = ${clientPrivateKey}
@@ -155,6 +163,7 @@ DNS = 192.168.1.254
 
 [Peer]
 PublicKey = ${serverPublicKey}
+PresharedKey = ${clientPresharedKey}
 AllowedIPs = ${BASE_SUBNET}.0/24, ${targetIp}/32
 Endpoint = ${endpoint}
 PersistentKeepalive = 25

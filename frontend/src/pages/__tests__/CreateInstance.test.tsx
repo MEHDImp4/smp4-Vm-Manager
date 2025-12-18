@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '../../test/test-utils';
 import userEvent from '@testing-library/user-event';
@@ -6,7 +7,7 @@ import CreateInstance from '../CreateInstance';
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
   useLocation: () => ({ pathname: '/create' }),
-  Link: ({ to, children }: any) => <a href={to}>{children}</a>,
+  Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a>,
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
@@ -25,8 +26,8 @@ describe('CreateInstance Page', () => {
     );
 
     // Default: templates fetch returns an array of Template objects
-    global.fetch = vi.fn((input: any) => {
-      const url = typeof input === 'string' ? input : input?.toString();
+    global.fetch = vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
       if (url && url.includes('/api/templates')) {
         return Promise.resolve({
           ok: true,
@@ -82,8 +83,8 @@ describe('CreateInstance Page', () => {
   it('should submit form with valid data', async () => {
     const user = userEvent.setup();
     // Mock both templates and instance creation
-    global.fetch = vi.fn((input: any, init?: any) => {
-      const url = typeof input === 'string' ? input : input?.toString();
+    global.fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
       if (url && url.includes('/api/templates')) {
         return Promise.resolve({
           ok: true,

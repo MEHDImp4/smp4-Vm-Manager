@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '../../test/test-utils';
 import userEvent from '@testing-library/user-event';
@@ -8,7 +9,7 @@ const navigateMock = vi.fn();
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
   useLocation: () => ({ pathname: '/auth' }),
-  Link: ({ to, children }: any) => <a href={to}>{children}</a>,
+  Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a>,
 }));
 
 vi.mock('@/hooks/use-toast', () => ({

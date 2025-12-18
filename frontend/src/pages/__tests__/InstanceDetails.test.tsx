@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '../../test/test-utils';
 import userEvent from '@testing-library/user-event';
@@ -6,7 +7,7 @@ import InstanceDetails from '../InstanceDetails';
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
   useParams: () => ({ id: 'instance1' }),
-  Link: ({ to, children }: any) => <a href={to}>{children}</a>,
+  Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a>,
 }));
 
 // InstanceDetails uses sonner's toast; see mock below
@@ -21,8 +22,8 @@ describe('InstanceDetails Page', () => {
     localStorage.getItem = vi.fn(() => JSON.stringify({ token: 'test-token' }));
 
     // URL-aware fetch mocks for the component requests
-    global.fetch = vi.fn((input: any) => {
-      const url = typeof input === 'string' ? input : input?.toString();
+    global.fetch = vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
       if (url && url.endsWith('/api/instances')) {
         return Promise.resolve({
           ok: true,
@@ -85,8 +86,8 @@ describe('InstanceDetails Page', () => {
 
   it('should show start button when stopped', async () => {
     // Override instances fetch to return stopped status
-    global.fetch = vi.fn((input: any) => {
-      const url = typeof input === 'string' ? input : input?.toString();
+    global.fetch = vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
       if (url && url.endsWith('/api/instances')) {
         return Promise.resolve({
           ok: true,

@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '../../test/test-utils';
 import Dashboard from '../Dashboard';
@@ -5,7 +6,7 @@ import Dashboard from '../Dashboard';
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
   useLocation: () => ({ pathname: '/dashboard' }),
-  Link: ({ to, children }: any) => <a href={to}>{children}</a>,
+  Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a>,
 }));
 
 // Dashboard uses sonner's toast; keep sonner mock below
@@ -24,8 +25,8 @@ describe('Dashboard Page', () => {
       })
     );
 
-    global.fetch = vi.fn((input: any) => {
-      const url = typeof input === 'string' ? input : input?.toString();
+    global.fetch = vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
       if (url && url.includes('/api/instances')) {
         return Promise.resolve({
           ok: true,

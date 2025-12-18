@@ -43,7 +43,7 @@ services:
       - smp4-net
 
   vpn:
-    build: ./vpn
+    image: mehdimp4/smp4-vm-manager-vpn:latest
     container_name: smp4-vpn
     cap_add:
       - NET_ADMIN

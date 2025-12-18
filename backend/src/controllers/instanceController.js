@@ -496,12 +496,21 @@ const getInstanceStats = async (req, res) => {
 const createDomain = async (req, res) => {
     try {
         const { id } = req.params;
-        const { port } = req.body; // Subdomain is now auto-generated
+        const { port, customSuffix } = req.body;
         const userId = req.user.id;
 
         // Validation
         if (!port) {
             return res.status(400).json({ error: "Port is required" });
+        }
+        if (!customSuffix) {
+            return res.status(400).json({ error: "Custom suffix is required" });
+        }
+
+        // Sanitize suffix: alphanumeric only, lowercase
+        const cleanSuffix = customSuffix.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (cleanSuffix.length < 3) {
+            return res.status(400).json({ error: "Suffix must be at least 3 alphanumeric characters" });
         }
 
         // Fetch Instance AND User
@@ -518,19 +527,16 @@ const createDomain = async (req, res) => {
             return res.status(404).json({ error: "Instance or User not found" });
         }
 
-        // Check limits (e.g. 1 domain per instance now? or allow multiple ports on same name? No, name is unique)
-        // If the user wants multiple ports, they can't with this scheme unless we append port to name
-        // For now, let's stick to the generated name. If it exists, prevent duplicate (or maybe return existing?)
+        // Check limits
         if (instance.domains.length >= 3) {
             return res.status(400).json({ error: "Maximum of 3 domains per instance reached" });
         }
 
-        // Generate Subdomain: [username]-[instancename]
-        // Sanitize: lowercase, only alphanumeric, replace spaces with dash
+        // Generate Subdomain: [username]-[instancename]-[suffix]
         const cleanUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const cleanInstance = instance.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-        // Remove consecutive dashes and trailing/leading dashes
-        const subdomain = `${cleanUser}-${cleanInstance}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+        const subdomain = `${cleanUser}-${cleanInstance}-${cleanSuffix}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
 
         // Check if subdomain is taken (global check)
         const existingDomain = await prisma.domain.findUnique({

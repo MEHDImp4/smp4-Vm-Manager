@@ -10,6 +10,7 @@ env:
   DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BACKEND_IMAGE: mehdimp4/smp4-vm-manager-backend
   FRONTEND_IMAGE: mehdimp4/smp4-vm-manager-frontend
+  VPN_IMAGE: mehdimp4/smp4-vm-manager-vpn
 
 jobs:
   build-and-push:
@@ -48,3 +49,12 @@ jobs:
           tags: ${{ env.FRONTEND_IMAGE }}:latest,${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
           cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push VPN
+        uses: docker/build-push-action@v5
+        with:
+          context: ./vpn
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.VPN_IMAGE }}:latest,${{ env.VPN_IMAGE }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.VPN_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.VPN_IMAGE }}:buildcache,mode=max

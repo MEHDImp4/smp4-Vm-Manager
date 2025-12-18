@@ -8,10 +8,11 @@ const InstanceDomains = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [domains, setDomains] = useState<any[]>([]);
-    const [newDomain, setNewDomain] = useState({ port: "" });
+    const [newDomain, setNewDomain] = useState({ port: "", suffix: "" });
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [instanceName, setInstanceName] = useState("");
+    const [userName, setUserName] = useState("");
 
     // Fetch domains and instance info
     useEffect(() => {
@@ -23,6 +24,7 @@ const InstanceDomains = () => {
                     return;
                 }
                 const user = JSON.parse(userStr);
+                setUserName(user.name?.toLowerCase().replace(/[^a-z0-9]/g, '') || "user");
 
                 // Fetch Instance Name (lightweight check)
                 const instRes = await fetch("/api/instances", {
@@ -31,7 +33,7 @@ const InstanceDomains = () => {
                 if (instRes.ok) {
                     const instances = await instRes.json();
                     const found = instances.find((i: any) => i.id === id);
-                    if (found) setInstanceName(found.name);
+                    if (found) setInstanceName(found.name.toLowerCase().replace(/[^a-z0-9]/g, '-'));
                 }
 
                 // Fetch Domains
@@ -54,8 +56,8 @@ const InstanceDomains = () => {
     }, [id, navigate]);
 
     const handleCreateDomain = async () => {
-        if (!newDomain.port) {
-            toast.error("Veuillez indiquer un port");
+        if (!newDomain.port || !newDomain.suffix) {
+            toast.error("Veuillez remplir tous les champs");
             return;
         }
 
@@ -74,13 +76,14 @@ const InstanceDomains = () => {
                     "Authorization": `Bearer ${user.token}`
                 },
                 body: JSON.stringify({
-                    port: parseInt(newDomain.port)
+                    port: parseInt(newDomain.port),
+                    customSuffix: newDomain.suffix
                 })
             });
 
             if (response.ok) {
                 toast.success("Domaine configuré avec succès !", { id: toastId });
-                setNewDomain({ port: "" });
+                setNewDomain({ port: "", suffix: "" });
 
                 // Refresh list
                 const domRes = await fetch(`/api/instances/${id}/domains`, {
@@ -177,10 +180,21 @@ const InstanceDomains = () => {
 
                             <div className="space-y-4 relative z-10">
                                 <div className="p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                                    <h3 className="text-sm font-medium text-indigo-400 mb-1">Format de domaine automatique</h3>
-                                    <p className="text-xs text-muted-foreground font-mono">
-                                        [utilisateur]-[instance].smp4.xyz
+                                    <h3 className="text-sm font-medium text-indigo-400 mb-1">Aperçu</h3>
+                                    <p className="text-xs text-muted-foreground font-mono break-all">
+                                        {userName}-{instanceName}-{newDomain.suffix || "suffix"}.smp4.xyz
                                     </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-muted-foreground">Nom du service</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Ex: map, dynmap, api..."
+                                        value={newDomain.suffix}
+                                        onChange={(e) => setNewDomain({ ...newDomain, suffix: e.target.value.replace(/[^a-z0-9]/gi, '') })}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-colors"
+                                    />
                                 </div>
 
                                 <div className="space-y-2">
@@ -192,12 +206,12 @@ const InstanceDomains = () => {
                                         onChange={(e) => setNewDomain({ ...newDomain, port: e.target.value })}
                                         className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-colors"
                                     />
-                                    <p className="text-xs text-muted-foreground">Le port sur lequel votre application écoute dans la VM.</p>
+                                    <p className="text-xs text-muted-foreground">Port interne dans la VM.</p>
                                 </div>
 
                                 <Button
                                     onClick={handleCreateDomain}
-                                    disabled={actionLoading || !newDomain.port}
+                                    disabled={actionLoading || !newDomain.port || !newDomain.suffix}
                                     className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white shadow-lg shadow-primary/20 py-6"
                                 >
                                     {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Créer l'accès"}

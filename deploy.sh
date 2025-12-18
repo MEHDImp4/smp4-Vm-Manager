@@ -29,9 +29,6 @@ echo "📥 Pulling latest images..."
 $DOCKER_COMPOSE_CMD pull
 
 
-# Build local images (like vpn)
-echo "🔨 Building local images..."
-$DOCKER_COMPOSE_CMD build
 
 # Restart services
 echo "🔄 Restarting services..."

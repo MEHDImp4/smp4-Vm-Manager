@@ -12,9 +12,7 @@ const Footer = () => {
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                 <Cloud className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">
-                Mini<span className="gradient-text">Cloud</span>
-              </span>
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">SMP4</span>
             </Link>
             <p className="text-muted-foreground text-sm mb-4">
               Containers et VM légères pour apprendre et expérimenter.

@@ -1055,6 +1055,22 @@ const InstanceDetails = () => {
                                         </p>
                                     </div>
                                 </div>
+
+                                <div className="flex gap-4 p-4 rounded-lg bg-white/5 border border-white/5">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-bold text-sm">3</div>
+                                    <div>
+                                        <h4 className="font-medium mb-1 text-foreground">Accès VPN (Recommandé)</h4>
+                                        <div className="text-sm text-muted-foreground space-y-2">
+                                            <p>Pour accéder à votre VM de manière sécurisée et accéder aux services locaux :</p>
+                                            <ol className="list-decimal pl-4 space-y-1 text-xs marker:text-muted-foreground">
+                                                <li>Téléchargez votre fichier de configuration via le bouton <strong>VPN Config</strong> ci-dessus.</li>
+                                                <li>Installez le client officiel <a href="https://www.wireguard.com/install/" target="_blank" rel="noreferrer" className="text-primary hover:underline">WireGuard</a>.</li>
+                                                <li>Importez le fichier <code className="bg-black/50 px-1 py-0.5 rounded text-secondary font-mono">.conf</code> téléchargé.</li>
+                                                <li>Activez la connexion ("Activate") pour accéder à l'IP locale.</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1083,7 +1099,7 @@ const InstanceDetails = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 };
 

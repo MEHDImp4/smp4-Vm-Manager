@@ -102,6 +102,43 @@ const CloudflareService = {
             console.error("[Cloudflare] Error removing ingress:", error.response?.data || error.message);
             throw new Error("Failed to update Cloudflare Tunnel");
         }
+    },
+
+    /**
+     * Remove multiple ingress rules by hostname (Bulk Operation)
+     * @param {string[]} hostnames - Array of full hostnames to remove
+     */
+    removeMultipleTunnelIngress: async (hostnames) => {
+        if (!ACCOUNT_ID || !API_TOKEN || !TUNNEL_ID) {
+            throw new Error("Missing Cloudflare credentials");
+        }
+        if (!hostnames || hostnames.length === 0) return true;
+
+        try {
+            const configResponse = await client.get(`/accounts/${ACCOUNT_ID}/cfd_tunnel/${TUNNEL_ID}/configurations`);
+            const currentConfig = configResponse.data.result.config;
+
+            // Filter out ALL provided hostnames
+            const newIngress = currentConfig.ingress.filter(r => !hostnames.includes(r.hostname));
+
+            if (newIngress.length === currentConfig.ingress.length) {
+                console.log(`[Cloudflare] No matching rules found for provided hostnames.`);
+                return false;
+            }
+
+            await client.put(`/accounts/${ACCOUNT_ID}/cfd_tunnel/${TUNNEL_ID}/configurations`, {
+                config: {
+                    ...currentConfig,
+                    ingress: newIngress
+                }
+            });
+
+            console.log(`[Cloudflare] Removed ingress rules for: ${hostnames.join(', ')}`);
+            return true;
+        } catch (error) {
+            console.error("[Cloudflare] Error removing multiple ingress:", error.response?.data || error.message);
+            throw new Error("Failed to update Cloudflare Tunnel");
+        }
     }
 };
 

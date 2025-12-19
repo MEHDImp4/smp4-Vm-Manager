@@ -216,7 +216,7 @@ const Account = () => {
                             <Cloud className="w-5 h-5 text-white" />
                         </div>
                         <span className="text-xl font-bold tracking-tight">
-                            Mini<span className="gradient-text">Cloud</span>
+                            SMP<span className="gradient-text">4</span>
                         </span>
                     </Link>
                     <div className="flex items-center gap-4">
@@ -473,7 +473,7 @@ const Account = () => {
                             Se déconnecter
                         </Button>
                         <p className="text-center text-xs text-muted-foreground mt-4">
-                            MiniCloud v1.0.0 • Fait avec ❤️ par l'équipe
+                            SMP4 v1.0.0 • Fait avec ❤️ par l'équipe
                         </p>
                     </div>
                 </div>

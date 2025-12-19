@@ -46,7 +46,7 @@ const WhySection = () => {
             Avantages
           </span>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Pourquoi choisir <span className="gradient-text">MiniCloud</span> ?
+            Pourquoi choisir <span className="gradient-text">SMP4</span> ?
           </h2>
           <p className="text-muted-foreground text-lg">
             Une plateforme pensée pour l'apprentissage et les projets personnels.

@@ -208,6 +208,12 @@ const Auth = () => {
                     {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                   </div>
 
+                  <div className="flex flex-col space-y-2 text-center">
+                    <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">SMP4</h1>
+                    <p className="text-sm text-muted-foreground">
+                      {isLogin ? "Heureux de vous revoir" : "Créez votre compte en quelques secondes"}
+                    </p>
+                  </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <Label htmlFor="login-password">Mot de passe</Label>

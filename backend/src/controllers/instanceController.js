@@ -427,11 +427,14 @@ const deleteInstance = async (req, res) => {
         // 3b. Clean up Domains
         if (instance.domains && instance.domains.length > 0) {
             debugLog(`Cleaning up ${instance.domains.length} domains for instance ${id}...`);
-            // Parallelize domain deletion to improve cleanup speed
-            await Promise.all(instance.domains.map(domain => {
-                const fullHostname = `${domain.subdomain}.smp4.xyz`;
-                return cloudflareService.removeTunnelIngress(fullHostname);
-            }));
+
+            const hostnames = instance.domains.map(d => `${d.subdomain}.smp4.xyz`);
+            try {
+                await cloudflareService.removeMultipleTunnelIngress(hostnames);
+            } catch (cfError) {
+                console.error("Failed to remove domains from Cloudflare:", cfError.message);
+                // Continue deletion anyway
+            }
         }
 
         // 3. Delete from DB

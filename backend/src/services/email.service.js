@@ -28,33 +28,59 @@ const sendInstanceCredentials = async (to, userName, instanceName, ip, password)
         const mailOptions = {
             from: process.env.SMTP_FROM || '"SMP4 VM Manager" <noreply@smp4.xyz>',
             to: to,
-            subject: `Your Instance "${instanceName}" is Ready!`,
+            subject: `Votre Instance "${instanceName}" est Prête !`,
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2>Hello ${userName},</h2>
-                    <p>Your Virtual Machine <strong>${instanceName}</strong> has been successfully provisioned and is ready to use.</p>
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="background-color: #2563eb; padding: 20px; text-align: center;">
+                        <h2 style="color: #ffffff; margin: 0; font-size: 24px;">🚀 Votre VM est prête !</h2>
+                    </div>
                     
-                    <h3>Access Details:</h3>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>IP Address:</strong></td>
-                            <td style="padding: 8px; border-bottom: 1px solid #eee;">${ip}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Username:</strong></td>
-                            <td style="padding: 8px; border-bottom: 1px solid #eee;">smp4</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Password:</strong></td>
-                            <td style="padding: 8px; border-bottom: 1px solid #eee; font-family: monospace; background-color: #f5f5f5;">${password}</td>
-                        </tr>
-                    </table>
+                    <div style="padding: 30px; background-color: #ffffff;">
+                        <p style="font-size: 16px; color: #333;">Bonjour <strong>${userName}</strong>,</p>
+                        <p style="font-size: 16px; color: #555; line-height: 1.5;">
+                            Votre machine virtuelle <strong>${instanceName}</strong> a été provisionnée avec succès et est prête à l'emploi.
+                        </p>
+                        
+                        <div style="background-color: #f3f4f6; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
+                            <h3 style="margin-top: 0; color: #1f2937; font-size: 18px;">🔑 Informations d'accès</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 8px 0; color: #6b7280; width: 120px;"><strong>Adresse IP :</strong></td>
+                                    <td style="padding: 8px 0; color: #111827; font-family: monospace; font-size: 14px;">${ip}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #6b7280;"><strong>Utilisateur :</strong></td>
+                                    <td style="padding: 8px 0; color: #111827; font-family: monospace; font-size: 14px;">smp4</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #6b7280;"><strong>Mot de passe :</strong></td>
+                                    <td style="padding: 8px 0;">
+                                        <span style="background-color: #e5e7eb; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 14px; color: #000;">${password}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
 
-                    <p><strong>Note:</strong> This password is also the root password. Assuming you are connected via our VPN or have set up port forwarding.</p>
+                        <div style="background-color: #fee2e2; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+                            <p style="margin: 0; color: #991b1b; font-size: 14px;">
+                                <strong>⚠️ Important :</strong> Ce mot de passe est temporaire. Vous serez invité à le changer dès votre première connexion.
+                            </p>
+                        </div>
 
-                    <p>You can manage your instance and download your VPN configuration from the dashboard.</p>
-                    
-                    <p>Happy coding,<br/>The SMP4 Team</p>
+                        <h3 style="color: #1f2937; font-size: 18px; margin-top: 25px;">🌐 Comment se connecter ?</h3>
+                        <p style="font-size: 15px; color: #555; line-height: 1.5;">
+                            Pour accéder à votre VM, vous devez être connecté au réseau local via notre VPN (WireGuard).
+                        </p>
+                        <ol style="color: #555; padding-left: 20px; line-height: 1.5;">
+                            <li style="margin-bottom: 8px;">Téléchargez votre configuration VPN depuis le tableau de bord.</li>
+                            <li style="margin-bottom: 8px;">Installez le client <a href="https://www.wireguard.com/install/" style="color: #2563eb; text-decoration: none;">WireGuard</a>.</li>
+                            <li style="margin-bottom: 8px;">Importez le fichier de configuration et activez la connexion.</li>
+                        </ol>
+
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px;">
+                            <p>Happy coding,<br/>L'équipe SMP4</p>
+                        </div>
+                    </div>
                 </div>
             `,
         };

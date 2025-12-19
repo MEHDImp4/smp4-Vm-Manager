@@ -1,6 +1,10 @@
+jest.mock('node-cron', () => ({
+  schedule: jest.fn(),
+}));
 jest.mock('../../src/db', () => ({
   prisma: require('jest-mock-extended').mockDeep(),
 }));
+const cron = require('node-cron');
 const { prisma } = require('../../src/db');
 const { startConsumptionCron } = require('../../src/cron/consumptionCron');
 
@@ -10,9 +14,8 @@ describe('Consumption Cron', () => {
   });
 
   it('should initialize cron job', () => {
-    expect(() => {
-      startConsumptionCron();
-    }).not.toThrow();
+    startConsumptionCron();
+    expect(cron.schedule).toHaveBeenCalledWith('* * * * *', expect.any(Function));
   });
 
   it('should process consumption on schedule', async () => {

@@ -2,9 +2,13 @@ jest.mock('../../src/db', () => ({
   prisma: require('jest-mock-extended').mockDeep(),
 }));
 jest.mock('../../src/services/proxmox.service');
+jest.mock('node-cron', () => ({
+  schedule: jest.fn(),
+}));
 
+const cron = require('node-cron');
 const { prisma } = require('../../src/db');
-const ProxmoxService = require('../../src/services/proxmox.service');
+const proxmoxService = require('../../src/services/proxmox.service');
 const { startSnapshotCron } = require('../../src/cron/snapshotCron');
 
 describe('Snapshot Cron', () => {
@@ -13,73 +17,51 @@ describe('Snapshot Cron', () => {
   });
 
   it('should initialize snapshot cron', () => {
-    expect(() => {
-      startSnapshotCron();
-    }).not.toThrow();
+    startSnapshotCron();
+    expect(cron.schedule).toHaveBeenCalledWith('0 0 * * *', expect.any(Function));
   });
 
-  it('should create snapshots for instances with vmid', async () => {
+  it('should run snapshot logic correctly', async () => {
+    startSnapshotCron();
+    const cronCallback = cron.schedule.mock.calls[0][1];
+
     const mockInstances = [
-      {
-        id: 'instance1',
-        vmid: 100,
-        hostname: 'test-vm-1',
-        status: 'online',
-      },
-      {
-        id: 'instance2',
-        vmid: 101,
-        hostname: 'test-vm-2',
-        status: 'online',
-      },
+      { id: '1', vmid: 100 },
+      { id: '2', vmid: 101 },
     ];
+    prisma.instance.findMany.mockResolvedValue(mockInstances);
+    proxmoxService.createLXCSnapshot.mockResolvedValue({});
 
-    prisma.instance.findMany.mockResolvedValueOnce(mockInstances);
-    prisma.snapshot.create.mockResolvedValueOnce({});
+    await cronCallback();
 
-    // Simulate snapshot logic
-    for (const instance of mockInstances) {
-      if (instance.vmid) {
-        prisma.snapshot.create.mockResolvedValueOnce({
-          id: `snapshot-${instance.vmid}`,
-          instanceId: instance.id,
-          createdAt: new Date(),
-        });
-      }
-    }
-
-    expect(prisma.instance.findMany).toBeDefined();
+    expect(prisma.instance.findMany).toHaveBeenCalledWith({ where: { vmid: { not: null } } });
+    expect(proxmoxService.createLXCSnapshot).toHaveBeenCalledTimes(2);
+    expect(proxmoxService.createLXCSnapshot).toHaveBeenCalledWith(100, expect.stringContaining('Auto-'), expect.any(String));
+    expect(proxmoxService.createLXCSnapshot).toHaveBeenCalledWith(101, expect.stringContaining('Auto-'), expect.any(String));
   });
 
-  it('should handle snapshot errors gracefully', async () => {
-    const mockInstances = [
-      {
-        id: 'instance1',
-        vmid: 100,
-        hostname: 'test-vm',
-        status: 'online',
-      },
-    ];
+  it('should handle errors for specific instances', async () => {
+    startSnapshotCron();
+    const cronCallback = cron.schedule.mock.calls[0][1];
 
-    prisma.instance.findMany.mockResolvedValueOnce(mockInstances);
-    prisma.snapshot.create.mockRejectedValueOnce(new Error('Snapshot failed'));
+    const mockInstances = [{ id: '1', vmid: 100 }];
+    prisma.instance.findMany.mockResolvedValue(mockInstances);
+    proxmoxService.createLXCSnapshot.mockRejectedValue(new Error("Snap failed"));
 
-    expect(prisma.instance.findMany).toBeDefined();
+    // Should not throw
+    await cronCallback();
+
+    expect(proxmoxService.createLXCSnapshot).toHaveBeenCalled();
   });
 
-  it('should skip instances without vmid', async () => {
-    const mockInstances = [
-      {
-        id: 'instance1',
-        vmid: null,
-        hostname: 'test-vm',
-        status: 'online',
-      },
-    ];
+  it('should handle general errors', async () => {
+    startSnapshotCron();
+    const cronCallback = cron.schedule.mock.calls[0][1];
 
-    prisma.instance.findMany.mockResolvedValueOnce(mockInstances);
+    prisma.instance.findMany.mockRejectedValue(new Error("DB Error"));
 
-    const instancesWithVmid = mockInstances.filter((i) => i.vmid);
-    expect(instancesWithVmid).toHaveLength(0);
+    await cronCallback();
+
+    expect(prisma.instance.findMany).toHaveBeenCalled();
   });
 });

@@ -1,3 +1,4 @@
+const emailService = require('../services/email.service');
 const { prisma } = require('../db');
 const proxmoxService = require('../services/proxmox.service');
 const sshService = require('../services/ssh.service');
@@ -150,6 +151,12 @@ const createInstance = async (req, res) => {
                         await sshService.execCommand(ip, `echo "root:${rootPassword}" | chpasswd`);
 
                         debugLog(`[Background] User 'smp4' configured successfully for ${vmid}`);
+
+                        // Send Email Notification
+                        if (user && user.email) {
+                            debugLog(`[Background] Sending credential email to ${user.email}...`);
+                            await emailService.sendInstanceCredentials(user.email, user.name, instance.name, ip, rootPassword);
+                        }
 
                         // 6. Security: Configure Firewall
                         try {

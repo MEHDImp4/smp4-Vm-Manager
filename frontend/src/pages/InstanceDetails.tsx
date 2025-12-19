@@ -709,6 +709,22 @@ const InstanceDetails = () => {
                 </div>
 
                 <div className="flex flex-col gap-8">
+                    {/* Email Password Notification */}
+                    {isOnline && stats.ip && (
+                        <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 p-4 rounded-xl flex items-center gap-3 animate-fade-up">
+                            <div className="p-2 bg-blue-500/20 rounded-full">
+                                <Shield className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-sm">Mot de passe envoyé !</h4>
+                                <p className="text-xs text-blue-400/80">
+                                    Vos identifiants de connexion (root) ont été envoyés à votre adresse email.
+                                    Vérifiez votre boîte de réception (et spams).
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Main Content: Terminal */}
                     <div className="w-full space-y-4 animate-fade-up-delay-1">
                         <div className="glass rounded-xl border border-white/10 overflow-hidden flex flex-col h-[600px] shadow-2xl relative group">

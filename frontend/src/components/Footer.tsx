@@ -9,7 +9,9 @@ const Footer = () => {
           {/* Brand */}
           <div className="md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4 md:mb-0 hover-lift">
-              <img src="/logo.png" alt="SMP4 Logo" className="w-8 h-8 object-contain" />
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <Cloud className="w-5 h-5 text-primary-foreground" />
+              </div>
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">SMP4cloud</span>
             </Link>
             <p className="text-muted-foreground text-sm mb-4">
@@ -106,7 +108,7 @@ const Footer = () => {
             <span className="px-2 py-1 rounded bg-primary/20 text-primary text-xs font-medium">
               Projet éducatif
             </span>
-            <span>© 2024 MiniCloud. Tous droits réservés.</span>
+            <span>© 2024 SMP4cloud. Tous droits réservés.</span>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <a href="#" className="hover:text-foreground transition-colors">

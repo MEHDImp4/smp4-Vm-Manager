@@ -79,7 +79,7 @@ const Auth = () => {
 
       toast({
         title: "Connexion réussie",
-        description: "Bienvenue sur MiniCloud !",
+        description: "Bienvenue sur SMP4cloud !",
       });
       navigate("/dashboard");
     } catch (error: any) {
@@ -146,8 +146,10 @@ const Auth = () => {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 mb-8 hover-lift">
-            <img src="/logo.png" alt="SMP4 Logo" className="w-10 h-10 object-contain" />
+          <Link to="/" className="flex items-center gap-2 mb-8">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
+              <Cloud className="w-5 h-5 text-primary-foreground" />
+            </div>
             <span className="text-2xl font-bold">
               SMP4<span className="gradient-text">cloud</span>
             </span>
@@ -346,8 +348,8 @@ const Auth = () => {
 
         <div className="relative z-10 text-center max-w-md">
           <div className="glass rounded-2xl p-8 border border-border/50 mb-8">
-            <div className="w-20 h-20 flex items-center justify-center mx-auto mb-6 hover-lift">
-              <img src="/logo.png" alt="SMP4 Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/30">
+              <Cloud className="w-10 h-10 text-primary-foreground" />
             </div>
             <h2 className="text-2xl font-bold mb-3">Déployez en quelques secondes</h2>
             <p className="text-muted-foreground">

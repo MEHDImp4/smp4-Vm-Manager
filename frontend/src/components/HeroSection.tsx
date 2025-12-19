@@ -44,17 +44,17 @@ const HeroSection = () => {
                 <div className="w-3 h-3 rounded-full bg-destructive" />
                 <div className="w-3 h-3 rounded-full bg-warning" />
                 <div className="w-3 h-3 rounded-full bg-success" />
-                <span className="ml-4 text-xs text-muted-foreground font-mono">terminal@minicloud</span>
+                <span className="ml-4 text-xs text-muted-foreground font-mono">terminal@smp4cloud</span>
               </div>
 
               {/* Terminal Content */}
               <div className="font-mono text-sm text-left space-y-2">
                 <p className="text-muted-foreground">
-                  <span className="text-primary">$</span> minicloud deploy --template small
+                  <span className="text-primary">$</span> smp4cloud deploy --template small
                 </p>
                 <p className="text-success">✓ Container créé avec succès</p>
                 <p className="text-muted-foreground">
-                  <span className="text-primary">$</span> minicloud status
+                  <span className="text-primary">$</span> smp4cloud status
                 </p>
                 <div className="flex items-center gap-3 mt-3">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50">

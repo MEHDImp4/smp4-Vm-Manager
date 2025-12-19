@@ -9,8 +9,10 @@ const Header = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 group hover-lift">
-          <img src="/logo.png" alt="SMP4 Logo" className="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-300" />
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
+            <Cloud className="w-5 h-5 text-primary-foreground" />
+          </div>
           <span className="text-xl font-bold tracking-tight">
             SMP4<span className="gradient-text">cloud</span>
           </span>

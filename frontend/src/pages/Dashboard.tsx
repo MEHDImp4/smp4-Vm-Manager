@@ -249,7 +249,7 @@ const Dashboard = () => {
               <Cloud className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight">
-              Mini<span className="gradient-text">Cloud</span>
+              SMP4<span className="gradient-text">cloud</span>
             </span>
           </Link>
           <div className="flex items-center gap-4">
@@ -260,9 +260,9 @@ const Dashboard = () => {
               </Link>
             </Button>
 
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowEarnModal(true)}
               className="hover:bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:text-amber-300"
             >
@@ -360,8 +360,8 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground leading-relaxed transition-opacity duration-500" key={currentTipIndex}>
                   {PRO_TIPS[currentTipIndex].text}
                   {PRO_TIPS[currentTipIndex].linkText && (
-                    <Link 
-                      to={PRO_TIPS[currentTipIndex].linkTo!} 
+                    <Link
+                      to={PRO_TIPS[currentTipIndex].linkTo!}
                       className="hover:underline decoration-amber-500/50"
                     >
                       <code className="text-foreground bg-white/10 px-1 py-0.5 rounded text-xs font-mono cursor-pointer hover:bg-white/20 transition-colors">
@@ -627,9 +627,9 @@ const Dashboard = () => {
       )}
 
       {/* Earn Points Modal */}
-      <EarnPointsModal 
-        isOpen={showEarnModal} 
-        onClose={() => setShowEarnModal(false)} 
+      <EarnPointsModal
+        isOpen={showEarnModal}
+        onClose={() => setShowEarnModal(false)}
         onPointsEarned={() => {
           // Refresh user data
           const fetchUserData = async () => {

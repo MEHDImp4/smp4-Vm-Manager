@@ -242,4 +242,32 @@ describe('ProxmoxService', () => {
       );
     });
   });
+
+  describe('rebootLXC', () => {
+    it('should reboot LXC container', async () => {
+      const upid = 'UPID:node:123:456:task';
+      service.client = { post: jest.fn().mockResolvedValue({ data: { data: upid } }) };
+      const result = await service.rebootLXC('100');
+      expect(result).toBe(upid);
+    });
+
+    it('should throw error when reboot fails', async () => {
+      service.client = { post: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.rebootLXC('100')).rejects.toThrow();
+    });
+  });
+
+  describe('getLXCConfig', () => {
+    it('should get LXC config', async () => {
+      const config = { net0: 'bridge=vmbr0' };
+      service.client = { get: jest.fn().mockResolvedValue({ data: { data: config } }) };
+      const result = await service.getLXCConfig('100');
+      expect(result).toEqual(config);
+    });
+
+    it('should throw error when get config fails', async () => {
+      service.client = { get: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.getLXCConfig('100')).rejects.toThrow();
+    });
+  });
 });

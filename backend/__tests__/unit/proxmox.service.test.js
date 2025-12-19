@@ -23,10 +23,12 @@ describe('ProxmoxService', () => {
     });
 
     it('should throw error when fetching LXC list fails', async () => {
-      service.client = { get: jest.fn().mockRejectedValueOnce({
-        response: { data: { error: 'Failed' } },
-        message: 'Network error',
-      }) };
+      service.client = {
+        get: jest.fn().mockRejectedValueOnce({
+          response: { data: { error: 'Failed' } },
+          message: 'Network error',
+        })
+      };
 
       await expect(service.getLXCList()).rejects.toThrow('Failed to get LXC list');
     });
@@ -41,10 +43,12 @@ describe('ProxmoxService', () => {
     });
 
     it('should throw error when fetching next VMID fails', async () => {
-      service.client = { get: jest.fn().mockRejectedValueOnce({
-        response: { data: { error: 'Failed' } },
-        message: 'Network error',
-      }) };
+      service.client = {
+        get: jest.fn().mockRejectedValueOnce({
+          response: { data: { error: 'Failed' } },
+          message: 'Network error',
+        })
+      };
 
       await expect(service.getNextVmid()).rejects.toThrow('Failed to get next VMID');
     });
@@ -70,10 +74,12 @@ describe('ProxmoxService', () => {
     });
 
     it('should throw error when cloning fails', async () => {
-      service.client = { post: jest.fn().mockRejectedValueOnce({
-        response: { data: { error: 'Clone failed' } },
-        message: 'Network error',
-      }) };
+      service.client = {
+        post: jest.fn().mockRejectedValueOnce({
+          response: { data: { error: 'Clone failed' } },
+          message: 'Network error',
+        })
+      };
 
       await expect(service.cloneLXC(100, 102, 'vm-clone')).rejects.toThrow(
         'Failed to clone LXC 100'
@@ -100,6 +106,78 @@ describe('ProxmoxService', () => {
 
       const result = await service.stopLXC(102);
       expect(result).toBeDefined();
+    });
+  });
+
+  describe('configureLXC', () => {
+    it('should configure LXC container', async () => {
+      service.client = { put: jest.fn().mockResolvedValueOnce({ data: { data: 'UPID:...' } }) };
+      const result = await service.configureLXC(102, { tags: 'test' });
+      expect(result).toBeDefined();
+      expect(service.client.put).toHaveBeenCalledWith(
+        `/api2/json/nodes/${service.node}/lxc/102/config`,
+        { tags: 'test' }
+      );
+    });
+  });
+
+  describe('getLXCStatus', () => {
+    it('should get LXC status', async () => {
+      const mockStatus = { status: 'running', cpu: 0.1 };
+      service.client = { get: jest.fn().mockResolvedValueOnce({ data: { data: mockStatus } }) };
+      const result = await service.getLXCStatus(102);
+      expect(result).toEqual(mockStatus);
+    });
+
+    it('should throw error if get status fails', async () => {
+      service.client = { get: jest.fn().mockRejectedValueOnce(new Error('Failed')) };
+      await expect(service.getLXCStatus(102)).rejects.toThrow();
+    });
+  });
+
+  describe('getLXCInterfaces', () => {
+    it('should get LXC interfaces', async () => {
+      const mockInterfaces = [{ name: 'eth0' }];
+      service.client = { get: jest.fn().mockResolvedValueOnce({ data: { data: mockInterfaces } }) };
+      const result = await service.getLXCInterfaces(102);
+      expect(result).toEqual(mockInterfaces);
+    });
+
+    it('should return empty array on error', async () => {
+      service.client = { get: jest.fn().mockRejectedValueOnce(new Error('Failed')) };
+      const result = await service.getLXCInterfaces(102);
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('deleteLXC', () => {
+    it('should delete LXC container', async () => {
+      service.client = { delete: jest.fn().mockResolvedValueOnce({ data: { data: 'UPID:...' } }) };
+      const result = await service.deleteLXC(102);
+      expect(result).toBeDefined();
+      expect(service.client.delete).toHaveBeenCalledWith(
+        `/api2/json/nodes/${service.node}/lxc/102?purge=1`
+      );
+    });
+  });
+
+  describe('waitForTask', () => {
+    it('should resolve when task is stopped and OK', async () => {
+      service.client = {
+        get: jest.fn().mockResolvedValue({
+          data: { data: { status: 'stopped', exitstatus: 'OK' } }
+        })
+      };
+      await expect(service.waitForTask('UPID:123')).resolves.not.toThrow();
+    });
+
+    it('should reject when task fails', async () => {
+      service.client = {
+        get: jest.fn().mockResolvedValue({
+          data: { data: { status: 'stopped', exitstatus: 'ERROR' } }
+        })
+      };
+      await expect(service.waitForTask('UPID:123')).rejects.toThrow();
     });
   });
 });

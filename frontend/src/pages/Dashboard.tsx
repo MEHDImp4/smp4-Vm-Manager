@@ -486,11 +486,16 @@ const Dashboard = () => {
                       {/* Metrics */}
                       <div className="flex items-center gap-6 relative z-10 pl-6 md:pl-0 border-l md:border-l-0 border-white/10">
                         <div className="text-right">
-                          <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Coût</p>
+                          <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Coût Total</p>
                           <div className={`font-mono font-bold flex items-center gap-1.5 ${instance.status === 'online' ? 'text-primary' : 'text-muted-foreground'}`}>
                             <BarChart3 className="w-4 h-4" />
-                            {instance.pointsPerDay} <span className="text-xs opacity-70">pts/j</span>
+                            {instance.pointsPerDay + ((instance.paidDomainsCount || 0) * 2)} <span className="text-xs opacity-70">pts/j</span>
                           </div>
+                          {(instance.paidDomainsCount || 0) > 0 && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              Dont {(instance.paidDomainsCount || 0) * 2} pts domaines
+                            </p>
+                          )}
                         </div>
                       </div>
 

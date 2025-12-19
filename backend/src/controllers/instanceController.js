@@ -265,6 +265,38 @@ const createInstance = async (req, res) => {
                     // Non-fatal, continue
                 }
 
+                // Auto-create Portainer Domain (Port 9000)
+                try {
+                    if (ip) {
+                        debugLog(`[Background] Creating Portainer domain for ${parameter_instance_name}...`);
+
+                        // Generate Subdomain: portainer-[username]-[instancename]
+                        const cleanUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const cleanInstance = instance.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                        const subdomain = `portainer-${cleanUser}-${cleanInstance}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+                        const fullHostname = `${subdomain}.smp4.xyz`;
+                        const serviceUrl = `http://${ip}:9000`;
+
+                        // Add to Cloudflare
+                        await cloudflareService.addTunnelIngress(fullHostname, serviceUrl);
+
+                        // Save to DB (First domain is free)
+                        await prisma.domain.create({
+                            data: {
+                                subdomain,
+                                port: 9000,
+                                isPaid: false, // First domain is always free
+                                instanceId: instance.id
+                            }
+                        });
+                        debugLog(`[Background] Portainer domain created: ${fullHostname}`);
+                    }
+                } catch (domainError) {
+                    console.error(`[Background] Portainer domain creation failed:`, domainError.message);
+                    // Non-fatal
+                }
+
                 // ALL DONE - SET ONLINE
                 await prisma.instance.update({
                     where: { id: instance.id },

@@ -2,6 +2,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../db');
 
+const BCRYPT_SALT_ROUNDS = 10;
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+
 
 const register = async (req, res) => {
     const { name, email, password } = req.body;

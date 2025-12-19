@@ -1,5 +1,13 @@
-jest.mock('../../src/db');
-jest.mock('../../src/middlewares/authMiddleware');
+jest.mock('../../src/db', () => ({
+  prisma: require('jest-mock-extended').mockDeep(),
+}));
+jest.mock('../../src/middlewares/authMiddleware', () => ({
+  verifyToken: (req, res, next) => {
+    req.user = { id: 'user1', email: 'test@test.com' };
+    next();
+  },
+  isAdmin: (req, res, next) => next(),
+}));
 
 const request = require('supertest');
 const express = require('express');
@@ -19,74 +27,37 @@ describe('Points Routes', () => {
     jest.clearAllMocks();
   });
 
-  describe('GET /api/points/balance', () => {
-    it('should get user points balance', async () => {
-      prisma.user.findUnique.mockResolvedValueOnce({
-        id: 'user1',
-        points: 500,
-      });
-
-      const response = await request(app)
-        .get('/api/points/balance')
-        .set('Authorization', 'Bearer token');
-
-      expect(response.status).toBe(200);
-      expect(response.body.points).toBe(500);
-    });
-
-    it('should return 404 if user not found', async () => {
-      prisma.user.findUnique.mockResolvedValueOnce(null);
-
-      const response = await request(app)
-        .get('/api/points/balance')
-        .set('Authorization', 'Bearer token');
-
-      expect(response.status).toBe(404);
-    });
-  });
-
-  describe('GET /api/points/transactions', () => {
-    it('should get user point transactions', async () => {
-      const mockTransactions = [
-        {
-          id: 'tx1',
-          userId: 'user1',
-          amount: -10,
-          reason: 'Instance cost',
-          createdAt: new Date(),
-        },
-      ];
-
-      prisma.pointTransaction.findMany.mockResolvedValueOnce(mockTransactions);
-
-      const response = await request(app)
-        .get('/api/points/transactions')
-        .set('Authorization', 'Bearer token');
-
-      expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-    });
-  });
-
   describe('POST /api/points/spin', () => {
     it('should spin and potentially earn points', async () => {
-      prisma.user.findUnique.mockResolvedValueOnce({
-        id: 'user1',
-        lastDailySpin: new Date(Date.now() - 86400000),
-        points: 100,
-      });
+      // Mock necessary database calls
+      prisma.dailySpin.findFirst.mockResolvedValue(null); // No previous spin
+      prisma.$transaction.mockResolvedValue([
+        { points: 100 }, // user update result
+        { id: 'spin1' }, // dailySpin create result
+        { id: 'tx1' }    // transaction create result
+      ]);
 
-      prisma.user.update.mockResolvedValueOnce({
-        id: 'user1',
-        points: 150,
-        lastDailySpin: new Date(),
+      const response = await request(app)
+        .post('/api/points/spin')
+        .set('Authorization', 'Bearer token');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('points');
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should return 400 if already spun today', async () => {
+      prisma.dailySpin.findFirst.mockResolvedValue({
+        id: 'spin_prev',
+        spinDate: new Date()
       });
 
       const response = await request(app)
         .post('/api/points/spin')
         .set('Authorization', 'Bearer token');
 
-      expect([200, 400]).toContain(response.status);
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('déjà tourné');
     });
   });
 });

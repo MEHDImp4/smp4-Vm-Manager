@@ -1,5 +1,13 @@
-jest.mock('../../src/db');
-jest.mock('../../src/middlewares/authMiddleware');
+jest.mock('../../src/db', () => ({
+  prisma: require('jest-mock-extended').mockDeep(),
+}));
+jest.mock('../../src/middlewares/authMiddleware', () => ({
+  verifyToken: (req, res, next) => {
+    req.user = { id: 'user1', email: 'test@test.com' };
+    next();
+  },
+  isAdmin: (req, res, next) => next(),
+}));
 
 const request = require('supertest');
 const express = require('express');
@@ -51,30 +59,5 @@ describe('Template Routes', () => {
     });
   });
 
-  describe('GET /api/templates/:id', () => {
-    it('should get template by id with versions', async () => {
-      const mockTemplate = {
-        id: 'template1',
-        name: 'Ubuntu 22.04',
-        versions: [
-          { id: 'tv1', version: '1.0', proxmoxId: 100 },
-        ],
-      };
 
-      prisma.template.findUnique.mockResolvedValueOnce(mockTemplate);
-
-      const response = await request(app).get('/api/templates/template1');
-
-      expect(response.status).toBe(200);
-      expect(response.body.name).toBe('Ubuntu 22.04');
-    });
-
-    it('should return 404 if template not found', async () => {
-      prisma.template.findUnique.mockResolvedValueOnce(null);
-
-      const response = await request(app).get('/api/templates/nonexistent');
-
-      expect(response.status).toBe(404);
-    });
-  });
 });

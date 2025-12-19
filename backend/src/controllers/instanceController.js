@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../db');
 const proxmoxService = require('../services/proxmox.service');
 const sshService = require('../services/ssh.service');
 const crypto = require('crypto');
@@ -560,9 +559,9 @@ const createDomain = async (req, res) => {
         // Check limits: 3 free, unlimited paid (with isPaid flag)
         const freeDomains = instance.domains.filter(d => !d.isPaid);
         const isPaidDomain = freeDomains.length >= 3;
-        
+
         if (isPaidDomain && req.body.isPaid !== true) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: "Maximum of 3 free domains reached",
                 requiresPurchase: true,
                 message: "You can purchase additional domains for 2 points/day"
@@ -653,7 +652,7 @@ const getDomains = async (req, res) => {
 
         const instance = await prisma.instance.findUnique({
             where: { id },
-            include: { 
+            include: {
                 domains: {
                     select: {
                         id: true,

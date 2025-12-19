@@ -1,4 +1,6 @@
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => ({
+  prisma: require('jest-mock-extended').mockDeep(),
+}));
 const { prisma } = require('../../src/db');
 const { startConsumptionCron } = require('../../src/cron/consumptionCron');
 

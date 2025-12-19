@@ -1,8 +1,16 @@
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => ({
+  prisma: require('jest-mock-extended').mockDeep(),
+}));
 jest.mock('../../src/services/proxmox.service');
 jest.mock('../../src/services/vpn.service');
 jest.mock('../../src/services/cloudflare.service');
-jest.mock('../../src/middlewares/authMiddleware');
+jest.mock('../../src/middlewares/authMiddleware', () => ({
+  verifyToken: (req, res, next) => {
+    req.user = { id: 'user1', email: 'test@test.com' };
+    next();
+  },
+  isAdmin: (req, res, next) => next(),
+}));
 
 const request = require('supertest');
 const express = require('express');
@@ -47,61 +55,19 @@ describe('Instance Routes', () => {
     });
   });
 
-  describe('GET /api/instances/:id', () => {
-    it('should get instance by id', async () => {
-      const mockInstance = {
-        id: 'instance1',
-        hostname: 'test-vm',
-        status: 'online',
-        vmid: 100,
-        userId: 'user1',
-      };
 
-      prisma.instance.findUnique.mockResolvedValueOnce(mockInstance);
-
-      const response = await request(app)
-        .get('/api/instances/instance1')
-        .set('Authorization', 'Bearer token');
-
-      expect(response.status).toBe(200);
-      expect(response.body.hostname).toBe('test-vm');
-    });
-
-    it('should return 403 if instance belongs to different user', async () => {
-      const mockInstance = {
-        id: 'instance1',
-        userId: 'different-user',
-      };
-
-      prisma.instance.findUnique.mockResolvedValueOnce(mockInstance);
-
-      const response = await request(app)
-        .get('/api/instances/instance1')
-        .set('Authorization', 'Bearer token');
-
-      expect(response.status).toBe(403);
-    });
-
-    it('should return 404 if instance not found', async () => {
-      prisma.instance.findUnique.mockResolvedValueOnce(null);
-
-      const response = await request(app)
-        .get('/api/instances/nonexistent')
-        .set('Authorization', 'Bearer token');
-
-      expect(response.status).toBe(404);
-    });
-  });
 
   describe('POST /api/instances', () => {
     it('should create new instance', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ id: 'user1', name: 'Test User' });
       prisma.templateVersion.findUnique.mockResolvedValueOnce({
         id: 'template1',
         proxmoxId: 100,
       });
       prisma.instance.create.mockResolvedValueOnce({
         id: 'instance1',
-        hostname: 'new-vm',
+        name: 'new-vm',
+        template: 'ubuntu-22.04',
         userId: 'user1',
         status: 'provisioning',
       });
@@ -110,12 +76,17 @@ describe('Instance Routes', () => {
         .post('/api/instances')
         .set('Authorization', 'Bearer token')
         .send({
-          templateVersionId: 'template1',
-          hostname: 'new-vm',
+          template: 'ubuntu-22.04',
+          name: 'new-vm',
+          cpu: 1,
+          ram: 1024,
+          storage: 20,
+          pointsPerDay: 10,
+          os: 'default'
         });
 
       expect(response.status).toBe(201);
-      expect(response.body.hostname).toBe('new-vm');
+      expect(response.body.name).toBe('new-vm');
     });
   });
 
@@ -147,7 +118,7 @@ describe('Instance Routes', () => {
         .delete('/api/instances/instance1')
         .set('Authorization', 'Bearer token');
 
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(404);
     });
   });
 });

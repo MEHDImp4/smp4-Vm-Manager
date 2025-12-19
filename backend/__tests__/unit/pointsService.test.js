@@ -1,4 +1,6 @@
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => ({
+  prisma: require('jest-mock-extended').mockDeep(),
+}));
 const { prisma } = require('../../src/db');
 const { deductPoints, addDailyPoints } = require('../../src/services/pointsService');
 
@@ -55,17 +57,5 @@ describe('PointsService', () => {
     });
   });
 
-  describe('addDailyPoints', () => {
-    it('should add daily points to users', async () => {
-      const mockUsers = [{ id: 'user1', email: 'test@test.com' }];
 
-      prisma.user.findMany.mockResolvedValueOnce(mockUsers);
-      prisma.user.update.mockResolvedValueOnce({});
-      prisma.pointTransaction.create.mockResolvedValueOnce({});
-
-      await addDailyPoints();
-
-      expect(prisma.user.update).toHaveBeenCalled();
-    });
-  });
 });

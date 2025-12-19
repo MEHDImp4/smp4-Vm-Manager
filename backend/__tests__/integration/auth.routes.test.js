@@ -1,10 +1,14 @@
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => ({
+  prisma: require('jest-mock-extended').mockDeep(),
+}));
+jest.mock('bcrypt');
 jest.mock('../../src/services/proxmox.service');
 jest.mock('../../src/services/vpn.service');
 jest.mock('../../src/services/cloudflare.service');
 
 const request = require('supertest');
 const express = require('express');
+const bcrypt = require('bcrypt');
 const { prisma } = require('../../src/db');
 const authRoutes = require('../../src/routes/authRoutes');
 const authMiddleware = require('../../src/middlewares/authMiddleware');
@@ -16,10 +20,13 @@ app.use('/api/auth', authRoutes);
 describe('Auth Routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    bcrypt.hash.mockResolvedValue('hashed_password');
+    bcrypt.compare.mockResolvedValue(true);
   });
 
   describe('POST /api/auth/register', () => {
     it('should register a new user', async () => {
+      console.log('DEBUG PRISMA:', prisma);
       prisma.user.findUnique.mockResolvedValueOnce(null);
       prisma.user.create.mockResolvedValueOnce({
         id: 'user1',
@@ -91,7 +98,7 @@ describe('Auth Routes', () => {
         });
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('token');
+      expect(response.body).toHaveProperty('user.token');
     });
 
     it('should return 401 if user not found', async () => {

@@ -1,4 +1,6 @@
-jest.mock('../../src/db');
+jest.mock('../../src/db', () => ({
+  prisma: require('jest-mock-extended').mockDeep(),
+}));
 jest.mock('../../src/services/proxmox.service');
 
 const { prisma } = require('../../src/db');

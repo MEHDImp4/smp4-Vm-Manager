@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../db');
 
 const SPIN_PRIZES = [10, 25, 50, 75, 100, 150, 200];
 const SPIN_WEIGHTS = [30, 25, 20, 12, 8, 4, 1]; // Higher chance for lower prizes

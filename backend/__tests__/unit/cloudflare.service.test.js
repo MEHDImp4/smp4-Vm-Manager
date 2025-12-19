@@ -1,60 +1,108 @@
 jest.mock('axios');
 const axios = require('axios');
-const CloudflareService = require('../../src/services/cloudflare.service');
 
 describe('CloudflareService', () => {
-  let service;
+  let CloudflareService;
+  let mockClient;
 
   beforeEach(() => {
+    jest.resetModules();
     jest.clearAllMocks();
-    service = new CloudflareService();
+
+    mockClient = {
+      get: jest.fn(),
+      put: jest.fn(),
+    };
+
+    // Re-acquire axios mock after resetModules
+    const mockAxios = require('axios');
+    mockAxios.create.mockReturnValue(mockClient);
+
+    // Require service under test
+    CloudflareService = require('../../src/services/cloudflare.service');
   });
 
-  describe('addIngress', () => {
+  describe('addTunnelIngress', () => {
     it('should add tunnel ingress successfully', async () => {
-      const mockResponse = {
+      // Mock get config behavior
+      mockClient.get.mockResolvedValueOnce({
+        data: {
+          result: {
+            config: {
+              ingress: [
+                { service: 'http_status:404' }
+              ]
+            }
+          }
+        }
+      });
+
+      // Mock put config behavior
+      mockClient.put.mockResolvedValueOnce({ data: { success: true } });
+
+      const result = await CloudflareService.addTunnelIngress('test.smp4.xyz', 'http://192.168.1.100:3000');
+
+      expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('/configurations'));
+      expect(mockClient.put).toHaveBeenCalledWith(
+        expect.stringContaining('/configurations'),
+        expect.objectContaining({
+          config: expect.objectContaining({
+            ingress: expect.arrayContaining([
+              expect.objectContaining({ hostname: 'test.smp4.xyz', service: 'http://192.168.1.100:3000' })
+            ])
+          })
+        })
+      );
+      expect(result).toBe(true);
+    });
+
+    it('should throw error when adding ingress fails', async () => {
+      mockClient.get.mockRejectedValueOnce(new Error('API error'));
+
+      await expect(
+        CloudflareService.addTunnelIngress('test.smp4.xyz', 'http://192.168.1.100:3000')
+      ).rejects.toThrow('Failed to configure Cloudflare Tunnel');
+    });
+  });
+
+  describe('removeTunnelIngress', () => {
+    it('should remove tunnel ingress successfully', async () => {
+      // Mock get config with existing rule
+      mockClient.get.mockResolvedValueOnce({
         data: {
           result: {
             config: {
               ingress: [
                 { hostname: 'test.smp4.xyz', service: 'http://192.168.1.100:3000' },
-              ],
-            },
-          },
-        },
-      };
+                { service: 'http_status:404' }
+              ]
+            }
+          }
+        }
+      });
 
-      axios.patch.mockResolvedValueOnce(mockResponse);
+      // Mock put success
+      mockClient.put.mockResolvedValueOnce({ data: { success: true } });
 
-      const result = await service.addIngress('test.smp4.xyz', '192.168.1.100', 3000);
+      const result = await CloudflareService.removeTunnelIngress('test.smp4.xyz');
 
-      expect(axios.patch).toHaveBeenCalled();
-      expect(result).toBeDefined();
-    });
-
-    it('should throw error when adding ingress fails', async () => {
-      axios.patch.mockRejectedValueOnce(new Error('API error'));
-
-      await expect(
-        service.addIngress('test.smp4.xyz', '192.168.1.100', 3000)
-      ).rejects.toThrow('Failed to add tunnel ingress');
-    });
-  });
-
-  describe('removeIngress', () => {
-    it('should remove tunnel ingress successfully', async () => {
-      axios.patch.mockResolvedValueOnce({ data: { result: { config: {} } } });
-
-      const result = await service.removeIngress('test.smp4.xyz');
-
-      expect(axios.patch).toHaveBeenCalled();
-      expect(result).toBeDefined();
+      expect(mockClient.put).toHaveBeenCalledWith(
+        expect.stringContaining('/configurations'),
+        expect.objectContaining({
+          config: expect.objectContaining({
+            ingress: expect.not.arrayContaining([
+              expect.objectContaining({ hostname: 'test.smp4.xyz' })
+            ])
+          })
+        })
+      );
+      expect(result).toBe(true);
     });
 
     it('should throw error when removing ingress fails', async () => {
-      axios.patch.mockRejectedValueOnce(new Error('API error'));
+      mockClient.get.mockRejectedValueOnce(new Error('API error'));
 
-      await expect(service.removeIngress('test.smp4.xyz')).rejects.toThrow();
+      await expect(CloudflareService.removeTunnelIngress('test.smp4.xyz')).rejects.toThrow('Failed to update Cloudflare Tunnel');
     });
   });
 });

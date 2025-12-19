@@ -8,14 +8,12 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <Cloud className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">SMP4</span>
+            <Link to="/" className="flex items-center gap-2 mb-4 md:mb-0 hover-lift">
+              <img src="/logo.png" alt="SMP4 Logo" className="w-8 h-8 object-contain" />
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">SMP4cloud</span>
             </Link>
             <p className="text-muted-foreground text-sm mb-4">
-              Containers et VM légères pour apprendre et expérimenter.
+              SMP4cloud - La solution simple pour vos VMs et conteneurs.
             </p>
             <div className="flex gap-3">
               <a

@@ -31,11 +31,11 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/points', pointsRoutes);
 
 app.get('/', (req, res) => {
-    res.send('MiniCloud Web Backend is running');
+    res.send('SMP4cloud Web Backend is running');
 });
 
 const server = app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`SMP4cloud Backend running on port ${PORT}`);
 });
 
 const sshService = require('./services/ssh.service');

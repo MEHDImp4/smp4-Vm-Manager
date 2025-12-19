@@ -26,7 +26,7 @@ const sendInstanceCredentials = async (to, userName, instanceName, ip, password)
         }
 
         const mailOptions = {
-            from: process.env.SMTP_FROM || '"SMP4 VM Manager" <noreply@smp4.xyz>',
+            from: process.env.SMTP_FROM || '"SMP4cloud VM Manager" <noreply@smp4.xyz>',
             to: to,
             subject: `Votre Instance "${instanceName}" est Prête !`,
             html: `
@@ -78,7 +78,7 @@ const sendInstanceCredentials = async (to, userName, instanceName, ip, password)
                         </ol>
 
                         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px;">
-                            <p>Happy coding,<br/>L'équipe SMP4</p>
+                            <p>Happy coding,<br/>L'équipe SMP4cloud</p>
                         </div>
                     </div>
                 </div>

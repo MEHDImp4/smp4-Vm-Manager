@@ -146,12 +146,10 @@ const Auth = () => {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
-              <Cloud className="w-5 h-5 text-primary-foreground" />
-            </div>
+          <Link to="/" className="flex items-center gap-2 mb-8 hover-lift">
+            <img src="/logo.png" alt="SMP4 Logo" className="w-10 h-10 object-contain" />
             <span className="text-2xl font-bold">
-              Mini<span className="gradient-text">Cloud</span>
+              SMP4<span className="gradient-text">cloud</span>
             </span>
           </Link>
 
@@ -162,7 +160,7 @@ const Auth = () => {
           <p className="text-muted-foreground mb-8">
             {isLogin
               ? "Connectez-vous pour accéder à vos instances."
-              : "Rejoignez MiniCloud et déployez vos premiers projets."}
+              : "Rejoignez SMP4cloud et déployez vos premiers projets."}
           </p>
 
           {/* Toggle Tabs */}
@@ -209,7 +207,7 @@ const Auth = () => {
                   </div>
 
                   <div className="flex flex-col space-y-2 text-center">
-                    <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">SMP4</h1>
+                    <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">SMP4cloud</h1>
                     <p className="text-sm text-muted-foreground">
                       {isLogin ? "Heureux de vous revoir" : "Créez votre compte en quelques secondes"}
                     </p>
@@ -348,8 +346,8 @@ const Auth = () => {
 
         <div className="relative z-10 text-center max-w-md">
           <div className="glass rounded-2xl p-8 border border-border/50 mb-8">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/30">
-              <Cloud className="w-10 h-10 text-primary-foreground" />
+            <div className="w-20 h-20 flex items-center justify-center mx-auto mb-6 hover-lift">
+              <img src="/logo.png" alt="SMP4 Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
             </div>
             <h2 className="text-2xl font-bold mb-3">Déployez en quelques secondes</h2>
             <p className="text-muted-foreground">

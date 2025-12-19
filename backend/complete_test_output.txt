@@ -1,0 +1,201 @@
+
+> web-backend@1.0.0 test
+> jest --coverage --coverage
+
+PASS __tests__/unit/pointsService.test.js
+  PointsService
+    deductPoints
+      ΓêÜ should deduct points from users with online instances (14 ms)
+      ΓêÜ should stop instances when points reach zero (1 ms)
+
+PASS __tests__/unit/consumptionCron.test.js
+  Consumption Cron
+    ΓêÜ should initialize cron job (66 ms)
+    ΓêÜ should process consumption on schedule (2 ms)
+
+PASS __tests__/unit/authMiddleware.test.js
+  Auth Middleware
+    ΓêÜ should extract user from valid token (11 ms)
+    ΓêÜ should reject request without authorization header (1 ms)
+    ΓêÜ should reject request with invalid token format (1 ms)
+    ΓêÜ should handle expired token (1 ms)
+
+PASS __tests__/unit/snapshotController.test.js
+  Snapshot Controller Unit Tests
+    createSnapshot
+      ΓêÜ should create a snapshot successfully (15 ms)
+      ΓêÜ should rotate snapshots if limit reached (delete oldest) (3 ms)
+    getSnapshots
+      ΓêÜ should return list of snapshots (1 ms)
+    restoreSnapshot
+      ΓêÜ should restore snapshot (3 ms)
+    deleteSnapshot
+      ΓêÜ should delete snapshot (5 ms)
+
+PASS __tests__/unit/snapshotCron.test.js
+  Snapshot Cron
+    ΓêÜ should initialize snapshot cron (69 ms)
+    ΓêÜ should create snapshots for instances with vmid (3 ms)
+    ΓêÜ should handle snapshot errors gracefully (1 ms)
+    ΓêÜ should skip instances without vmid
+
+PASS __tests__/unit/vpn.service.test.js
+  VpnService
+    createClient
+      ΓêÜ should create VPN client and return config (19 ms)
+      ΓêÜ should throw error when VPN client creation fails (26 ms)
+    deleteClient
+      ΓêÜ should delete VPN client successfully (2 ms)
+
+PASS __tests__/unit/cloudflare.service.test.js
+  CloudflareService
+    addTunnelIngress
+      ΓêÜ should add tunnel ingress successfully (40 ms)
+      ΓêÜ should throw error when adding ingress fails (25 ms)
+    removeTunnelIngress
+      ΓêÜ should remove tunnel ingress successfully (15 ms)
+      ΓêÜ should throw error when removing ingress fails (16 ms)
+
+PASS __tests__/unit/proxmox.service.test.js
+  ProxmoxService
+    getLXCList
+      ΓêÜ should return list of LXC containers (16 ms)
+      ΓêÜ should throw error when fetching LXC list fails (22 ms)
+    getNextVmid
+      ΓêÜ should return next available VMID (1 ms)
+      ΓêÜ should throw error when fetching next VMID fails (1 ms)
+    cloneLXC
+      ΓêÜ should clone LXC container successfully (2 ms)
+      ΓêÜ should throw error when cloning fails (1 ms)
+    startLXC
+      ΓêÜ should start LXC container (1 ms)
+    stopLXC
+      ΓêÜ should stop LXC container (1 ms)
+    configureLXC
+      ΓêÜ should configure LXC container
+    getLXCStatus
+      ΓêÜ should get LXC status
+      ΓêÜ should throw error if get status fails (1 ms)
+    getLXCInterfaces
+      ΓêÜ should get LXC interfaces (1 ms)
+      ΓêÜ should return empty array on error (1 ms)
+    deleteLXC
+      ΓêÜ should delete LXC container
+    waitForTask
+      ΓêÜ should resolve when task is stopped and OK (1 ms)
+      ΓêÜ should reject when task fails
+    Snapshot Methods
+      ΓêÜ should create snapshot (1 ms)
+      ΓêÜ should list snapshots (1 ms)
+      ΓêÜ should delete snapshot
+      ΓêÜ should rollback snapshot (1 ms)
+    Backup Methods
+      ΓêÜ should create backup
+      ΓêÜ should list backups (1 ms)
+      ΓêÜ should delete backup
+      ΓêÜ should get backup download ticket (1 ms)
+      ΓêÜ should fallback to volid if ticket fails
+    Firewall Methods
+      ΓêÜ should add firewall rule (1 ms)
+      ΓêÜ should set firewall options
+
+PASS __tests__/integration/points.routes.test.js
+  Points Routes
+    POST /api/points/spin
+      ΓêÜ should spin and potentially earn points (39 ms)
+      ΓêÜ should return 400 if already spun today (9 ms)
+
+PASS __tests__/integration/template.routes.test.js
+  Template Routes
+    GET /api/templates
+      ΓêÜ should get all templates (27 ms)
+      ΓêÜ should return empty array if no templates exist (6 ms)
+
+PASS __tests__/integration/auth.routes.test.js
+  Auth Routes
+    POST /api/auth/register
+      ΓêÜ should register a new user (46 ms)
+      ΓêÜ should return 400 if user already exists (8 ms)
+      ΓêÜ should return 400 if fields are missing (7 ms)
+    POST /api/auth/login
+      ΓêÜ should login user successfully (6 ms)
+      ΓêÜ should return 401 if user not found (5 ms)
+      ΓêÜ should return 400 if fields are missing (6 ms)
+
+PASS __tests__/integration/instance.routes.test.js (5.224 s)
+  Instance Routes
+    GET /api/instances
+      ΓêÜ should get all user instances (52 ms)
+    POST /api/instances
+      ΓêÜ should create new instance (29 ms)
+    DELETE /api/instances/:id
+      ΓêÜ should delete instance (3009 ms)
+      ΓêÜ should return 403 if trying to delete others instance (4 ms)
+
+PASS __tests__/unit/instanceController.test.js (8.129 s)
+  Instance Controller Unit Tests
+    toggleInstanceStatus
+      ΓêÜ should stop a running instance (9 ms)
+      ΓêÜ should start a stopped instance (1 ms)
+      ΓêÜ should return 404 if instance not found (5 ms)
+    restartInstance
+      ΓêÜ should reboot instance (1 ms)
+    deleteInstance
+      ΓêÜ should delete instance and cleanup resources (3008 ms)
+      ΓêÜ should handle errors during stop gracefully (1 ms)
+      ΓêÜ should handle errors during proxmox delete gracefully (3003 ms)
+    getInstanceStats
+      ΓêÜ should return stats for running instance (1 ms)
+      ΓêÜ should return zero stats for stopped instance (1 ms)
+      ΓêÜ should handle proxmox errors by returning zeros/unknown
+    createDomain
+      ΓêÜ should create a domain successfully (1 ms)
+      ΓêÜ should validate inputs
+    deleteDomain
+      ΓêÜ should delete domain successfully (1 ms)
+      ΓêÜ should return 404 if domain not found
+    getDomains
+      ΓêÜ should return domains
+      ΓêÜ should return 404 if instance not found (1 ms)
+    getVpnConfig
+      ΓêÜ should return existing config
+      ΓêÜ should generate config if missing and instance has IP (1 ms)
+    createInstance
+      ΓêÜ should create instance successfully (1 ms)
+      ΓêÜ should return 400 for invalid template (1 ms)
+      ΓêÜ should return 500 on db error
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------------------------------
+File                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                                          
+------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------------------------------
+All files               |    56.6 |    39.19 |   56.89 |   56.97 |                                                                                                                            
+ controllers            |   62.21 |    54.16 |   67.44 |   62.68 |                                                                                                                            
+  authController.js     |   44.15 |    51.72 |   33.33 |   44.73 | 40-41,62,78-79,84-102,109-134,139-156,161-171                                                                              
+  instanceController.js |      70 |    60.15 |   79.16 |   71.04 | 99,119-266,313-314,352-353,367,374-375,437-438,450,520-521,533,556,564,582,591,612-613,643-644,674-675,687,697,706,721-727 
+  pointsController.js   |   49.25 |    28.57 |      50 |   47.69 | 75-76,82-105,111-134,140-193                                                                                               
+  snapshotController.js |   59.81 |       45 |   66.66 |   60.37 | 20,24,36,75-76,92,107-108,124,132,136,144-145,154-155,165-166,182,190,199,209-210,216-274                                  
+  templateController.js |      75 |      100 |     100 |      75 | 10-11                                                                                                                      
+ cron                   |   57.57 |       50 |   66.66 |   57.57 |                                                                                                                            
+  consumptionCron.js    |      90 |       50 |   66.66 |      90 | 13                                                                                                                         
+  snapshotCron.js       |   43.47 |       50 |   66.66 |   43.47 | 14-47                                                                                                                      
+ middlewares            |      25 |        0 |       0 |      25 |                                                                                                                            
+  authMiddleware.js     |      25 |        0 |       0 |      25 | 4-16                                                                                                                       
+ routes                 |    79.1 |        0 |       0 |    79.1 |                                                                                                                            
+  authRoutes.js         |   54.83 |        0 |       0 |   54.83 | 13-25,33-39                                                                                                                
+  instanceRoutes.js     |     100 |      100 |     100 |     100 |                                                                                                                            
+  pointsRoutes.js       |     100 |      100 |     100 |     100 |                                                                                                                            
+  templateRoutes.js     |     100 |      100 |     100 |     100 |                                                                                                                            
+ services               |   44.89 |    24.33 |   53.22 |   45.15 |                                                                                                                            
+  cloudflare.service.js |   85.36 |    67.85 |     100 |   84.61 | 27,52-53,78,88-89                                                                                                          
+  pointsService.js      |   95.23 |    83.33 |     100 |   95.23 | 84                                                                                                                         
+  proxmox.service.js    |   69.76 |    31.03 |   92.59 |   69.29 | 10,67-79,88-89,98-109,140-141,158-161,184-185,201-202,218-219,236-237,260-261,282-283,299-300,337-338,355-356              
+  ssh.service.js        |    2.51 |        0 |    3.57 |    2.61 | 14-289                                                                                                                     
+  vpn.service.js        |   81.81 |    66.66 |     100 |   85.71 | 24-25,35                                                                                                                   
+------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------------------------------------
+Jest: "global" coverage threshold for branches (50%) not met: 39.19%
+Test Suites: 13 passed, 13 total
+Tests:       86 passed, 86 total
+Snapshots:   0 total
+Time:        9.554 s, estimated 10 s
+Ran all test suites.

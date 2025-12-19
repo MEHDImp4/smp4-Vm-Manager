@@ -295,6 +295,58 @@ describe('Instance Controller Unit Tests', () => {
         });
     });
 
+    // --- NEW DOMAIN TESTS ---
+    describe('deleteDomain', () => {
+        it('should delete domain successfully', async () => {
+            req.params = { id: 'inst1', domainId: 'dom1' };
+            prisma.domain.findUnique.mockResolvedValue({
+                id: 'dom1',
+                subdomain: 'sub1',
+                instance: { id: 'inst1', userId: 'user1' }
+            });
+
+            cloudflareService.removeTunnelIngress.mockResolvedValue();
+            prisma.domain.delete.mockResolvedValue();
+
+            await instanceController.deleteDomain(req, res);
+
+            expect(cloudflareService.removeTunnelIngress).toHaveBeenCalledWith('sub1.smp4.xyz');
+            expect(prisma.domain.delete).toHaveBeenCalledWith({ where: { id: 'dom1' } });
+            expect(res.json).toHaveBeenCalled();
+        });
+
+        it('should return 404 if domain not found', async () => {
+            req.params = { id: 'inst1', domainId: 'dom1' };
+            prisma.domain.findUnique.mockResolvedValue(null);
+
+            await instanceController.deleteDomain(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(404);
+        });
+    });
+
+    describe('getDomains', () => {
+        it('should return domains', async () => {
+            req.params.id = 'inst1';
+            prisma.instance.findUnique.mockResolvedValue({
+                id: 'inst1',
+                userId: 'user1',
+                domains: [{ id: 'd1' }]
+            });
+
+            await instanceController.getDomains(req, res);
+
+            expect(res.json).toHaveBeenCalledWith([{ id: 'd1' }]);
+        });
+
+        it('should return 404 if instance not found', async () => {
+            req.params.id = 'inst1';
+            prisma.instance.findUnique.mockResolvedValue(null);
+            await instanceController.getDomains(req, res);
+            expect(res.status).toHaveBeenCalledWith(404);
+        });
+    });
+
     describe('getVpnConfig', () => {
         it('should return existing config', async () => {
             req.params.id = 'inst1';

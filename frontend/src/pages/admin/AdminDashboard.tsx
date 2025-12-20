@@ -127,7 +127,7 @@ const AdminDashboard = () => {
             if (!userStr) return;
             const user = JSON.parse(userStr);
 
-            const body: any = { isBanned };
+            const body: { isBanned: boolean; banReason?: string; banDuration?: string } = { isBanned };
             if (isBanned) {
                 body.banReason = reason;
                 if (duration) body.banDuration = duration;

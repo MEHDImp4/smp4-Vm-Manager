@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Coins, Pause, CreditCard, GraduationCap } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const PointsSection = () => {
+  useScrollAnimation();
   const [points, setPoints] = useState(120);
 
   const calculateDays = (points: number, cost: number) => {
@@ -13,7 +15,7 @@ const PointsSection = () => {
     <section id="points" className="py-24 relative">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <div className="text-center max-w-2xl mx-auto mb-16 animate-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out">
           <span className="text-sm font-medium text-primary uppercase tracking-wider mb-3 block">
             Système de Points
           </span>
@@ -50,7 +52,11 @@ const PointsSection = () => {
                 desc: "Vérifiez votre statut étudiant et recevez des points bonus chaque mois.",
               },
             ].map((feature, index) => (
-              <div key={index} className="flex gap-4 group">
+              <div
+                key={index}
+                className="flex gap-4 group animate-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out"
+                style={{ transitionDelay: `${index * 100}ms` }}
+              >
                 <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center group-hover:border-primary/60 transition-colors">
                   <feature.icon className="w-5 h-5 text-primary" />
                 </div>
@@ -63,7 +69,7 @@ const PointsSection = () => {
           </div>
 
           {/* Right: Visualization */}
-          <div className="glass rounded-2xl p-8 border border-border/50">
+          <div className="glass rounded-2xl p-8 border border-border/50 animate-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out delay-300">
             <h3 className="text-xl font-semibold mb-6 text-center">Simulateur de points</h3>
 
             {/* Points Control */}

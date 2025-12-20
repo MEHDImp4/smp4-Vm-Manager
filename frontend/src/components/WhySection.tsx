@@ -1,4 +1,5 @@
 import { Zap, FlaskConical, Shield, BarChart3, Brain, Container } from "lucide-react";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const features = [
   {
@@ -34,6 +35,8 @@ const features = [
 ];
 
 const WhySection = () => {
+  useScrollAnimation();
+
   return (
     <section id="why" className="py-24 relative overflow-hidden">
       {/* Background Effect */}
@@ -41,7 +44,7 @@ const WhySection = () => {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <div className="text-center max-w-2xl mx-auto mb-16 animate-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out">
           <span className="text-sm font-medium text-primary uppercase tracking-wider mb-3 block">
             Avantages
           </span>
@@ -58,7 +61,8 @@ const WhySection = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group gradient-border rounded-2xl p-6 hover-lift"
+              className="group gradient-border rounded-2xl p-6 hover-lift animate-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out"
+              style={{ transitionDelay: `${index * 100}ms` }}
             >
               <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center mb-4 group-hover:border-primary/60 transition-colors">
                 <feature.icon className="w-6 h-6 text-primary" />
@@ -70,7 +74,7 @@ const WhySection = () => {
         </div>
 
         {/* Bottom CTA */}
-        <div className="text-center mt-16">
+        <div className="text-center mt-16 animate-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out delay-500">
           <p className="text-muted-foreground mb-6">
             Prêt à déployer votre premier projet ?
           </p>

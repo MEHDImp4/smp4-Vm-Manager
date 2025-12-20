@@ -87,14 +87,49 @@ const replyMessage = async (req, res) => {
 
         // Using a simple HTML template for reply
         const htmlContent = `
-      <div style="font-family: Arial, sans-serif; color: #333;">
-        <h2>Réponse à votre message sur SMP4cloud</h2>
-        <p>Bonjour ${originalMessage.name},</p>
-        <p>${content.replace(/\n/g, '<br>')}</p>
-        <hr>
-        <p style="color: #666; font-size: 12px;">Message original du ${new Date(originalMessage.createdAt).toLocaleDateString()}:<br>
-        <i>${originalMessage.message}</i></p>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
+  .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+  .header { background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); padding: 40px 20px; text-align: center; }
+  .header-text { margin: 0; color: white; font-size: 28px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .content { padding: 40px 30px; color: #374151; line-height: 1.6; font-size: 16px; }
+  .greeting { font-size: 20px; font-weight: 600; margin-bottom: 24px; color: #111827; }
+  .message-body { margin-bottom: 32px; white-space: pre-wrap; }
+  .quote-box { background-color: #f8fafc; border-left: 4px solid #d8b4fe; padding: 20px; margin-top: 32px; border-radius: 0 8px 8px 0; font-size: 14px; color: #64748b; }
+  .quote-header { font-weight: 600; margin-bottom: 8px; color: #475569; display: flex; align-items: center; gap: 8px; }
+  .footer { background-color: #f8fafc; padding: 30px; text-align: center; font-size: 13px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+  .footer-link { color: #a855f7; text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-text">SMP4<span style="opacity: 0.9">cloud</span></div>
+    </div>
+    <div class="content">
+      <div class="greeting">Bonjour ${originalMessage.name},</div>
+      
+      <div class="message-body">${content}</div>
+      
+      <div class="quote-box">
+        <div class="quote-header">
+            En réponse à votre message du ${new Date(originalMessage.createdAt).toLocaleDateString('fr-FR')} :
+        </div>
+        <div style="font-style: italic;">"${originalMessage.message}"</div>
       </div>
+    </div>
+    <div class="footer">
+      <p style="margin: 0 0 10px 0;">Cet email a été envoyé automatiquement par la plateforme SMP4cloud.</p>
+      <p style="margin: 0;">&copy; ${new Date().getFullYear()} SMP4cloud. Tous droits réservés.</p>
+    </div>
+  </div>
+</body>
+</html>
     `;
 
         await emailService.sendEmail(originalMessage.email, subject, htmlContent);

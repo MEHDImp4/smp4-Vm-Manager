@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Cpu, HardDrive, MemoryStick, Rocket, Container } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 interface Template {
   id: string;
@@ -22,6 +23,7 @@ const templateMetadata: Record<string, { usage: string; popular: boolean }> = {
 };
 
 const TemplatesSection = () => {
+  useScrollAnimation();
   const [templates, setTemplates] = useState<Template[]>([]);
 
   useEffect(() => {
@@ -46,7 +48,7 @@ const TemplatesSection = () => {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <div className="text-center max-w-2xl mx-auto mb-16 animate-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out">
           <span className="text-sm font-medium text-primary uppercase tracking-wider mb-3 block">
             Templates
           </span>
@@ -67,10 +69,11 @@ const TemplatesSection = () => {
             return (
               <div
                 key={template.id}
-                className={`relative glass rounded-2xl p-6 hover-lift border ${meta.popular
+                className={`relative glass rounded-2xl p-6 hover-lift border animate-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out ${meta.popular
                   ? "border-primary/50 shadow-lg shadow-primary/10"
                   : "border-border/50"
                   }`}
+                style={{ transitionDelay: `${index * 100}ms` }}
               >
                 {meta.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-primary to-secondary text-xs font-semibold text-primary-foreground z-20">

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const contactController = require('../controllers/contactController');
-const authMiddleware = require('../middlewares/authMiddleware');
+const { verifyToken: authMiddleware } = require('../middlewares/authMiddleware');
 
 // Public route
 router.post('/', contactController.submitMessage);

@@ -1,24 +1,22 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
-import FeatureSection from "@/components/FeatureSection";
-import ConceptSection from "@/components/ConceptSection";
-import TemplatesSection from "@/components/TemplatesSection";
 import PointsSection from "@/components/PointsSection";
+import TemplatesSection from "@/components/TemplatesSection";
 import WhySection from "@/components/WhySection";
-
+import TestimonialsSection from "@/components/TestimonialsSection";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main>
+    <div className="min-h-screen flex flex-col">
+      <main className="flex-grow">
         <HeroSection />
-        <FeatureSection />
-        <PointsSection />
         <TemplatesSection />
+        <PointsSection />
         <WhySection />
+        <TestimonialsSection />
       </main>
-
+      <Footer />
     </div>
   );
 };

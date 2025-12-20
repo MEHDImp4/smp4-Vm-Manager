@@ -247,3 +247,22 @@
     transform: scale(1.1) rotate(5deg);
   }
 }
+
+@keyframes scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@layer utilities {
+  .animate-scroll {
+    animation: scroll 40s linear infinite;
+  }
+  
+  .pause-hover:hover {
+    animation-play-state: paused;
+  }
+}

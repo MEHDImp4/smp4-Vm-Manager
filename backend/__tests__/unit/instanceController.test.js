@@ -132,7 +132,7 @@ describe('Instance Controller Unit Tests', () => {
             proxmoxService.stopLXC.mockResolvedValue();
             proxmoxService.deleteLXC.mockResolvedValue();
             vpnService.deleteClient.mockResolvedValue();
-            cloudflareService.removeTunnelIngress.mockResolvedValue();
+            cloudflareService.removeMultipleTunnelIngress.mockResolvedValue();
             prisma.instance.delete.mockResolvedValue({});
 
             await instanceController.deleteInstance(req, res);
@@ -140,7 +140,7 @@ describe('Instance Controller Unit Tests', () => {
             expect(proxmoxService.stopLXC).toHaveBeenCalledWith(100);
             expect(proxmoxService.deleteLXC).toHaveBeenCalledWith(100);
             expect(vpnService.deleteClient).toHaveBeenCalledWith('vpn-conf');
-            expect(cloudflareService.removeTunnelIngress).toHaveBeenCalledWith('sub1.smp4.xyz');
+            expect(cloudflareService.removeMultipleTunnelIngress).toHaveBeenCalledWith(['sub1.smp4.xyz']);
             expect(prisma.instance.delete).toHaveBeenCalledWith({ where: { id: 'inst1' } });
             expect(res.json).toHaveBeenCalledWith({ message: "Instance deleted" });
         });
@@ -277,7 +277,7 @@ describe('Instance Controller Unit Tests', () => {
             await instanceController.createDomain(req, res);
 
             expect(cloudflareService.addTunnelIngress).toHaveBeenCalledWith(
-                'user1-inst1-app.smp4.xyz',
+                'app-user1-inst1.smp4.xyz',
                 'http://192.168.1.50:8080'
             );
             expect(res.status).toHaveBeenCalledWith(201);

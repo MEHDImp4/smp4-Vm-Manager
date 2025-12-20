@@ -1,0 +1,87 @@
+FAIL __tests__/unit/pointsController.test.js
+  Points Controller Unit Tests
+    spinWheel
+      ΓêÜ should allow user to spin if they have not spun today (8 ms)
+      ΓêÜ should return 400 if user already spun today (1 ms)
+      ΓêÜ should handle errors gracefully (3 ms)
+    canSpinToday
+      ΓêÜ should return true if no spin today
+      ΓêÜ should return false if already spun (1 ms)
+      ΓêÜ should handle errors (1 ms)
+    purchasePoints
+      ΓêÜ should return placeholder response for valid amount
+      ΓêÜ should return 400 for invalid amount (1 ms)
+      ΓêÜ should handle errors
+    claimSocialBonus
+      ├ù should claim bonus if platform is valid and not yet claimed (3 ms)
+      ΓêÜ should return 400 if platform is invalid (1 ms)
+      ├ù should return 400 if bonus already claimed (1 ms)
+      ├ù should handle errors
+
+  ΓùÅ Points Controller Unit Tests ΓÇ║ claimSocialBonus ΓÇ║ should claim bonus if platform is valid and not yet claimed
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: ObjectContaining {"where": ObjectContaining {"amount": 50, "type": "social", "userId": "user1"}}
+
+    Number of calls: 0
+
+      171 |             await pointsController.claimSocialBonus(req, res);
+      172 |
+    > 173 |             expect(prisma.pointTransaction.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+          |                                                       ^
+      174 |                 where: expect.objectContaining({
+      175 |                     userId: 'user1',
+      176 |                     type: 'social',
+
+      at Object.toHaveBeenCalledWith (__tests__/unit/pointsController.test.js:173:55)
+
+  ΓùÅ Points Controller Unit Tests ΓÇ║ claimSocialBonus ΓÇ║ should return 400 if bonus already claimed
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: 400
+    Received: 500
+
+    Number of calls: 1
+
+      204 |             await pointsController.claimSocialBonus(req, res);
+      205 |
+    > 206 |             expect(res.status).toHaveBeenCalledWith(400);
+          |                                ^
+      207 |             expect(res.json).toHaveBeenCalledWith({ error: "Bonus d├⌐j├á r├⌐clam├⌐ pour cette plateforme" });
+      208 |             expect(prisma.$transaction).not.toHaveBeenCalled();
+      209 |         });
+
+      at Object.toHaveBeenCalledWith (__tests__/unit/pointsController.test.js:206:32)
+
+  ΓùÅ Points Controller Unit Tests ΓÇ║ claimSocialBonus ΓÇ║ should handle errors
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: 500
+    Received: 400
+
+    Number of calls: 1
+
+      215 |             await pointsController.claimSocialBonus(req, res);
+      216 |
+    > 217 |             expect(res.status).toHaveBeenCalledWith(500);
+          |                                ^
+      218 |         });
+      219 |     });
+      220 | });
+
+      at Object.toHaveBeenCalledWith (__tests__/unit/pointsController.test.js:217:32)
+
+PASS __tests__/integration/points.routes.test.js
+  Points Routes
+    POST /api/points/spin
+      ΓêÜ should spin and potentially earn points (64 ms)
+      ΓêÜ should return 400 if already spun today (7 ms)
+
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       3 failed, 12 passed, 15 total
+Snapshots:   0 total
+Time:        1.442 s, estimated 3 s
+Ran all test suites matching /pointsController.test.js|points.routes.test.js/i.

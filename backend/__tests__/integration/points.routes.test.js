@@ -57,7 +57,7 @@ describe('Points Routes', () => {
         .set('Authorization', 'Bearer token');
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toContain('déjà tourné');
+      expect(response.body.error).toContain('Vous devez attendre 24h entre chaque tour !');
     });
   });
 });

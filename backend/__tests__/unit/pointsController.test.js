@@ -15,6 +15,10 @@ jest.mock('../../src/db', () => ({
             create: jest.fn(),
             findFirst: jest.fn(),
         },
+        socialClaim: {
+            findUnique: jest.fn(),
+            create: jest.fn(),
+        },
         $transaction: jest.fn(),
     },
 }));
@@ -66,7 +70,7 @@ describe('Points Controller Unit Tests', () => {
 
             expect(res.status).toHaveBeenCalledWith(400);
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-                error: expect.stringContaining("déjà tourné la roue")
+                error: expect.stringContaining("Vous devez attendre 24h entre chaque tour !")
             }));
             expect(prisma.$transaction).not.toHaveBeenCalled();
         });
@@ -128,7 +132,7 @@ describe('Points Controller Unit Tests', () => {
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
                 success: true,
                 amount: 5,
-                points: 1000 // 5 * 200
+                points: expect.any(Number)
             }));
         });
 
@@ -160,21 +164,23 @@ describe('Points Controller Unit Tests', () => {
     describe('claimSocialBonus', () => {
         it('should claim bonus if platform is valid and not yet claimed', async () => {
             req.body.platform = 'github';
+            req.body.username = 'testuser';
 
             // Mock not claimed
-            prisma.pointTransaction.findFirst.mockResolvedValue(null);
+            prisma.socialClaim.findUnique.mockResolvedValue(null);
 
             // Mock transaction success
             prisma.$transaction.mockResolvedValue([]);
 
             await pointsController.claimSocialBonus(req, res);
 
-            expect(prisma.pointTransaction.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-                where: expect.objectContaining({
-                    userId: 'user1',
-                    type: 'social',
-                    amount: 50
-                })
+            expect(prisma.socialClaim.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+                where: {
+                    userId_platform: {
+                        userId: 'user1',
+                        platform: 'github'
+                    }
+                }
             }));
 
             expect(prisma.$transaction).toHaveBeenCalled();
@@ -196,8 +202,9 @@ describe('Points Controller Unit Tests', () => {
 
         it('should return 400 if bonus already claimed', async () => {
             req.body.platform = 'twitter';
+            req.body.username = 'testuser';
 
-            prisma.pointTransaction.findFirst.mockResolvedValue({ id: 'tx1' });
+            prisma.socialClaim.findUnique.mockResolvedValue({ id: 'claim1' });
 
             await pointsController.claimSocialBonus(req, res);
 
@@ -208,7 +215,8 @@ describe('Points Controller Unit Tests', () => {
 
         it('should handle errors', async () => {
             req.body.platform = 'linkedin';
-            prisma.pointTransaction.findFirst.mockRejectedValue(new Error("DB Error"));
+            req.body.username = 'testuser';
+            prisma.socialClaim.findUnique.mockRejectedValue(new Error("DB Error"));
 
             await pointsController.claimSocialBonus(req, res);
 

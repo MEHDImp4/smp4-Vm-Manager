@@ -1,6 +1,6 @@
 const { prisma } = require('../db');
 const ProxmoxService = require('./proxmox.service');
-const proxmox = new ProxmoxService();
+const proxmox = ProxmoxService;
 
 const deductPoints = async () => {
     try {

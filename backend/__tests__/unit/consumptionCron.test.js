@@ -1,6 +1,9 @@
 jest.mock('node-cron', () => ({
   schedule: jest.fn(),
 }));
+jest.mock('../../src/services/proxmox.service', () => ({
+  stopLXC: jest.fn().mockResolvedValue({}),
+}));
 jest.mock('../../src/db', () => ({
   prisma: require('jest-mock-extended').mockDeep(),
 }));

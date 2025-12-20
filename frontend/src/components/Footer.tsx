@@ -19,20 +19,12 @@ const Footer = () => {
             </p>
             <div className="flex gap-3">
               <a
-                href="https://github.com"
+                href="https://github.com/MEHDImp4"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
               >
                 <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="https://discord.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-              >
-                <MessageCircle className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -52,9 +44,9 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                <Link to="/docker-guide" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
                   Documentation
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -72,11 +64,6 @@ const Footer = () => {
                   Blog
                 </a>
               </li>
-              <li>
-                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
-                  Status
-                </a>
-              </li>
             </ul>
           </div>
 
@@ -91,11 +78,6 @@ const Footer = () => {
               <li>
                 <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
                   Contact
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
-                  Discord
                 </a>
               </li>
             </ul>

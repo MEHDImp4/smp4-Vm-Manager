@@ -4,7 +4,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const instanceRoutes = require('./routes/instanceRoutes');
 const templateRoutes = require('./routes/templateRoutes');
-const templateRoutes = require('./routes/templateRoutes');
+
 const pointsRoutes = require('./routes/pointsRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const { startConsumptionCron } = require('./cron/consumptionCron');

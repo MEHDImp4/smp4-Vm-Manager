@@ -12,14 +12,57 @@ import { toast } from "sonner";
 import { Loader2, Users, Server, Activity, Shield, Search, RefreshCw, Ban, UserCheck, Edit, Plus, Trash2, Power } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
+interface NodeStats {
+    cpu: number;
+    memory: {
+        total: number;
+        used: number;
+    };
+    uptime: number;
+    pveversion: string;
+    kversion: string;
+    cpuinfo?: {
+        model: string;
+        cpus: number;
+    };
+}
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    points: number;
+    isBanned: boolean;
+    _count?: {
+        instances: number;
+    };
+}
+
+interface Instance {
+    id: string;
+    name: string;
+    template: string;
+    vmid: number;
+    cpu: string;
+    ram: string;
+    storage: string;
+    pointsPerDay: number;
+    status: string;
+    user?: {
+        email: string;
+        name: string;
+    };
+}
+
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [nodeStats, setNodeStats] = useState<any>(null);
-    const [users, setUsers] = useState<any[]>([]);
-    const [allInstances, setAllInstances] = useState<any[]>([]);
+    const [nodeStats, setNodeStats] = useState<NodeStats | null>(null);
+    const [users, setUsers] = useState<User[]>([]);
+    const [allInstances, setAllInstances] = useState<Instance[]>([]);
     const [searchUser, setSearchUser] = useState("");
-    const [editUser, setEditUser] = useState<any>(null);
+    const [editUser, setEditUser] = useState<User | null>(null);
     const [editPoints, setEditPoints] = useState("");
 
     const fetchData = async () => {

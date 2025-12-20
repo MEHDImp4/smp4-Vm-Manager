@@ -347,9 +347,32 @@ const confirmAccountDeletion = async (req, res) => {
             }
         }
 
-        // Delete user from database (cascade will handle related records)
+        // Delete user from database (must delete related records first due to foreign key constraints)
         console.log('[Delete] Deleting user from database...');
         try {
+            // Get all instance IDs for cascade deletion
+            const instanceIds = user.instances.map(i => i.id);
+
+            // Delete in correct order to avoid foreign key violations
+            console.log('[Delete] Deleting snapshots...');
+            await prisma.snapshot.deleteMany({ where: { instanceId: { in: instanceIds } } });
+
+            console.log('[Delete] Deleting domains...');
+            await prisma.domain.deleteMany({ where: { instanceId: { in: instanceIds } } });
+
+            console.log('[Delete] Deleting instances...');
+            await prisma.instance.deleteMany({ where: { userId } });
+
+            console.log('[Delete] Deleting point transactions...');
+            await prisma.pointTransaction.deleteMany({ where: { userId } });
+
+            console.log('[Delete] Deleting daily spins...');
+            await prisma.dailySpin.deleteMany({ where: { userId } });
+
+            console.log('[Delete] Deleting social claims...');
+            await prisma.socialClaim.deleteMany({ where: { userId } });
+
+            console.log('[Delete] Finally deleting user...');
             await prisma.user.delete({ where: { id: userId } });
             console.log('[Delete] User deleted successfully');
 

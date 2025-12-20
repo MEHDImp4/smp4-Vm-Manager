@@ -390,5 +390,68 @@ module.exports = {
             </div>
         `;
         return module.exports.sendEmail(to, subject, html);
+    },
+    sendWheelWinEmail: async (to, name, points) => {
+        const subject = `🎉 Félicitations ! Vous avez gagné ${points} points !`;
+        const html = `
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 2px; border-radius: 12px;">
+                <div style="background: white; padding: 40px; border-radius: 10px;">
+                    <!-- Header -->
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); width: 60px; height: 60px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                            <span style="font-size: 30px;">🎡</span>
+                        </div>
+                        <h1 style="color: #1f2937; margin: 0; font-size: 28px; font-weight: 700;">Bravo ${name} !</h1>
+                    </div>
+
+                    <!-- Win Message -->
+                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; border-radius: 12px; border: 2px solid #f59e0b; margin-bottom: 30px; text-align: center;">
+                        <p style="color: #92400e; font-size: 16px; margin: 0 0 15px 0;">
+                            Vous avez tourné la roue quotidienne et gagné :
+                        </p>
+                        <div style="background: white; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <span style="font-size: 48px; font-weight: 800; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                                +${points}
+                            </span>
+                            <span style="font-size: 24px; color: #92400e; font-weight: 600; margin-left: 8px;">PTS</span>
+                        </div>
+                    </div>
+
+                    <!-- Next Spin Info -->
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 30px 0;">
+                        <h3 style="color: #92400e; margin: 0 0 10px 0; font-size: 16px;">⏰ Prochaine rotation</h3>
+                        <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.6;">
+                            Revenez demain pour tenter votre chance à nouveau et gagner jusqu'à <strong>200 points</strong> !
+                        </p>
+                    </div>
+
+                    <!-- What to do with points -->
+                    <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin: 30px 0;">
+                        <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 16px;">💡 Utilisez vos points :</h3>
+                        <ul style="color: #047857; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                            <li>Créez des machines virtuelles puissantes</li>
+                            <li>Ajoutez des snapshots pour sauvegarder vos données</li>
+                            <li>Obtenez des domaines personnalisés</li>
+                            <li>Gardez vos VMs actives plus longtemps</li>
+                        </ul>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 40px; padding-top: 25px; border-top: 2px solid #e5e7eb; text-align: center;">
+                        <p style="color: #6b7280; font-size: 14px; margin: 0 0 10px 0;">
+                            Continuez à gagner des points quotidiennement !
+                        </p>
+                        <a href="https://smp4.xyz/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 10px 0;">
+                            Voir mon solde
+                        </a>
+                        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0 0;">
+                            L'équipe SMP4cloud<br/>
+                            <span style="color: #d1d5db;">© 2024 SMP4cloud - Tous droits réservés</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+        return module.exports.sendEmail(to, subject, html);
     }
 };

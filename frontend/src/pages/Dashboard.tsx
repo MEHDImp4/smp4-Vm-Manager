@@ -59,6 +59,7 @@ const Dashboard = () => {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyCode, setVerifyCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [costRateMode, setCostRateMode] = useState<'day' | 'hour' | 'minute'>('day');
   const hasProvisioning = instances.some(i => i.status === 'provisioning');
 
   // Rotate Pro Tips
@@ -290,6 +291,32 @@ const Dashboard = () => {
     } catch (e) {
       toast.error("Erreur d'envoi");
     }
+  };
+
+  const handleCostRateToggle = () => {
+    setCostRateMode(prev => {
+      if (prev === 'day') return 'hour';
+      if (prev === 'hour') return 'minute';
+      return 'day';
+    });
+  };
+
+  const formatCostRate = (dailyCost: number) => {
+    if (costRateMode === 'hour') {
+      return {
+        value: (dailyCost / 24).toFixed(2),
+        unit: 'pts/h'
+      };
+    } else if (costRateMode === 'minute') {
+      return {
+        value: (dailyCost / 24 / 60).toFixed(4),
+        unit: 'pts/min'
+      };
+    }
+    return {
+      value: dailyCost.toString(),
+      unit: 'pts/j'
+    };
   };
 
   return (
@@ -608,15 +635,19 @@ const Dashboard = () => {
 
                       {/* Metrics */}
                       <div className="flex items-center gap-6 relative z-10 pl-6 md:pl-0 border-l md:border-l-0 border-white/10">
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Coût Total</p>
-                          <div className={`font-mono font-bold flex items-center gap-1.5 ${instance.status === 'online' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <div
+                          className="text-right cursor-pointer group/cost hover:bg-white/5 rounded-lg p-2 -m-2 transition-all"
+                          onClick={handleCostRateToggle}
+                          title="Cliquez pour changer l'unité"
+                        >
+                          <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-semibold group-hover/cost:text-primary transition-colors">Coût Total</p>
+                          <div className={`font-mono font-bold flex items-center gap-1.5 ${instance.status === 'online' ? 'text-primary' : 'text-muted-foreground'} group-hover/cost:scale-105 transition-transform`}>
                             <BarChart3 className="w-4 h-4" />
-                            {instance.pointsPerDay + ((instance.paidDomainsCount || 0) * 2)} <span className="text-xs opacity-70">pts/j</span>
+                            {formatCostRate(instance.pointsPerDay + ((instance.paidDomainsCount || 0) * 2)).value} <span className="text-xs opacity-70">{formatCostRate(instance.pointsPerDay + ((instance.paidDomainsCount || 0) * 2)).unit}</span>
                           </div>
                           {(instance.paidDomainsCount || 0) > 0 && (
                             <p className="text-[10px] text-muted-foreground mt-0.5">
-                              Dont {(instance.paidDomainsCount || 0) * 2} pts domaines
+                              Dont {formatCostRate((instance.paidDomainsCount || 0) * 2).value} {formatCostRate((instance.paidDomainsCount || 0) * 2).unit.split('/')[1]} domaines
                             </p>
                           )}
                         </div>

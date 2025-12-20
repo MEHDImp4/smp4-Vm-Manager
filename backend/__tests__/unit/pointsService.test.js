@@ -1,6 +1,11 @@
 jest.mock('../../src/db', () => ({
   prisma: require('jest-mock-extended').mockDeep(),
 }));
+jest.mock('../../src/services/proxmox.service', () => {
+  return jest.fn().mockImplementation(() => ({
+    stopLXC: jest.fn().mockResolvedValue({}),
+  }));
+});
 const { prisma } = require('../../src/db');
 const { deductPoints, addDailyPoints } = require('../../src/services/pointsService');
 
@@ -48,8 +53,11 @@ describe('PointsService', () => {
       ];
 
       prisma.user.findMany.mockResolvedValueOnce(mockUsers);
+      prisma.instance.findMany.mockResolvedValueOnce([
+        { id: 'instance1', vmid: 100 }
+      ]);
+      prisma.instance.updateMany.mockResolvedValueOnce({});
       prisma.pointTransaction.create.mockResolvedValueOnce({});
-      prisma.instance.update.mockResolvedValueOnce({});
 
       await deductPoints();
 

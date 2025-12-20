@@ -1,4 +1,6 @@
 const { prisma } = require('../db');
+const ProxmoxService = require('./proxmox.service');
+const proxmox = new ProxmoxService();
 
 const deductPoints = async () => {
     try {
@@ -52,7 +54,28 @@ const deductPoints = async () => {
                     console.log(`User ${user.email} has exhausted points. Stopping instances.`);
                     newBalance = 0;
 
-                    // Stop all instances for this user
+                    // Get instances to stop with their VMIDs
+                    const instancesToStop = await prisma.instance.findMany({
+                        where: {
+                            userId: user.id,
+                            status: 'online'
+                        }
+                    });
+
+                    // Stop VMs in Proxmox first
+                    for (const instance of instancesToStop) {
+                        if (instance.vmid) {
+                            try {
+                                console.log(`Stopping VM ${instance.vmid} for user ${user.email}`);
+                                await proxmox.stopLXC(instance.vmid);
+                            } catch (error) {
+                                console.error(`Failed to stop VM ${instance.vmid} in Proxmox:`, error.message);
+                                // Continue anyway to update database
+                            }
+                        }
+                    }
+
+                    // Update database status for all instances
                     await prisma.instance.updateMany({
                         where: {
                             userId: user.id,

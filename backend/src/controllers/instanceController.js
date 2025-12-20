@@ -270,13 +270,17 @@ const createInstance = async (req, res) => {
                     if (ip) {
                         debugLog(`[Background] Creating Portainer domain for ${parameter_instance_name}...`);
 
-                        // Generate Subdomain: portainer-[username]-[instancename]
+                        // Generate Subdomain: portainer-[user]-[vm]
+                        // Ensure strict sanitization matching the createDomain logic
                         const cleanUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
                         const cleanInstance = instance.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                        // Format: [suffix]-[user]-[vm] => portainer-${cleanUser}-${cleanInstance}
                         const subdomain = `portainer-${cleanUser}-${cleanInstance}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
 
                         const fullHostname = `${subdomain}.smp4.xyz`;
                         const serviceUrl = `http://${ip}:9000`;
+
+                        debugLog(`[Background] Attempting to create Portainer domain: ${fullHostname} -> ${serviceUrl}`);
 
                         // Add to Cloudflare
                         await cloudflareService.addTunnelIngress(fullHostname, serviceUrl);
@@ -290,10 +294,12 @@ const createInstance = async (req, res) => {
                                 instanceId: instance.id
                             }
                         });
-                        debugLog(`[Background] Portainer domain created: ${fullHostname}`);
+                        debugLog(`[Background] Portainer domain successfully created in DB: ${subdomain}`);
+                    } else {
+                        console.warn(`[Background] Skipping Portainer domain creation: No IP available for ${vmid}`);
                     }
                 } catch (domainError) {
-                    console.error(`[Background] Portainer domain creation failed:`, domainError.message);
+                    console.error(`[Background] Portainer domain creation FAILED for ${vmid}:`, domainError);
                     // Non-fatal
                 }
 
@@ -614,7 +620,7 @@ const createDomain = async (req, res) => {
         const cleanUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const cleanInstance = instance.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
 
-        const subdomain = `${cleanUser}-${cleanInstance}-${cleanSuffix}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
+        const subdomain = `${cleanSuffix}-${cleanUser}-${cleanInstance}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
 
         // Check if subdomain is taken (global check)
         const existingDomain = await prisma.domain.findUnique({

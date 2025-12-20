@@ -783,6 +783,27 @@ const InstanceDetails = () => {
                                     LIVE
                                 </div> */}
                             </div>
+                            <div className="flex gap-4">
+                                <Button className="w-full bg-[#13bef9] hover:bg-[#0da5d9] text-white" asChild>
+                                    <a
+                                        href={
+                                            domains.find(d => d.subdomain.startsWith('portainer-'))
+                                                ? `https://${domains.find(d => d.subdomain.startsWith('portainer-')).subdomain}.smp4.xyz`
+                                                : `http://${stats.ip}:9000`
+                                        }
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <div className="mr-2 h-4 w-4 bg-white/20 rounded-full flex items-center justify-center">
+                                            <div className="h-2 w-2 bg-white rounded-full" />
+                                        </div>
+                                        Accéder à Portainer
+                                    </a>
+                                </Button>
+                                {/* <Button variant="outline" className="w-full border-white/10 hover:bg-white/5 disabled:opacity-50">
+                                    Autres services (Bientôt)
+                                </Button> */}
+                            </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
                                 {/* CPU Graph */}

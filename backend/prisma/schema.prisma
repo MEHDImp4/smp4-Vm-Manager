@@ -20,6 +20,7 @@ model User {
   instances  Instance[]
   transactions PointTransaction[]
   dailySpins DailySpin[]
+  socialClaims SocialClaim[]
 
   @@map("users")
 }

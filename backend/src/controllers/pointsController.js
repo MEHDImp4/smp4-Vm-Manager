@@ -9,24 +9,20 @@ const spinWheel = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // Check if user already spun today
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const existingSpin = await prisma.dailySpin.findFirst({
-            where: {
-                userId,
-                spinDate: {
-                    gte: today
-                }
-            }
+        // Check if user already spun in the last 24h
+        const lastSpin = await prisma.dailySpin.findFirst({
+            where: { userId },
+            orderBy: { spinDate: 'desc' }
         });
 
-        if (existingSpin) {
-            return res.status(400).json({
-                error: "Vous avez déjà tourné la roue aujourd'hui !",
-                nextSpinIn: getTimeUntilMidnight()
-            });
+        if (lastSpin) {
+            const nextSpinDate = new Date(lastSpin.spinDate.getTime() + 24 * 60 * 60 * 1000); // +24 hours
+            if (new Date() < nextSpinDate) {
+                return res.status(400).json({
+                    error: "Vous devez attendre 24h entre chaque tour !",
+                    nextSpinIn: nextSpinDate.getTime() - new Date().getTime()
+                });
+            }
         }
 
         // Generate random points using weighted prizes
@@ -68,12 +64,13 @@ const spinWheel = async (req, res) => {
 
         // Send confirmation email
         try {
-            // Check if user has an email (should be required, but good to be safe)
             if (req.user.email) {
+                // Next spin is exactly 24h from now
                 const nextSpinTime = new Date();
                 nextSpinTime.setDate(nextSpinTime.getDate() + 1);
-                nextSpinTime.setHours(0, 0, 0, 0);
+                // nextSpinTime.setHours(0, 0, 0, 0); // Removed midnight logic
                 const nextSpinStr = nextSpinTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                const nextSpinDateStr = nextSpinTime.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 
                 await emailService.sendEmail(
                     req.user.email,
@@ -82,7 +79,7 @@ const spinWheel = async (req, res) => {
                         <h2>Félicitations ! 🎁</h2>
                         <p>Vous avez gagné <strong>${wonPoints} points</strong> sur la roue quotidienne SMP4.</p>
                         <p>Votre nouveau solde : <strong>${updatedUser.points} points</strong>.</p>
-                        <p>Vous pourrez tourner la roue à nouveau demain dès <strong>00:00</strong> !</p>
+                        <p>Vous pourrez tourner la roue à nouveau le <strong>${nextSpinDateStr} à ${nextSpinStr}</strong> !</p>
                         <br/>
                         <a href="https://smp4.xyz" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Revenir sur SMP4</a>
                     </div>`
@@ -90,7 +87,6 @@ const spinWheel = async (req, res) => {
             }
         } catch (emailErr) {
             console.error("Failed to send spin email:", emailErr);
-            // Don't fail the request, just log it
         }
 
         res.json({
@@ -110,22 +106,26 @@ const canSpinToday = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const existingSpin = await prisma.dailySpin.findFirst({
-            where: {
-                userId,
-                spinDate: {
-                    gte: today
-                }
-            }
+        const lastSpin = await prisma.dailySpin.findFirst({
+            where: { userId },
+            orderBy: { spinDate: 'desc' }
         });
 
+        let canSpin = true;
+        let nextSpinIn = 0;
+
+        if (lastSpin) {
+            const nextSpinDate = new Date(lastSpin.spinDate.getTime() + 24 * 60 * 60 * 1000);
+            if (new Date() < nextSpinDate) {
+                canSpin = false;
+                nextSpinIn = nextSpinDate.getTime() - new Date().getTime();
+            }
+        }
+
         res.json({
-            canSpin: !existingSpin,
-            nextSpinIn: existingSpin ? getTimeUntilMidnight() : 0,
-            lastSpin: existingSpin ? existingSpin.spinDate : null
+            canSpin: canSpin,
+            nextSpinIn: nextSpinIn,
+            lastSpin: lastSpin ? lastSpin.spinDate : null
         });
 
     } catch (error) {
@@ -146,7 +146,11 @@ const purchasePoints = async (req, res) => {
             return res.status(400).json({ error: "Montant invalide" });
         }
 
-        const pointsToAdd = amount * 200; // 1$ = 200 points
+        let pointsToAdd = amount * 300; // 1$ = 300 points
+
+        // Add bonus points
+        if (amount === 5) pointsToAdd += 100;
+        if (amount === 10) pointsToAdd += 200;
 
         // Placeholder response until payment integration is added
         res.json({
@@ -221,14 +225,6 @@ const claimSocialBonus = async (req, res) => {
         res.status(500).json({ error: "Erreur" });
     }
 };
-
-// Helper function
-function getTimeUntilMidnight() {
-    const now = new Date();
-    const midnight = new Date(now);
-    midnight.setHours(24, 0, 0, 0);
-    return midnight.getTime() - now.getTime(); // milliseconds until midnight
-}
 
 module.exports = {
     spinWheel,

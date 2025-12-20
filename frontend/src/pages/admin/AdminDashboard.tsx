@@ -127,7 +127,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 30000); // Auto-refresh every 30s
+        const interval = setInterval(fetchData, 10000); // Auto-refresh every 10s
         return () => clearInterval(interval);
     }, []);
 

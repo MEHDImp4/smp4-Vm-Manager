@@ -35,19 +35,7 @@ const PRO_TIPS: ProTip[] = [
   {
     text: "Économisez des points en arrêtant vos instances inutilisées !",
     linkText: "Voir mes instances",
-    linkTo: "/dashboard#instances"
-  },
-  {
-    text: "Besoin de plus de puissance ? ",
-    linkText: "Passez au plan Pro",
-    linkTo: "/subscription",
-    suffix: "."
-  },
-  {
-    text: "Gagnez des points bonus en invitant des amis via le ",
-    linkText: "programme de parrainage",
-    linkTo: "/referrals",
-    suffix: "."
+    linkTo: "/dashboard"
   },
   {
     text: "Utilisez Portainer pour gérer vos conteneurs Docker facilement. ",

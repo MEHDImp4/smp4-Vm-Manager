@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Users, Server, Activity, Shield, Search, RefreshCw, Ban, UserCheck, Edit, Plus, Trash2, Power } from "lucide-react";
+import { Loader2, Users, Server, Activity, Shield, Search, RefreshCw, Ban, UserCheck, Edit, Plus, Trash2, Power, ArrowLeft } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface NodeStats {
@@ -235,92 +235,141 @@ const AdminDashboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground p-6 md:p-8 font-sans">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <div className="min-h-screen bg-background text-foreground p-6 md:p-8 font-sans relative overflow-hidden">
+            {/* Background Effects */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse-glow" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/20 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: '1.5s' }} />
+                <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-emerald-500/10 rounded-full blur-[80px] animate-float" />
+            </div>
+
+            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
                 {/* Header */}
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-up">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight gradient-text">Administration</h1>
-                        <p className="text-muted-foreground">Vue d'ensemble et gestion de la plateforme</p>
+                        <h1 className="text-4xl font-extrabold tracking-tight gradient-text mb-2">Administration</h1>
+                        <p className="text-muted-foreground text-lg">Vue d'ensemble et gestion complète de la plateforme</p>
                     </div>
-                    <Button onClick={fetchData} variant="outline" size="icon">
-                        <RefreshCw className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-3">
+                        <Button
+                            onClick={() => navigate('/dashboard')}
+                            variant="outline"
+                            className="glass border-white/10 hover:bg-white/5 transition-all duration-300 group"
+                        >
+                            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                            Retour au Dashboard
+                        </Button>
+                        <Button
+                            onClick={fetchData}
+                            variant="outline"
+                            size="icon"
+                            className="glass border-white/10 hover:bg-white/5 transition-all duration-300 hover:rotate-180"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
 
-                <Tabs defaultValue="overview" className="space-y-6">
-                    <TabsList className="bg-muted/50 p-1">
-                        <TabsTrigger value="overview" className="gap-2"><Activity className="w-4 h-4" /> Vue d'ensemble</TabsTrigger>
-                        <TabsTrigger value="users" className="gap-2"><Users className="w-4 h-4" /> Utilisateurs</TabsTrigger>
-                        <TabsTrigger value="instances" className="gap-2"><Server className="w-4 h-4" /> Instances Globales</TabsTrigger>
+                <Tabs defaultValue="overview" className="space-y-8 animate-fade-up-delay-1">
+                    <TabsList className="bg-black/40 backdrop-blur-xl p-1.5 border border-white/10 rounded-2xl w-full max-w-2xl mx-auto grid grid-cols-3 gap-1">
+                        <TabsTrigger
+                            value="overview"
+                            className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
+                        >
+                            <Activity className="w-4 h-4" /> Vue d'ensemble
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="users"
+                            className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
+                        >
+                            <Users className="w-4 h-4" /> Utilisateurs
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="instances"
+                            className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
+                        >
+                            <Server className="w-4 h-4" /> Instances Globales
+                        </TabsTrigger>
                     </TabsList>
 
                     {/* Overview Content */}
-                    <TabsContent value="overview" className="space-y-6 animate-fade-in">
+                    <TabsContent value="overview" className="space-y-8 animate-fade-in">
                         {nodeStats && (
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                                <Card className="glass border-primary/20">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">CPU Node</CardTitle>
-                                        <Activity className="h-4 w-4 text-primary" />
+                                <Card className="glass border-primary/20 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                        <CardTitle className="text-sm font-medium text-muted-foreground">CPU Node</CardTitle>
+                                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                            <Activity className="h-4 w-4" />
+                                        </div>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{(nodeStats.cpu * 100).toFixed(1)}%</div>
-                                        <Progress value={nodeStats.cpu * 100} className="mt-2 h-2" />
-                                        <p className="text-xs text-muted-foreground mt-2">{nodeStats.cpuinfo?.model} ({nodeStats.cpuinfo?.cpus} cores)</p>
+                                    <CardContent className="relative z-10">
+                                        <div className="text-3xl font-bold mb-2">{(nodeStats.cpu * 100).toFixed(1)}%</div>
+                                        <Progress value={nodeStats.cpu * 100} className="h-1.5" />
+                                        <p className="text-xs text-muted-foreground mt-3 font-mono">{nodeStats.cpuinfo?.model}</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="glass border-primary/20">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">RAM Node</CardTitle>
-                                        <Activity className="h-4 w-4 text-purple-500" />
+                                <Card className="glass border-purple-500/20 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                        <CardTitle className="text-sm font-medium text-muted-foreground">RAM Node</CardTitle>
+                                        <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+                                            <Activity className="h-4 w-4" />
+                                        </div>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{((nodeStats.memory.used / nodeStats.memory.total) * 100).toFixed(1)}%</div>
-                                        <Progress value={(nodeStats.memory.used / nodeStats.memory.total) * 100} className="mt-2 h-2 bg-purple-900/20" />
-                                        <p className="text-xs text-muted-foreground mt-2">{formatBytes(nodeStats.memory.used)} / {formatBytes(nodeStats.memory.total)}</p>
+                                    <CardContent className="relative z-10">
+                                        <div className="text-3xl font-bold mb-2">{((nodeStats.memory.used / nodeStats.memory.total) * 100).toFixed(1)}%</div>
+                                        <Progress value={(nodeStats.memory.used / nodeStats.memory.total) * 100} className="h-1.5 bg-purple-900/20" indicatorClassName="bg-purple-500" />
+                                        <p className="text-xs text-muted-foreground mt-3 font-mono">{formatBytes(nodeStats.memory.used)} / {formatBytes(nodeStats.memory.total)}</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="glass border-primary/20">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Uptime</CardTitle>
-                                        <Activity className="h-4 w-4 text-emerald-500" />
+                                <Card className="glass border-emerald-500/20 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                        <CardTitle className="text-sm font-medium text-muted-foreground">Uptime</CardTitle>
+                                        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                                            <Activity className="h-4 w-4" />
+                                        </div>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{Math.floor(nodeStats.uptime / 86400)}j</div>
+                                    <CardContent className="relative z-10">
+                                        <div className="text-3xl font-bold mb-2">{Math.floor(nodeStats.uptime / 86400)}j</div>
                                         <p className="text-xs text-muted-foreground mt-2">En ligne depuis {Math.floor(nodeStats.uptime / 3600)} heures</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="glass border-primary/20">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">Version PVE</CardTitle>
-                                        <Shield className="h-4 w-4 text-amber-500" />
+                                <Card className="glass border-amber-500/20 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                        <CardTitle className="text-sm font-medium text-muted-foreground">Version PVE</CardTitle>
+                                        <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                                            <Shield className="h-4 w-4" />
+                                        </div>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{nodeStats.pveversion.split('/')[1]?.split(' ')[0] || 'Unknown'}</div>
-                                        <p className="text-xs text-muted-foreground mt-2">{nodeStats.kversion}</p>
+                                    <CardContent className="relative z-10">
+                                        <div className="text-3xl font-bold mb-2">{nodeStats.pveversion.split('/')[1]?.split(' ')[0] || 'Unknown'}</div>
+                                        <p className="text-xs text-muted-foreground mt-2 font-mono text-[10px]">{nodeStats.kversion}</p>
                                     </CardContent>
                                 </Card>
                             </div>
                         )}
 
                         <div className="grid gap-6 md:grid-cols-2">
-                            <Card className="glass">
+                            <Card className="glass border-white/10">
                                 <CardHeader>
                                     <CardTitle>Statistiques Plateforme</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="flex justify-between items-center bg-white/5 p-3 rounded-lg">
-                                        <span>Utilisateurs Totaux</span>
-                                        <span className="font-bold text-xl">{users.length}</span>
+                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                        <span className="text-muted-foreground">Utilisateurs Totaux</span>
+                                        <span className="font-bold text-2xl">{users.length}</span>
                                     </div>
-                                    <div className="flex justify-between items-center bg-white/5 p-3 rounded-lg">
-                                        <span>Instances Totales</span>
-                                        <span className="font-bold text-xl">{allInstances.length}</span>
+                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                        <span className="text-muted-foreground">Instances Totales</span>
+                                        <span className="font-bold text-2xl">{allInstances.length}</span>
                                     </div>
-                                    <div className="flex justify-between items-center bg-white/5 p-3 rounded-lg">
-                                        <span>Instances en Ligne</span>
-                                        <span className="font-bold text-xl text-emerald-500">{allInstances.filter(i => i.status === 'online').length}</span>
+                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                        <span className="text-muted-foreground">Instances en Ligne</span>
+                                        <span className="font-bold text-2xl text-emerald-500">{allInstances.filter(i => i.status === 'online').length}</span>
                                     </div>
                                 </CardContent>
                             </Card>

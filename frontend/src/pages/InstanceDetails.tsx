@@ -198,6 +198,10 @@ const InstanceDetails = () => {
                 const data = await response.json();
                 setSnapshots(data.snapshots);
                 setMaxSnapshots(data.maxSnapshots);
+                // Store backups in instance state or separate state. 
+                // Since instance is an object, update it or add new state.
+                // Let's add 'backups' to instance object for simplicity in rendering as implemented above
+                setInstance((prev: any) => ({ ...prev, backups: data.backups }));
             }
         } catch (e) {
             console.error("Failed to fetch snapshots", e);
@@ -1051,6 +1055,37 @@ const InstanceDetails = () => {
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>
                                                 </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="mt-6 pt-6 border-t border-white/5">
+                                <h4 className="font-semibold text-sm mb-4 flex items-center gap-2">
+                                    <div className="p-1.5 rounded-md bg-amber-500/10 text-amber-500">
+                                        <Download className="w-3.5 h-3.5" />
+                                    </div>
+                                    Archives de Sauvegarde (Fichiers)
+                                </h4>
+                                <div className="space-y-3">
+                                    {(instance?.backups || []).length === 0 ? (
+                                        <div className="text-sm text-muted-foreground opacity-60 pl-8">Aucune archive ( .zst ) trouvée.</div>
+                                    ) : (
+                                        (instance.backups || []).map((backup: any) => (
+                                            <div key={backup.volid} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-amber-500/30 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-lg bg-amber-500/20 text-amber-500">
+                                                        <Shield className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium text-sm text-foreground break-all">{backup.volid.split('/').pop()}</div>
+                                                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                                            {new Date(backup.ctime * 1000).toLocaleString()} • {formatBytes(backup.size)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {/* Actions for backups not implemented yet (requires tricky restore) */}
                                             </div>
                                         ))
                                     )}

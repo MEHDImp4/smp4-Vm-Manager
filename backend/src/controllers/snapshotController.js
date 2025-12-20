@@ -141,8 +141,21 @@ const getSnapshots = async (req, res) => {
             orderBy: { createdAt: 'desc' }
         });
 
+        // Also fetch VZDump backups (files)
+        let backups = [];
+        if (instance.vmid) {
+            try {
+                // Try 'local' storage (standard for pve)
+                backups = await proxmoxService.listBackups('local', instance.vmid);
+                // If needed, check other storages, but 'local' is standard for vz-dump
+            } catch (e) {
+                console.error("Failed to list backups:", e.message);
+            }
+        }
+
         res.json({
             snapshots: finalSnapshots,
+            backups: backups,
             maxSnapshots: MAX_SNAPSHOTS,
             remaining: Math.max(0, MAX_SNAPSHOTS - finalSnapshots.length)
         });

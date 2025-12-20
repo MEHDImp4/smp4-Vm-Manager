@@ -552,6 +552,27 @@ const getInstanceStats = async (req, res) => {
                 rootPassword: instance.rootPassword
             });
 
+            // SYNC DB STATUS: PROXMOX -> DB
+            try {
+                const currentDbStatus = instance.status;
+                const proxmoxStatus = status.status; // 'running' or 'stopped'
+
+                // Map Proxmox 'running' to DB 'online'
+                const mappedProxmoxStatus = proxmoxStatus === 'running' ? 'online' : 'stopped';
+
+                // Only update if DIFFERENT and NOT 'provisioning' (to avoid race conditions during creation)
+                if (currentDbStatus !== 'provisioning' && currentDbStatus !== mappedProxmoxStatus) {
+                    debugLog(`[Sync] Mismatch for ${instance.id}. DB: ${currentDbStatus}, Proxmox: ${proxmoxStatus}. Updating DB...`);
+                    await prisma.instance.update({
+                        where: { id: instance.id },
+                        data: { status: mappedProxmoxStatus }
+                    });
+                }
+            } catch (syncError) {
+                console.warn("Failed to sync status to DB:", syncError);
+                // Non-fatal, stats still returned
+            }
+
         } catch (proxmoxError) {
             // If Proxmox call fails (e.g. timeout), return cached database status or zeros
             console.error(`Proxmox stats error for ${instance.vmid}:`, proxmoxError.message);

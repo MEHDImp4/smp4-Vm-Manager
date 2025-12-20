@@ -612,7 +612,20 @@ const InstanceDetails = () => {
     if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground"><Loader2 className="w-8 h-8 animate-spin" /></div>;
     if (!instance) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground">Instance non trouvée</div>;
 
-    const isOnline = stats.status === 'online' || stats.status === 'running';
+    // Prioritize real-time status from stats, fallback to static instance status
+    // Normalize 'running' (Proxmox) to 'online' (DB/UI)
+    const displayStatus = stats.status && stats.status !== 'unknown'
+        ? (stats.status === 'running' ? 'online' : stats.status)
+        : instance.status;
+
+    const isDisplayOnline = displayStatus === 'online';
+    const isDisplayStopped = displayStatus === 'stopped';
+    const isOnline = isDisplayOnline; // Restore expected variable for usage below
+
+    const portainerDomain = domains.find(d => d.port === 9000);
+    const portainerUrl = portainerDomain
+        ? `https://${portainerDomain.subdomain}.smp4.xyz`
+        : (stats.ip ? `http://${stats.ip}:9000` : '#');
 
     return (
         <div className="min-h-screen bg-background text-foreground relative overflow-hidden font-sans selection:bg-primary/20">
@@ -641,13 +654,13 @@ const InstanceDetails = () => {
                                     {instance?.name || 'Chargement...'}
                                 </h1>
                                 {instance && (
-                                    <div className={`px-3 py-1 rounded-full border ${instance.status === 'online'
+                                    <div className={`px-3 py-1 rounded-full border ${isDisplayOnline
                                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
                                         : 'bg-destructive/10 border-destructive/20 text-destructive'
                                         } text-xs font-semibold flex items-center gap-2 backdrop-blur-md`}>
-                                        <div className={`w-2 h-2 rounded-full ${instance.status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-destructive'
+                                        <div className={`w-2 h-2 rounded-full ${isDisplayOnline ? 'bg-emerald-500 animate-pulse' : 'bg-destructive'
                                             }`} />
-                                        {instance.status === 'online' ? 'EN LIGNE' : 'HORS LIGNE'}
+                                        {isDisplayOnline ? 'EN LIGNE' : 'HORS LIGNE'}
                                     </div>
                                 )}
                             </div>
@@ -679,8 +692,8 @@ const InstanceDetails = () => {
                     <div className="flex items-center gap-3 glass p-1.5 rounded-xl">
                         <Button
                             onClick={() => handlePowerAction("start")}
-                            disabled={loading || instance?.status === "online"}
-                            className={`rounded-lg transition-all duration-300 ${instance?.status === "online"
+                            disabled={loading || isDisplayOnline}
+                            className={`rounded-lg transition-all duration-300 ${isDisplayOnline
                                 ? "bg-transparent text-muted-foreground hover:bg-white/5"
                                 : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
                                 }`}
@@ -689,8 +702,8 @@ const InstanceDetails = () => {
                         </Button>
                         <Button
                             onClick={() => handlePowerAction("stop")}
-                            disabled={loading || instance?.status === "stopped"}
-                            className={`rounded-lg transition-all duration-300 ${instance?.status === "stopped"
+                            disabled={loading || isDisplayStopped}
+                            className={`rounded-lg transition-all duration-300 ${isDisplayStopped
                                 ? "bg-transparent text-muted-foreground hover:bg-white/5"
                                 : "bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20"
                                 }`}
@@ -699,7 +712,7 @@ const InstanceDetails = () => {
                         </Button>
                         <Button
                             onClick={() => handlePowerAction("restart")}
-                            disabled={loading || instance?.status === "stopped"}
+                            disabled={loading || isDisplayStopped}
                             className="bg-transparent hover:bg-white/10 text-foreground border border-white/10"
                         >
                             <RotateCw className="w-4 h-4 mr-2" /> Redémarrer
@@ -972,7 +985,7 @@ const InstanceDetails = () => {
                             <h3 className="font-semibold text-lg text-muted-foreground pl-1">Actions Rapides</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <a
-                                    href={stats.ip ? `http://${stats.ip}:9000` : '#'}
+                                    href={portainerUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={`relative overflow-hidden group p-6 rounded-xl border border-white/10 glass transition-all hover:-translate-y-1 hover:shadow-glow ${!stats.ip && 'opacity-50 cursor-not-allowed'}`}

@@ -44,28 +44,28 @@ const HeroSection = () => {
                 <div className="w-3 h-3 rounded-full bg-destructive" />
                 <div className="w-3 h-3 rounded-full bg-warning" />
                 <div className="w-3 h-3 rounded-full bg-success" />
-                <span className="ml-4 text-xs text-muted-foreground font-mono">terminal@smp4cloud</span>
+                <span className="ml-4 text-xs text-muted-foreground font-mono">user@smp4cloud</span>
               </div>
 
               {/* Terminal Content */}
               <div className="font-mono text-sm text-left space-y-2">
                 <p className="text-muted-foreground">
-                  <span className="text-primary">$</span> smp4cloud deploy --template small
+                  <span className="text-primary">$</span> git push origin main
                 </p>
-                <p className="text-success">✓ Container créé avec succès</p>
+                <p className="text-success">✓ Déploiement démarré via Portainer...</p>
                 <p className="text-muted-foreground">
-                  <span className="text-primary">$</span> smp4cloud status
+                  <span className="text-primary">$</span> verif status
                 </p>
                 <div className="flex items-center gap-3 mt-3">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50">
                     <Container className="w-4 h-4 text-primary" />
-                    <span className="text-foreground">web-app</span>
-                    <span className="text-xs text-success">● en ligne</span>
+                    <span className="text-foreground">api-server</span>
+                    <span className="text-xs text-success">● actif</span>
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50">
                     <Server className="w-4 h-4 text-secondary" />
-                    <span className="text-foreground">database</span>
-                    <span className="text-xs text-success">● en ligne</span>
+                    <span className="text-foreground">postgres</span>
+                    <span className="text-xs text-success">● actif</span>
                   </div>
                 </div>
               </div>

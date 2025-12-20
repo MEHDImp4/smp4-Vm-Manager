@@ -212,9 +212,9 @@ const InstanceDomains = () => {
                                         Aperçu URL
                                     </h3>
                                     <p className="text-sm font-mono text-primary break-all">
-                                        <span className="text-muted-foreground/50">{userName}-</span>
-                                        <span className="text-muted-foreground/50">{instanceName}-</span>
                                         <span className="text-foreground font-semibold bg-primary/10 px-1 rounded">{newDomain.suffix || "app"}</span>
+                                        <span className="text-muted-foreground/50">-{userName}-</span>
+                                        <span className="text-muted-foreground/50">{instanceName}</span>
                                         <span className="text-muted-foreground/50">.smp4.xyz</span>
                                     </p>
                                 </div>
@@ -222,7 +222,7 @@ const InstanceDomains = () => {
                                 {/* Inputs */}
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-medium text-muted-foreground ml-1">Nom du service</label>
+                                        <label className="text-xs font-medium text-muted-foreground ml-1">Préfixe du service</label>
                                         <input
                                             type="text"
                                             placeholder="Ex: api, blog, map..."

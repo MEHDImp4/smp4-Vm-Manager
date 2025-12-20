@@ -13,7 +13,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Cloud, LogOut, User, Shield, Key, ChevronRight, LayoutDashboard, Coins, History, Settings, Loader2, Camera, Sparkles, TrendingUp } from "lucide-react";
+import { Cloud, LogOut, User, Shield, Key, LayoutDashboard, Settings, Loader2, Camera, TrendingUp, Server } from "lucide-react";
 import { toast } from "sonner";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -32,22 +32,7 @@ const Account = () => {
         confirmPassword: ""
     });
 
-    // Buy Points State
-    const [buyOpen, setBuyOpen] = useState(false);
-    const [buyLoading, setBuyLoading] = useState(false);
-
-
-
-    const handleBuyPoints = async () => {
-        setBuyLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setBuyLoading(false);
-        setBuyOpen(false);
-        toast.success("Points achetés avec succès ! (Simulation)");
-        // Update user points locally for demo
-        setUser((prev: any) => ({ ...prev, points: (prev?.points || 0) + 500 }));
-    };
+    const [instances, setInstances] = useState<any[]>([]);
 
     const [usageData, setUsageData] = useState<any[]>([]);
 
@@ -74,6 +59,7 @@ const Account = () => {
                     setUser(localUser); // Fallback
                 }
 
+
                 // Fetch Points History
                 const historyRes = await fetch('/api/auth/me/points-history', {
                     headers: { "Authorization": `Bearer ${localUser.token}` }
@@ -81,6 +67,15 @@ const Account = () => {
                 if (historyRes.ok) {
                     const transactions = await historyRes.json();
                     processHistoryData(transactions);
+                }
+
+                // Fetch Instances for stats
+                const instRes = await fetch('/api/instances', {
+                    headers: { "Authorization": `Bearer ${localUser.token}` }
+                });
+                if (instRes.ok) {
+                    const instances = await instRes.json();
+                    setInstances(instances);
                 }
 
             } catch (e) {
@@ -366,66 +361,31 @@ const Account = () => {
 
                     {/* Stats / Usage Summary - Enhanced */}
                     <div className="grid md:grid-cols-2 gap-6 animate-fade-up-delay-2">
-                        {/* Points Balance & Buy */}
-                        <div className="glass rounded-2xl p-6 border border-white/10 hover:border-primary/20 transition-colors group relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-yellow-500/10 rounded-full blur-[80px]" />
+                        {/* Instances Summary */}
+                        <div className="glass rounded-2xl p-6 border border-white/10 hover:border-indigo-500/20 transition-colors group relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-indigo-500/10 rounded-full blur-[80px]" />
                             <div className="relative z-10">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="font-semibold flex items-center gap-2">
-                                        <div className="p-2 rounded-lg bg-yellow-500/10 text-yellow-500">
-                                            <Coins className="w-5 h-5" />
+                                        <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+                                            <Server className="w-5 h-5" />
                                         </div>
-                                        Solde de Points
+                                        Ressources Actives
                                     </h3>
                                 </div>
-                                <div className="text-4xl font-bold mb-2 tracking-tight">{user.points?.toFixed(0) || '0'} <span className="text-lg text-muted-foreground font-normal">pts</span></div>
-                                <p className="text-sm text-muted-foreground mb-6">Suffisant pour environ {Math.floor((user.points || 0) / 50)} jours de VM standard.</p>
+                                <div className="text-4xl font-bold mb-2 tracking-tight">
+                                    {instances.filter((i: any) => i.status === 'running' || i.status === 'online').length}
+                                    <span className="text-lg text-muted-foreground font-normal ml-2">/ {instances.length}</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-6">
+                                    Instances actuellement en cours d'exécution.
+                                </p>
 
-                                <Dialog open={buyOpen} onOpenChange={setBuyOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button className="w-full h-11 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hover:from-yellow-500/20 hover:to-orange-500/20 text-yellow-500 border border-yellow-500/20 shadow-none">
-                                            <Sparkles className="w-4 h-4 mr-2" />
-                                            Recharger mon compte
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-md glass border-white/10">
-                                        <DialogHeader>
-                                            <DialogTitle className="flex items-center gap-2">
-                                                <Coins className="w-5 h-5 text-yellow-500" />
-                                                Recharger des points
-                                            </DialogTitle>
-                                            <DialogDescription>
-                                                Choisissez un pack de points. (Simulation)
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="grid grid-cols-2 gap-4 py-4">
-                                            {[
-                                                { amount: 100, price: "5€", popular: false },
-                                                { amount: 500, price: "20€", popular: true },
-                                                { amount: 1000, price: "35€", popular: false },
-                                                { amount: 5000, price: "150€", popular: false },
-                                            ].map((pack, i) => (
-                                                <div key={i} className={`relative p-4 rounded-xl border cursor-pointer hover:bg-white/5 transition-all ${pack.popular ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-white/10 bg-white/5'}`} onClick={handleBuyPoints}>
-                                                    {pack.popular && (
-                                                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-wider">
-                                                            Populaire
-                                                        </div>
-                                                    )}
-                                                    <div className="text-center">
-                                                        <div className="text-2xl font-bold text-foreground mb-1">{pack.amount}</div>
-                                                        <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Points</div>
-                                                        <div className="mt-3 py-1 px-2 rounded-lg bg-white/10 text-sm font-bold">
-                                                            {pack.price}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <DialogFooter>
-                                            <Button variant="ghost" onClick={() => setBuyOpen(false)}>Annuler</Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
+                                <Button asChild className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20">
+                                    <Link to="/dashboard">
+                                        Gérer mes instances
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
 

@@ -975,18 +975,22 @@ const InstanceDetails = () => {
                                     </div>
                                     Backups & Snapshots
                                 </h3>
-                                {(loading || snapshotLoading) && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                                <div className="flex items-center gap-2">
+                                    {(loading || snapshotLoading) && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                                    <Button size="sm" onClick={handleCreateSnapshot} disabled={snapshotLoading || snapshots.length >= maxSnapshots} className="bg-indigo-600 hover:bg-indigo-500 text-white">
+                                        <Plus className="w-4 h-4 mr-2" /> Créer
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="space-y-6 flex-1">
                                 <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 p-4 rounded-xl flex items-start gap-3">
                                     <Shield className="w-5 h-5 mt-0.5 shrink-0" />
                                     <div className="text-sm">
-                                        <p className="font-semibold mb-1">Système de Sauvegarde Automatisé</p>
+                                        <p className="font-semibold mb-1">Système de Backups</p>
                                         <p className="opacity-80">
-                                            Vos données sont sécurisées automatiquement chaque nuit à 00h00.
-                                            Les 3 derniers backups sont conservés.
-                                            Les backups manuels sont désactivés pour garantir la stabilité.
+                                            Vous pouvez créer jusqu'à {maxSnapshots} snapshots manuels.
+                                            Sécurisez vos données avant toute modification importante.
                                         </p>
                                     </div>
                                 </div>
@@ -994,9 +998,9 @@ const InstanceDetails = () => {
                                 <div className="space-y-3">
                                     {snapshots.length === 0 ? (
                                         <div className="text-center py-8 text-muted-foreground bg-white/5 rounded-xl border border-white/5 border-dashed">
-                                            Aucun backup automatique pour le moment.
+                                            Aucun backup pour le moment.
                                             <br />
-                                            <span className="text-xs opacity-50">Le prochain sera créé à minuit.</span>
+                                            <span className="text-xs opacity-50">Créez-en un manuellement ci-dessus.</span>
                                         </div>
                                     ) : (
                                         snapshots.map((snap) => (
@@ -1015,16 +1019,36 @@ const InstanceDetails = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex items-center gap-1 opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDownloadSnapshot(snap.id)}
+                                                        disabled={snapshotLoading}
+                                                        title="Télécharger (Backup)"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-indigo-400 hover:bg-indigo-500/10"
+                                                    >
+                                                        <Download className="w-4 h-4" />
+                                                    </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
                                                         onClick={() => handleRestoreSnapshot(snap.id, snap.name)}
                                                         disabled={snapshotLoading}
                                                         title="Restaurer"
-                                                        className="h-8 w-8 text-muted-foreground hover:text-indigo-400 hover:bg-indigo-500/10"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10"
                                                     >
                                                         <History className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDeleteSnapshot(snap.id, snap.name)}
+                                                        disabled={snapshotLoading}
+                                                        title="Supprimer"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
                                                     </Button>
                                                 </div>
                                             </div>

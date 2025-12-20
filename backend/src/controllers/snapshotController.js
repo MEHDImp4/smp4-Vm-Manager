@@ -78,6 +78,7 @@ const createSnapshot = async (req, res) => {
 };
 
 // Get all snapshots for an instance (GET /instances/:id/snapshots)
+// Get all snapshots for an instance (GET /instances/:id/snapshots)
 const getSnapshots = async (req, res) => {
     try {
         const { id } = req.params;
@@ -92,15 +93,58 @@ const getSnapshots = async (req, res) => {
             return res.status(404).json({ error: 'Instance not found' });
         }
 
-        const snapshots = await prisma.snapshot.findMany({
+        // Sync with Proxmox if VMID exists
+        if (instance.vmid) {
+            try {
+                // 1. Fetch from Proxmox
+                const proxmoxSnapshots = await proxmoxService.listLXCSnapshots(instance.vmid);
+
+                // 2. Fetch from DB
+                const dbSnapshots = await prisma.snapshot.findMany({
+                    where: { instanceId: id }
+                });
+
+                // 3. Identify missing in DB (Add)
+                const dbSnapNames = new Set(dbSnapshots.map(s => s.proxmoxSnapName));
+                const missingInDb = proxmoxSnapshots.filter(p => !dbSnapNames.has(p.name));
+
+                for (const pSnap of missingInDb) {
+                    await prisma.snapshot.create({
+                        data: {
+                            instanceId: id,
+                            name: pSnap.description || `Snapshot ${new Date(pSnap.snaptime * 1000).toLocaleString('fr-FR')}`,
+                            proxmoxSnapName: pSnap.name,
+                            description: pSnap.description || null,
+                            createdAt: new Date(pSnap.snaptime * 1000)
+                        }
+                    });
+                }
+
+                // 4. Identify missing in Proxmox (Delete from DB)
+                const proxmoxSnapNames = new Set(proxmoxSnapshots.map(p => p.name));
+                const missingInProxmox = dbSnapshots.filter(d => !proxmoxSnapNames.has(d.proxmoxSnapName));
+
+                for (const dSnap of missingInProxmox) {
+                    await prisma.snapshot.delete({ where: { id: dSnap.id } });
+                }
+
+            } catch (syncError) {
+                console.error('Snapshot sync warning:', syncError.message);
+                // Non-fatal, continue with DB data if Proxmox fails (e.g. VM stopped/offline?)
+                // Actually listLXCSnapshots works even if stopped usually, but if VM deleted?
+            }
+        }
+
+        // Return fresh list from DB
+        const finalSnapshots = await prisma.snapshot.findMany({
             where: { instanceId: id },
             orderBy: { createdAt: 'desc' }
         });
 
         res.json({
-            snapshots,
+            snapshots: finalSnapshots,
             maxSnapshots: MAX_SNAPSHOTS,
-            remaining: MAX_SNAPSHOTS - snapshots.length
+            remaining: Math.max(0, MAX_SNAPSHOTS - finalSnapshots.length)
         });
 
     } catch (error) {

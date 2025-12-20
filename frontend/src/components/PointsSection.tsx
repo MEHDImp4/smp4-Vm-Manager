@@ -68,9 +68,12 @@ const PointsSection = () => {
 
             {/* Points Control */}
             <div className="mb-8">
-              <div className="flex justify-between text-sm mb-4">
+              <div className="flex justify-between items-center text-sm mb-2">
                 <span className="text-muted-foreground">Votre budget points</span>
-                <span className="font-mono font-bold text-xl text-primary">{points} pts</span>
+                <div className="text-right">
+                  <div className="font-mono font-bold text-xl text-primary">{points} pts</div>
+                  <div className="text-xs text-muted-foreground">≈ ${(points / 300).toFixed(2)} USD</div>
+                </div>
               </div>
 
               <Slider
@@ -97,6 +100,12 @@ const PointsSection = () => {
                 <p className="text-muted-foreground text-sm">
                   d'utilisation en template <span className="text-primary font-medium">Small</span>
                 </p>
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <div className="text-xs text-muted-foreground">
+                    Coût réel: <span className="text-foreground font-semibold">${(points / 300).toFixed(2)} USD</span>
+                    <span className="text-muted-foreground/70"> (300 pts = 1$)</span>
+                  </div>
+                </div>
               </div>
               <div className="mt-4 pt-4 border-t border-border/50 text-center">
                 <span className="text-sm text-muted-foreground">

@@ -10,6 +10,7 @@ jest.mock('../../src/db', () => ({
         },
         user: {
             update: jest.fn(),
+            findUnique: jest.fn(),
         },
         pointTransaction: {
             create: jest.fn(),
@@ -40,6 +41,9 @@ describe('Points Controller Unit Tests', () => {
 
     describe('spinWheel', () => {
         it('should allow user to spin if they have not spun today', async () => {
+            // Mock verified user
+            prisma.user.findUnique.mockResolvedValue({ isVerified: true, email: 'test@example.com' });
+
             // Mock no spin today
             prisma.dailySpin.findFirst.mockResolvedValue(null);
 
@@ -61,6 +65,9 @@ describe('Points Controller Unit Tests', () => {
         });
 
         it('should return 400 if user already spun today', async () => {
+            // Mock verified user
+            prisma.user.findUnique.mockResolvedValue({ isVerified: true });
+
             // Mock spin exists
             prisma.dailySpin.findFirst.mockResolvedValue({
                 spinDate: new Date()
@@ -76,6 +83,7 @@ describe('Points Controller Unit Tests', () => {
         });
 
         it('should handle errors gracefully', async () => {
+            prisma.user.findUnique.mockResolvedValue({ isVerified: true });
             prisma.dailySpin.findFirst.mockRejectedValue(new Error("DB Error"));
 
             await pointsController.spinWheel(req, res);
@@ -125,6 +133,7 @@ describe('Points Controller Unit Tests', () => {
 
     describe('purchasePoints', () => {
         it('should return placeholder response for valid amount', async () => {
+            prisma.user.findUnique.mockResolvedValue({ isVerified: true });
             req.body.amount = 5; // Valid: 1, 2, 5, 10
 
             await pointsController.purchasePoints(req, res);
@@ -137,6 +146,7 @@ describe('Points Controller Unit Tests', () => {
         });
 
         it('should return 400 for invalid amount', async () => {
+            prisma.user.findUnique.mockResolvedValue({ isVerified: true });
             req.body.amount = 3; // Invalid
 
             await pointsController.purchasePoints(req, res);
@@ -163,6 +173,7 @@ describe('Points Controller Unit Tests', () => {
 
     describe('claimSocialBonus', () => {
         it('should claim bonus if platform is valid and not yet claimed', async () => {
+            prisma.user.findUnique.mockResolvedValue({ isVerified: true });
             req.body.platform = 'github';
             req.body.username = 'testuser';
 
@@ -191,6 +202,7 @@ describe('Points Controller Unit Tests', () => {
         });
 
         it('should return 400 if platform is invalid', async () => {
+            prisma.user.findUnique.mockResolvedValue({ isVerified: true });
             req.body.platform = 'myspace';
 
             await pointsController.claimSocialBonus(req, res);
@@ -201,6 +213,7 @@ describe('Points Controller Unit Tests', () => {
         });
 
         it('should return 400 if bonus already claimed', async () => {
+            prisma.user.findUnique.mockResolvedValue({ isVerified: true });
             req.body.platform = 'twitter';
             req.body.username = 'testuser';
 
@@ -214,6 +227,7 @@ describe('Points Controller Unit Tests', () => {
         });
 
         it('should handle errors', async () => {
+            prisma.user.findUnique.mockResolvedValue({ isVerified: true });
             req.body.platform = 'linkedin';
             req.body.username = 'testuser';
             prisma.socialClaim.findUnique.mockRejectedValue(new Error("DB Error"));

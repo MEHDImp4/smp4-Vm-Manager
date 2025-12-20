@@ -30,6 +30,7 @@ describe('Points Routes', () => {
   describe('POST /api/points/spin', () => {
     it('should spin and potentially earn points', async () => {
       // Mock necessary database calls
+      prisma.user.findUnique.mockResolvedValue({ isVerified: true });
       prisma.dailySpin.findFirst.mockResolvedValue(null); // No previous spin
       prisma.$transaction.mockResolvedValue([
         { points: 100 }, // user update result
@@ -47,6 +48,7 @@ describe('Points Routes', () => {
     });
 
     it('should return 400 if already spun today', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isVerified: true });
       prisma.dailySpin.findFirst.mockResolvedValue({
         id: 'spin_prev',
         spinDate: new Date()

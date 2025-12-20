@@ -256,6 +256,16 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
         }
     };
 
+    const handlePurchase = (pack: { usd: number, points: number }) => {
+        // Lien PayPal.me exemple - À REMPLACER par votre propre lien ou intégration API
+        // Format: https://paypal.me/votrecompte/MONTANTUSD
+        const paypalLink = `https://paypal.me/mehdimp477/${pack.usd}USD?locale.x=fr_XC&country.x=MA`;
+
+        window.open(paypalLink, "_blank");
+
+        toast.info("Une fois le paiement effectué, vos points seront crédités manuellement (pour l'instant).");
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -525,6 +535,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                     ].map((pack) => (
                                         <button
                                             key={pack.usd}
+                                            onClick={() => handlePurchase(pack)}
                                             className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-300 group overflow-hidden ${pack.popular
                                                 ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-900/10 border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/10'
                                                 : 'bg-white/5 border-white/5 hover:border-white/10 hover:bg-white/10'
@@ -554,7 +565,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                 </div>
                                 <div className="mt-4 text-center">
                                     <span className="text-[10px] uppercase tracking-widest text-muted-foreground bg-white/5 px-3 py-1 rounded-full">
-                                        Paiement sécurisé par Stripe
+                                        Paiement sécurisé par PayPal
                                     </span>
                                 </div>
                             </div>

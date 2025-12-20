@@ -2,13 +2,16 @@ import { Cloud, Github, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
+  const token = localStorage.getItem("token");
+  const logoLink = token ? "/dashboard" : "/";
+
   return (
     <footer className="border-t border-border/50 bg-card/50">
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4 md:mb-0 hover-lift">
+            <Link to={logoLink} className="flex items-center gap-2 mb-4 md:mb-0 hover-lift">
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                 <Cloud className="w-5 h-5 text-primary-foreground" />
               </div>

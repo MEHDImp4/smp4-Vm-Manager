@@ -462,9 +462,11 @@ const InstanceDetails = () => {
             cursorBlink: true,
             fontFamily: '"Fira Code", monospace',
             fontSize: 14,
+            allowTransparency: true,
             theme: {
-                background: '#09090b', // zinc-950
+                background: '#00000000', // Transparent to let CSS background show throuh
                 foreground: '#f4f4f5',
+                selectionBackground: 'rgba(255, 255, 255, 0.3)',
             }
         });
 
@@ -742,7 +744,7 @@ const InstanceDetails = () => {
                     <div className="w-full space-y-4 animate-fade-up-delay-1">
                         <div className="glass rounded-xl border border-white/10 overflow-hidden flex flex-col h-[600px] shadow-2xl relative group">
                             <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-                            <div className="bg-black/80 px-4 py-3 flex items-center justify-between border-b border-white/10 relative z-10 backdrop-blur-md">
+                            <div className="bg-zinc-900/50 px-4 py-3 flex items-center justify-between border-b border-white/10 relative z-10 backdrop-blur-md">
                                 <div className="flex items-center gap-3">
                                     <div className="flex gap-1.5">
                                         <div className="w-3 h-3 rounded-full bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
@@ -750,9 +752,9 @@ const InstanceDetails = () => {
                                         <div className="w-3 h-3 rounded-full bg-green-500/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
                                     </div>
                                     <div className="h-4 w-px bg-white/10 mx-2" />
-                                    <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-black/40 border border-white/5 shadow-inner">
                                         <Terminal className="w-3.5 h-3.5 text-primary" />
-                                        <span className="text-xs text-muted-foreground font-mono">ssh smp4@{stats.ip || '...'}</span>
+                                        <span className="text-xs text-zinc-400 font-mono">ssh smp4@{stats.ip || '...'}</span>
                                     </div>
                                 </div>
                                 <Button
@@ -765,9 +767,9 @@ const InstanceDetails = () => {
                                     <RotateCw className="w-3.5 h-3.5" />
                                 </Button>
                             </div>
-                            <div className="flex-1 bg-black/95 p-1 font-mono text-sm overflow-hidden relative" ref={terminalRef}>
+                            <div className="flex-1 bg-zinc-950/90 p-4 font-mono text-sm overflow-hidden relative backdrop-blur-sm" ref={terminalRef}>
                                 {(!isOnline || !stats.ip) && (
-                                    <div className="absolute inset-0 flex items-center justify-center flex-col z-10 select-none pointer-events-none">
+                                    <div className="absolute inset-0 flex items-center justify-center flex-col z-10 select-none pointer-events-none bg-zinc-950/80 backdrop-blur-[2px]">
                                         <div className="relative">
                                             <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
                                             <Loader2 className="w-12 h-12 text-primary animate-spin relative z-10" />

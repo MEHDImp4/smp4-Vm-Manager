@@ -71,13 +71,7 @@ const HeroSection = () => {
               </div>
             </div>
 
-            {/* Floating Elements */}
-            <div className="absolute -top-24 -right-24 p-4 glass rounded-xl border border-border/50 animate-float" style={{ animationDelay: "1s" }}>
-              <Cpu className="w-8 h-8 text-primary" />
-            </div>
-            <div className="absolute -bottom-12 -left-12 p-4 glass rounded-xl border border-border/50 animate-float" style={{ animationDelay: "2s" }}>
-              <Layers className="w-8 h-8 text-secondary" />
-            </div>
+
           </div>
 
 

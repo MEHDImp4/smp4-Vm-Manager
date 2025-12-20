@@ -399,50 +399,78 @@ module.exports = {
                     <!-- Header -->
                     <div style="text-align: center; margin-bottom: 30px;">
                         <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); width: 60px; height: 60px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-                            <span style="font-size: 30px;">🎡</span>
+                            <span style="font-size: 30px;">🎁</span>
                         </div>
-                        <h1 style="color: #1f2937; margin: 0; font-size: 28px; font-weight: 700;">Bravo ${name} !</h1>
+                        <h1 style="color: #1f2937; margin: 0; font-size: 28px; font-weight: 700;">Félicitations ${name} !</h1>
                     </div>
 
-                    <!-- Win Message -->
-                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; border-radius: 12px; border: 2px solid #f59e0b; margin-bottom: 30px; text-align: center;">
-                        <p style="color: #92400e; font-size: 16px; margin: 0 0 15px 0;">
-                            Vous avez tourné la roue quotidienne et gagné :
+                    <!-- Welcome Message -->
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 30px;">
+                        <p style="color: #374151; font-size: 16px; margin: 0 0 10px 0;">
+                            Bonjour <strong>${name}</strong> 👋
                         </p>
-                        <div style="background: white; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <span style="font-size: 48px; font-weight: 800; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.6;">
+                            Vous avez gagné <strong>${points} points</strong> sur la roue quotidienne SMP4.
+                        </p>
+                    </div>
+
+                    <!-- Win Display -->
+                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 30px; border-radius: 12px; border: 2px solid #f59e0b; margin-bottom: 30px; text-align: center;">
+                        <p style="color: #92400e; font-size: 14px; margin: 0 0 20px 0; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                            🎉 Vous avez gagné
+                        </p>
+                        <div style="background: white; padding: 25px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <span style="font-size: 56px; font-weight: 800; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                                 +${points}
                             </span>
-                            <span style="font-size: 24px; color: #92400e; font-weight: 600; margin-left: 8px;">PTS</span>
+                            <span style="font-size: 28px; color: #92400e; font-weight: 700; margin-left: 10px;">PTS</span>
                         </div>
                     </div>
 
                     <!-- Next Spin Info -->
-                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 30px 0;">
-                        <h3 style="color: #92400e; margin: 0 0 10px 0; font-size: 16px;">⏰ Prochaine rotation</h3>
-                        <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.6;">
-                            Revenez demain pour tenter votre chance à nouveau et gagner jusqu'à <strong>200 points</strong> !
+                    <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin: 30px 0;">
+                        <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 16px;">⏰ Prochaine rotation</h3>
+                        <p style="color: #047857; font-size: 14px; margin: 0 0 10px 0; line-height: 1.6;">
+                            Revenez demain pour tenter votre chance à nouveau !
+                        </p>
+                        <p style="color: #059669; font-size: 13px; margin: 0;">
+                            💎 Gagnez jusqu'à <strong>200 points</strong> par rotation quotidienne
                         </p>
                     </div>
 
                     <!-- What to do with points -->
-                    <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin: 30px 0;">
-                        <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 16px;">💡 Utilisez vos points :</h3>
-                        <ul style="color: #047857; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
-                            <li>Créez des machines virtuelles puissantes</li>
-                            <li>Ajoutez des snapshots pour sauvegarder vos données</li>
-                            <li>Obtenez des domaines personnalisés</li>
-                            <li>Gardez vos VMs actives plus longtemps</li>
-                        </ul>
+                    <div style="margin: 30px 0;">
+                        <h3 style="color: #1f2937; font-size: 16px; margin-bottom: 15px; text-align: center;">✨ Utilisez vos points pour</h3>
+                        <div style="display: grid; gap: 10px;">
+                            <div style="background: #f9fafb; padding: 12px 15px; border-radius: 6px; border-left: 3px solid #667eea;">
+                                <strong style="color: #374151; font-size: 14px;">💻 Machines Virtuelles</strong>
+                                <p style="color: #6b7280; font-size: 13px; margin: 5px 0 0 0;">Créez des VMs puissantes (4-28 pts/jour)</p>
+                            </div>
+                            <div style="background: #f9fafb; padding: 12px 15px; border-radius: 6px; border-left: 3px solid #8b5cf6;">
+                                <strong style="color: #374151; font-size: 14px;">📸 Snapshots & Backups</strong>
+                                <p style="color: #6b7280; font-size: 13px; margin: 5px 0 0 0;">Sauvegardez vos données importantes</p>
+                            </div>
+                            <div style="background: #f9fafb; padding: 12px 15px; border-radius: 6px; border-left: 3px solid #ec4899;">
+                                <strong style="color: #374151; font-size: 14px;">🌐 Domaines Personnalisés</strong>
+                                <p style="color: #6b7280; font-size: 13px; margin: 5px 0 0 0;">Exposez vos apps avec des tunnels HTTPS (+2 pts/jour)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tips -->
+                    <div style="background: #fffbeb; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 25px 0;">
+                        <p style="color: #92400e; font-size: 13px; margin: 0;">
+                            <strong>💡 Astuce :</strong> Arrêtez vos VMs quand vous ne les utilisez pas pour économiser vos points et les faire durer plus longtemps !
+                        </p>
                     </div>
 
                     <!-- Footer -->
                     <div style="margin-top: 40px; padding-top: 25px; border-top: 2px solid #e5e7eb; text-align: center;">
                         <p style="color: #6b7280; font-size: 14px; margin: 0 0 10px 0;">
-                            Continuez à gagner des points quotidiennement !
+                            Revenez demain pour gagner encore plus de points !
                         </p>
                         <a href="https://smp4.xyz/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 10px 0;">
-                            Voir mon solde
+                            Revenir sur SMP4
                         </a>
                         <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0 0;">
                             L'équipe SMP4cloud<br/>

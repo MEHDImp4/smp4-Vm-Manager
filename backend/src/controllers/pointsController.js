@@ -203,20 +203,8 @@ const claimSocialBonus = async (req, res) => {
 
         // Verification Logic
         if (platform === 'github') {
-            try {
-                // Verify if user follows the repository owner or the specific user
-                // For this example, we'll check if they follow a target user (e.g., the dev 'Mehdi' or project repo)
-                // Since I don't know the exact target, I'll simulate a check or check existence
-                // Ideally: await axios.get(`https://api.github.com/users/${username}/following/${TARGET_USER}`)
-
-                // For now, let's just verify the user exists on GitHub to prevent fake names
-                // const githubRes = await axios.get(`https://api.github.com/users/${username}`);
-                // if (githubRes.status !== 200) throw new Error("User not found");
-
-                // Proceed (Option B: Trust or Basic Check)
-            } catch (err) {
-                // return res.status(400).json({ error: "Utilisateur GitHub introuvable ou erreur API" });
-            }
+            // Placeholder: Future GitHub API verification
+            // currently verifying user existence and follow status is skipped
         }
 
         const bonusPoints = validPlatforms[platform];

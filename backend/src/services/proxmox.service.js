@@ -321,6 +321,29 @@ class ProxmoxService {
             return { volid };
         }
     }
+
+    /**
+     * Delete a volume (backup, disk, etc)
+     * @param {string} volid - Volume ID
+     */
+    async deleteVolume(volid) {
+        // Parse volid to get storage and file. Format: storage:type/file
+        // E.g., local:backup/vzdump-lxc-100...
+        const parts = volid.split(':');
+        if (parts.length < 2) throw new Error('Invalid volid format');
+        const storage = parts[0];
+        // Ensure path uses encoded volid
+
+        try {
+            const response = await this.client.delete(
+                `/api2/json/nodes/${this.node}/storage/${storage}/content/${encodeURIComponent(volid)}`
+            );
+            return response.data.data;
+        } catch (error) {
+            console.error('Error deleting volume:', error.response?.data || error.message);
+            throw new Error(`Failed to delete volume ${volid}`);
+        }
+    }
     /**
      * Add a firewall rule to an LXC container
      * @param {number} vmid - Container VMID

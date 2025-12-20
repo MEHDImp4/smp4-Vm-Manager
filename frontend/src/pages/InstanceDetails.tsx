@@ -889,94 +889,81 @@ const InstanceDetails = () => {
 
 
 
-                        {/* Backups Card */}
-                        <div className="glass rounded-xl p-6 md:p-8 border border-white/10 space-y-6 animate-fade-up-delay-2 relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[80px]" />
-                            <div className="flex items-center justify-between relative z-10">
+                        {/* Snapshots */}
+                        <div className="glass rounded-xl p-6 md:p-8 border border-white/10 animate-fade-up-delay-3 flex flex-col justify-between">
+                            <div className="flex items-center justify-between mb-8">
                                 <h3 className="font-bold text-lg text-foreground flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
-                                        <Camera className="w-5 h-5" />
+                                    <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+                                        <History className="w-5 h-5" />
                                     </div>
-                                    Backups & Instantanés
+                                    Backups & Snapshots
                                 </h3>
-
+                                {(loading || snapshotLoading) && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
                             </div>
 
-                            <div className="flex items-center gap-6 text-sm text-muted-foreground relative z-10 pb-2 border-b border-border/50">
-                                <span className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-primary" />
-                                    {snapshots.length} / {maxSnapshots} slots utilisés
-                                </span>
-                                <span className="flex items-center gap-2">
-                                    <History className="w-4 h-4" />
-                                    Prochain auto: <span className="text-foreground font-mono">{timeUntilSnapshot}</span>
-                                </span>
-                            </div>
-
-                            {/* Backups List */}
-                            <div className="grid gap-3 relative z-10">
-                                {snapshots.length === 0 ? (
-                                    <div className="text-sm text-muted-foreground text-center py-12 border border-dashed border-white/10 rounded-xl bg-white/5">
-                                        <Camera className="w-8 h-8 mx-auto mb-3 opacity-50" />
-                                        Aucun backup disponible pour le moment
+                            <div className="space-y-6 flex-1">
+                                <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 p-4 rounded-xl flex items-start gap-3">
+                                    <Shield className="w-5 h-5 mt-0.5 shrink-0" />
+                                    <div className="text-sm">
+                                        <p className="font-semibold mb-1">Système de Sauvegarde Automatisé</p>
+                                        <p className="opacity-80">
+                                            Vos données sont sécurisées automatiquement chaque nuit à 00h00.
+                                            Les 3 derniers backups sont conservés.
+                                            Les backups manuels sont désactivés pour garantir la stabilité.
+                                        </p>
                                     </div>
-                                ) : (
-                                    snapshots.map((snap) => (
-                                        <div
-                                            key={snap.id}
-                                            className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-primary/30 transition-all hover:bg-white/10 group"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-                                                    <History className="w-5 h-5" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-base font-semibold text-foreground">{snap.name}</p>
-                                                    <p className="text-xs text-muted-foreground font-mono">
-                                                        {new Date(snap.createdAt).toLocaleDateString('fr-FR', {
-                                                            day: 'numeric',
-                                                            month: 'long',
-                                                            year: 'numeric',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="gap-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10"
-                                                    onClick={() => handleRestoreSnapshot(snap.id, snap.name)}
-                                                    disabled={snapshotLoading}
-                                                >
-                                                    <RotateCw className="w-4 h-4" />
-                                                    <span className="hidden sm:inline">Restaurer</span>
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="gap-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
-                                                    onClick={() => handleDownloadSnapshot(snap.id)}
-                                                    disabled={snapshotLoading}
-                                                >
-                                                    <Download className="w-4 h-4" />
-                                                    <span className="hidden sm:inline">Télécharger</span>
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="gap-2 text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                                                    onClick={() => handleDeleteSnapshot(snap.id, snap.name)}
-                                                    disabled={snapshotLoading}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {snapshots.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground bg-white/5 rounded-xl border border-white/5 border-dashed">
+                                            Aucun backup automatique pour le moment.
+                                            <br />
+                                            <span className="text-xs opacity-50">Le prochain sera créé à minuit.</span>
                                         </div>
-                                    ))
-                                )}
+                                    ) : (
+                                        snapshots.map((snap) => (
+                                            <div key={snap.id} className="group flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-indigo-500/30 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400">
+                                                        <Camera className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium text-sm text-foreground">{snap.name}</div>
+                                                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                                            {new Date(snap.createdAt).toLocaleString()}
+                                                            {snap.name.includes("Auto") && (
+                                                                <span className="px-1.5 py-0.5 rounded-sm bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase">Auto</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleRestoreSnapshot(snap.id, snap.name)}
+                                                        disabled={snapshotLoading}
+                                                        title="Restaurer"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-indigo-400 hover:bg-indigo-500/10"
+                                                    >
+                                                        <History className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between text-xs text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    Prochain backup dans {timeUntilSnapshot}
+                                </div>
+                                <div>
+                                    {snapshots.length} / {maxSnapshots} slots utilisés
+                                </div>
                             </div>
                         </div>
 

@@ -326,7 +326,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                                     fontWeight="bold"
                                                     textAnchor="middle"
                                                     dominantBaseline="middle"
-                                                    transform={`rotate(${textAngle + 90}, ${textX}, ${textY})`}
+                                                    transform={`rotate(${textAngle}, ${textX}, ${textY})`}
                                                 >
                                                     {prize}
                                                 </text>
@@ -345,10 +345,10 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                             {wonPrize && (
                                 <div className="text-center mb-4">
                                     <div className={`inline-block px-6 py-3 rounded-2xl bg-gradient-to-r ${wonPrize >= 150
-                                            ? 'from-yellow-400 to-orange-500 shadow-2xl shadow-yellow-500/50'
-                                            : wonPrize >= 75
-                                                ? 'from-amber-500 to-orange-500 shadow-2xl shadow-amber-500/50'
-                                                : 'from-blue-500 to-indigo-500 shadow-xl shadow-blue-500/30'
+                                        ? 'from-yellow-400 to-orange-500 shadow-2xl shadow-yellow-500/50'
+                                        : wonPrize >= 75
+                                            ? 'from-amber-500 to-orange-500 shadow-2xl shadow-amber-500/50'
+                                            : 'from-blue-500 to-indigo-500 shadow-xl shadow-blue-500/30'
                                         } ${wonPrize >= 150 ? 'animate-celebrate' : 'animate-bounce'}`}>
                                         <p className="text-3xl font-bold text-white flex items-center gap-2">
                                             {wonPrize >= 150 ? (

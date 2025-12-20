@@ -7,6 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Users, Server, Activity, Shield, Search, RefreshCw, Ban, UserCheck, Edit, Plus, Trash2, Power, ArrowLeft, Cpu, ShieldAlert, CheckCircle, Box, Database, Save, HardDrive, MoreVertical, Minus, Tag, Globe, Lock, Mail, Send, Eye } from "lucide-react";
@@ -94,7 +104,11 @@ const AdminDashboard = () => {
 
     // Delete State
     const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; user: User | null }>({ isOpen: false, user: null });
+
     const [deleteReason, setDeleteReason] = useState("");
+
+    // Confirm Dialog State for Unban
+    const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; title: string; description: string; onConfirm: () => void }>({ isOpen: false, title: "", description: "", onConfirm: () => { } });
 
     const fetchData = async () => {
         setLoading(true);
@@ -135,9 +149,12 @@ const AdminDashboard = () => {
     const handleBanClick = (user: User) => {
         if (user.isBanned) {
             // Unban immediately with confirmation
-            if (confirm(`Voulez-vous débannir ${user.name} ?`)) {
-                performBan(user.id, false);
-            }
+            setConfirmDialog({
+                isOpen: true,
+                title: "Débannir l'utilisateur ?",
+                description: `Voulez-vous vraiment débannir ${user.name} ?`,
+                onConfirm: () => performBan(user.id, false)
+            });
         } else {
             setBanDialog({ isOpen: true, user });
             setBanReason("");
@@ -837,6 +854,26 @@ const AdminDashboard = () => {
                     </DialogContent>
                 </Dialog>
             </div>
+
+            <AlertDialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {confirmDialog.description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            confirmDialog.onConfirm();
+                            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                        }}>
+                            Continuer
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
@@ -859,6 +896,8 @@ const MessagesTable = () => {
     const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
     const [replySubject, setReplySubject] = useState("");
     const [replyContent, setReplyContent] = useState("");
+
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
     const fetchMessages = async () => {
         try {
@@ -887,14 +926,18 @@ const MessagesTable = () => {
         fetchMessages();
     }, []);
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Supprimer ce message ?")) return;
+    const handleDelete = (id: string) => {
+        setDeleteConfirm({ isOpen: true, id });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteConfirm.id) return;
         try {
             const userStr = localStorage.getItem("user");
             if (!userStr) return;
             const user = JSON.parse(userStr);
 
-            const res = await fetch(`/api/contact/${id}`, {
+            const res = await fetch(`/api/contact/${deleteConfirm.id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${user.token}` }
             });
@@ -904,6 +947,8 @@ const MessagesTable = () => {
             }
         } catch (e) {
             toast.error("Erreur lors de la suppression");
+        } finally {
+            setDeleteConfirm({ isOpen: false, id: null });
         }
     };
 
@@ -1017,6 +1062,24 @@ const MessagesTable = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+
+            <AlertDialog open={deleteConfirm.isOpen} onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, isOpen: open }))}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer le message ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Cette action est irréversible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Supprimer
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 };

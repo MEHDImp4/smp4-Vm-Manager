@@ -3,6 +3,18 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Terminal, RotateCw, Cpu, MemoryStick, HardDrive, Camera, History, Download, Trash2, ExternalLink, Shield, Globe, BookOpen, ArrowLeft, Square, Play, Power, Loader2, Plus, Clock, Link as LinkIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -61,6 +73,11 @@ const InstanceDetails = () => {
     const [domains, setDomains] = useState<any[]>([]);
     const [newDomain, setNewDomain] = useState({ subdomain: "", port: "" });
     const [domainLoading, setDomainLoading] = useState(false);
+
+    // Alert/Confirm State
+    const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; title: string; description: React.ReactNode; onConfirm: () => void }>({ isOpen: false, title: "", description: "", onConfirm: () => { } });
+    const [inputDialog, setInputDialog] = useState<{ isOpen: boolean; title: string; onConfirm: (val: string) => void }>({ isOpen: false, title: "", onConfirm: () => { } });
+    const [inputValue, setInputValue] = useState("");
 
     useEffect(() => {
         const updateCountdown = () => {
@@ -191,10 +208,16 @@ const InstanceDetails = () => {
         if (id) fetchSnapshots();
     }, [id, fetchSnapshots]);
 
-    const handleCreateSnapshot = async () => {
-        const name = prompt("Nom du backup (optionnel):");
-        if (name === null) return; // User cancelled
+    const handleCreateSnapshot = () => {
+        setInputValue("");
+        setInputDialog({
+            isOpen: true,
+            title: "Créer un backup",
+            onConfirm: (name) => executeCreateSnapshot(name)
+        });
+    };
 
+    const executeCreateSnapshot = async (name: string) => {
         const userStr = localStorage.getItem("user");
         if (!userStr) return;
         const user = JSON.parse(userStr);
@@ -224,9 +247,24 @@ const InstanceDetails = () => {
         }
     };
 
-    const handleRestoreSnapshot = async (snapId: string, snapName: string) => {
-        if (!confirm(`Voulez-vous vraiment restaurer le backup "${snapName}" ?\n\nAttention: Le conteneur sera arrêté puis redémarré.`)) return;
+    const handleRestoreSnapshot = (snapId: string, snapName: string) => {
+        setConfirmDialog({
+            isOpen: true,
+            title: "Restaurer le backup ?",
+            description: (
+                <div className="space-y-2">
+                    <p>Voulez-vous vraiment restaurer le backup <strong>"{snapName}"</strong> ?</p>
+                    <p className="text-sm text-yellow-500/90 font-medium pb-2 border-b border-yellow-500/20">
+                        Attention: Le conteneur sera arrêté puis redémarré avec l'état du backup.
+                    </p>
+                    <p className="text-xs text-muted-foreground">Toutes les données créées après ce backup seront perdues.</p>
+                </div>
+            ),
+            onConfirm: () => executeRestoreSnapshot(snapId)
+        });
+    };
 
+    const executeRestoreSnapshot = async (snapId: string) => {
         const userStr = localStorage.getItem("user");
         if (!userStr) return;
         const user = JSON.parse(userStr);
@@ -251,9 +289,16 @@ const InstanceDetails = () => {
         }
     };
 
-    const handleDeleteSnapshot = async (snapId: string, snapName: string) => {
-        if (!confirm(`Voulez-vous vraiment supprimer le backup "${snapName}" ?`)) return;
+    const handleDeleteSnapshot = (snapId: string, snapName: string) => {
+        setConfirmDialog({
+            isOpen: true,
+            title: "Supprimer le backup ?",
+            description: `Voulez-vous vraiment supprimer définitivement le backup "${snapName}" ?`,
+            onConfirm: () => executeDeleteSnapshot(snapId)
+        });
+    };
 
+    const executeDeleteSnapshot = async (snapId: string) => {
         const userStr = localStorage.getItem("user");
         if (!userStr) return;
         const user = JSON.parse(userStr);
@@ -294,8 +339,16 @@ const InstanceDetails = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                toast.success(`Backup créé: ${data.backup.filename}`);
-                alert(`Le backup a été créé sur le serveur.\n\nFichier: ${data.backup.filename}\nTaille: ${Math.round(data.backup.size / 1024 / 1024)} MB\n\n${data.note}`);
+                toast.success("Backup prêt", {
+                    description: (
+                        <div className="space-y-1 mt-1">
+                            <p><strong>Fichier:</strong> {data.backup.filename}</p>
+                            <p><strong>Taille:</strong> {Math.round(data.backup.size / 1024 / 1024)} MB</p>
+                            <p className="border-l-2 border-primary/20 pl-2 mt-2 text-xs italic opacity-80">{data.note}</p>
+                        </div>
+                    ),
+                    duration: 10000,
+                });
             } else {
                 const err = await response.json();
                 toast.error(err.error || "Erreur lors du téléchargement");
@@ -372,9 +425,16 @@ const InstanceDetails = () => {
         }
     };
 
-    const handleDeleteDomain = async (domainId: string) => {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer ce domaine ?")) return;
+    const handleDeleteDomain = (domainId: string) => {
+        setConfirmDialog({
+            isOpen: true,
+            title: "Supprimer le domaine ?",
+            description: "Êtes-vous sûr de vouloir supprimer ce domaine ? Cette action est irréversible.",
+            onConfirm: () => executeDeleteDomain(domainId)
+        });
+    };
 
+    const executeDeleteDomain = async (domainId: string) => {
         setDomainLoading(true);
         const toastId = toast.loading("Suppression du domaine...");
 
@@ -545,9 +605,16 @@ const InstanceDetails = () => {
         };
     }, [instance?.vmid, stats.ip, stats.rootPassword, refreshKey]); // Added refreshKey dependency
 
-    const handleRestart = async () => {
-        if (!confirm("Voulez-vous vraiment redémarrer cette instance ?")) return;
+    const handleRestart = () => {
+        setConfirmDialog({
+            isOpen: true,
+            title: "Redémarrer l'instance ?",
+            description: "Voulez-vous vraiment redémarrer cette instance ? Les services seront temporairement indisponibles.",
+            onConfirm: () => executeRestart()
+        });
+    };
 
+    const executeRestart = async () => {
         const userStr = localStorage.getItem("user");
         if (!userStr) return;
         const user = JSON.parse(userStr);
@@ -570,22 +637,30 @@ const InstanceDetails = () => {
     };
 
     const handlePowerAction = async (action: "start" | "stop" | "restart") => {
+        // If specific restart button is clicked, we might want confirmation too, but the UI has a separate restart button calling handleRestart.
+        // The power action bar calls handlePowerAction("restart").
+        // I should intercept restart action here too if I want confirmation on that button.
+        // Based on code at line 727, handlePowerAction("restart") is called directly.
+        // I will modify handlePowerAction to check for restart. or better, modify the button to call handleRestart?
+        // But handlePowerAction handles start/stop too.
+
+        if (action === 'restart') {
+            handleRestart();
+            return;
+        }
+
         const userStr = localStorage.getItem("user");
         if (!userStr) return;
         const user = JSON.parse(userStr);
 
-        // Optimistic UI update or loading state
         setLoading(true); // Temporarily lock buttons
 
         try {
             let url = `/api/instances/${id}/toggle`; // Default for start/stop
             const method = 'POST';
 
-            if (action === 'restart') {
-                url = `/api/instances/${id}/restart`;
-            } else {
-                url = `/api/instances/${id}/toggle`;
-            }
+            // action is guaranteed to be 'start' or 'stop' here due to early return
+            url = `/api/instances/${id}/toggle`;
 
             const response = await fetch(url, {
                 method: method,
@@ -1102,7 +1177,64 @@ const InstanceDetails = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div >
+            {/* Custom Alert/Confirm Dialogs */}
+            <AlertDialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {confirmDialog.description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            confirmDialog.onConfirm();
+                            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                        }}>
+                            Continuer
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Input Dialog (Backup Name) */}
+            <Dialog open={inputDialog.isOpen} onOpenChange={(open) => setInputDialog(prev => ({ ...prev, isOpen: open }))}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{inputDialog.title}</DialogTitle>
+                        <DialogDescription>
+                            Entrez un nom pour identifier ce backup.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="input-name" className="mb-2 block">Nom</Label>
+                        <Input
+                            id="input-name"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder="Ex: Avant mise à jour..."
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    inputDialog.onConfirm(inputValue);
+                                    setInputDialog(prev => ({ ...prev, isOpen: false }));
+                                }
+                            }}
+                            autoFocus
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setInputDialog(prev => ({ ...prev, isOpen: false }))}>Annuler</Button>
+                        <Button onClick={() => {
+                            inputDialog.onConfirm(inputValue);
+                            setInputDialog(prev => ({ ...prev, isOpen: false }));
+                        }}>
+                            Créer
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
     );
 };
 

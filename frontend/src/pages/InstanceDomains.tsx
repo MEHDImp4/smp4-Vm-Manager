@@ -4,6 +4,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Globe, Plus, Loader2, Trash2, ExternalLink, Link as LinkIcon, ShieldCheck, AlertCircle, Coins, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const InstanceDomains = () => {
     const { id } = useParams();
@@ -14,6 +24,7 @@ const InstanceDomains = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [instanceName, setInstanceName] = useState("");
     const [userName, setUserName] = useState("");
+    const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; title: string; description: React.ReactNode; onConfirm: () => void }>({ isOpen: false, title: "", description: "", onConfirm: () => { } });
 
     // Fetch domains and instance info
     useEffect(() => {
@@ -56,7 +67,7 @@ const InstanceDomains = () => {
         if (id) fetchData();
     }, [id, navigate]);
 
-    const handleCreateDomain = async () => {
+    const handleCreateDomain = () => {
         if (!newDomain.port || !newDomain.suffix) {
             toast.error("Veuillez remplir tous les champs");
             return;
@@ -67,14 +78,24 @@ const InstanceDomains = () => {
 
         // If it's a paid domain, ask for confirmation
         if (isPaidDomain) {
-            const confirmed = confirm(
-                "Vous avez déjà 3 sous-domaines gratuits.\n\n" +
-                "Ce domaine supplémentaire coûtera 2 points/jour tant qu'il existe.\n\n" +
-                "Voulez-vous continuer ?"
-            );
-            if (!confirmed) return;
+            setConfirmDialog({
+                isOpen: true,
+                title: "Confirmation de paiement",
+                description: (
+                    <div className="space-y-2">
+                        <p>Vous avez déjà 3 sous-domaines gratuits.</p>
+                        <p>Ce domaine supplémentaire coûtera <strong>2 points/jour</strong> tant qu'il existe.</p>
+                        <p>Voulez-vous continuer ?</p>
+                    </div>
+                ),
+                onConfirm: () => executeCreateDomain(isPaidDomain)
+            });
+        } else {
+            executeCreateDomain(false);
         }
+    };
 
+    const executeCreateDomain = async (isPaidDomain: boolean) => {
         setActionLoading(true);
         const toastId = toast.loading("Configuration de Cloudflare...");
 
@@ -117,9 +138,16 @@ const InstanceDomains = () => {
         }
     };
 
-    const handleDeleteDomain = async (domainId: string) => {
-        if (!confirm("Voulez-vous vraiment supprimer ce domaine ?")) return;
+    const handleDeleteDomain = (domainId: string) => {
+        setConfirmDialog({
+            isOpen: true,
+            title: "Supprimer le domaine",
+            description: "Voulez-vous vraiment supprimer ce domaine ?",
+            onConfirm: () => executeDeleteDomain(domainId)
+        });
+    };
 
+    const executeDeleteDomain = async (domainId: string) => {
         setActionLoading(true);
         const toastId = toast.loading("Suppression du tunnel...");
 
@@ -405,7 +433,28 @@ const InstanceDomains = () => {
                     </div>
                 </div>
             </div>
-        </div>
+
+
+            <AlertDialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {confirmDialog.description}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            confirmDialog.onConfirm();
+                            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                        }}>
+                            Continuer
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div >
     );
 };
 

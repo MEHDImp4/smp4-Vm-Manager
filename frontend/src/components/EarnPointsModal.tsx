@@ -176,7 +176,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
 
                     // Calculate rotation to land on the prize
                     const segmentAngle = 360 / WHEEL_PRIZES.length;
-                    const targetRotation = 360 * 5 + (prizeIndex * segmentAngle); // 5 full rotations + target
+                    const targetRotation = 360 * 5 - (prizeIndex * segmentAngle) - (segmentAngle / 2); // 5 full rotations - target - centering
 
                     setRotation(targetRotation);
 

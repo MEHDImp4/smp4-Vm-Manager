@@ -164,6 +164,7 @@ Voici tes objectifs :
         *   Image : \`containrrr/watchtower\`
         *   Commande : \`--interval 30\` (vérification toutes les 30 secondes)
         *   Volumes : \`/var/run/docker.sock:/var/run/docker.sock\`
+        *   Environment : \`DOCKER_API_VERSION=1.44\`
 
 4.  **Documentation Post-Installation** :
     *   À la fin, génère une section "IMPORTANT" expliquant comment rendre le package GHCR public sur GitHub pour que mon serveur puisse le télécharger sans mot de passe (Package Settings -> Change visibility -> Public).
@@ -190,6 +191,7 @@ Objectifs :
 3. **Docker Compose** :
    - Crée un docker-compose.yml qui utilise l'image distante (ghcr.io/...).
    - Ajoute Watchtower pour auto-update (check 30s).
+   - Configure l'environnement Watchtower : DOCKER_API_VERSION=1.44.
    - Pas de "build: .".
 
 4. **Documentation** :

@@ -1,6 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Cloud, ArrowLeft, BookOpen, Terminal, Box, Layers, Globe, AlertTriangle, CheckCircle2, Lock } from "lucide-react";
+import { toast } from "sonner";
 
 const DockerGuide = () => {
     const navigate = useNavigate();
@@ -103,37 +104,74 @@ const DockerGuide = () => {
                         </ul>
                     </div>
 
-                    {/* Step 3: Dockerize */}
+                    {/* Step 3: Dockerize & CI/CD */}
                     <div className="glass rounded-2xl p-8 border border-white/10">
                         <h2 className="text-2xl font-bold mb-4 flex items-center gap-3">
                             <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-sm font-bold">3</span>
-                            Dockeriser ton projet
+                            Dockeriser & Automatiser (CI/CD)
                         </h2>
                         <p className="text-muted-foreground mb-4">
-                            Utilise ce prompt pour générer les fichiers de configuration parfaits pour notre infrastructure.
+                            Utilise ce prompt avancé avec ton assistant IA préféré (ChatGPT, Claude, Copilot) pour générer une configuration complète incluant le déploiement automatique via GitHub Actions.
                         </p>
                         <div className="bg-black/40 rounded-xl p-6 font-mono text-sm text-blue-300 overflow-x-auto border border-white/10 relative group shadow-inner">
                             <Button size="sm" variant="outline" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/50 hover:bg-background" onClick={() => {
-                                navigator.clipboard.writeText(`Tu es un expert DevOps.\nAnalyse ce repository GitHub : <URL_DU_REPO>\n\nObjectif : dockeriser l’application pour un déploiement simple avec Docker Compose.\n\nTâches :\n1. Identifier le langage et le type de projet (frontend, backend, API, etc.)\n2. Générer un Dockerfile optimisé (production-ready)\n3. Générer un docker-compose.yml compatible Portainer\n4. Expliquer les ports exposés et les variables d’environnement\n5. Ne PAS utiliser de build local (tout doit marcher via Portainer)\n6. Supposer que l’utilisateur n’a jamais utilisé Docker. L'app doit écouter sur 0.0.0.0.\n\nRetour attendu :\n- Dockerfile\n- docker-compose.yml\n- README minimal avec instructions Portainer`);
-                                alert("Prompt copié !");
+                                navigator.clipboard.writeText(`Tu es un expert DevOps et Docker.
+J'ai un projet dans ce repository. Je veux que tu mettes en place une pipeline CI/CD complète et moderne.
+
+Voici tes objectifs :
+
+1.  **Dockerisation** :
+    *   Crée un \`Dockerfile\` optimisé pour la production (multi-stage build si possible).
+    *   L'application doit écouter sur \`0.0.0.0\`.
+
+2.  **GitHub Actions (CI/CD)** :
+    *   Crée un workflow \`.github/workflows/deploy.yml\`.
+    *   Ce workflow doit se déclencher lors d'un push sur la branche \`main\`.
+    *   Il doit construire (build) l'image Docker.
+    *   Il doit pousser (push) cette image sur le **GitHub Container Registry (GHCR)**.
+    *   Utilise \`GITHUB_TOKEN\` pour l'authentification.
+    *   Nomme l'image en minuscules : \`ghcr.io/OWNER/REPO:latest\`.
+
+3.  **Docker Compose** :
+    *   Crée un fichier \`docker-compose.yml\` prêt pour le déploiement.
+    *   Il doit utiliser l'image que tu as configurée ci-dessus (\`image: ghcr.io/...\`).
+    *   N'utilise PAS de \`build: .\`, on veut utiliser l'image pré-compilée du registre.
+    *   Expose les ports nécessaires.
+    *   **IMPORTANT** : Ajoute un service **Watchtower** pour la mise à jour automatique.
+        *   Image : \`containrrr/watchtower\`
+        *   Commande : \`--interval 30\` (vérification toutes les 30 secondes)
+        *   Volumes : \`/var/run/docker.sock:/var/run/docker.sock\`
+
+4.  **Documentation Post-Installation** :
+    *   À la fin, génère une section "IMPORTANT" expliquant comment rendre le package GHCR public sur GitHub pour que mon serveur puisse le télécharger sans mot de passe (Package Settings -> Change visibility -> Public).
+
+Analyse mon code pour détecter le langage et les besoins, puis fournis-moi tous ces fichiers.`);
+                                toast.success("Prompt copié dans le presse-papier !");
                             }}>
                                 Copier
                             </Button>
-                            <div className="whitespace-pre-wrap opacity-80">
-                                {`Tu es un expert DevOps.
-Analyse ce repository GitHub : <URL_DU_REPO>
+                            <div className="whitespace-pre-wrap opacity-80 text-xs md:text-sm leading-relaxed">
+                                {`Tu es un expert DevOps et Docker.
+J'ai un projet dans ce repository. Je veux que tu mettes en place une pipeline CI/CD complète.
 
-Objectif : dockeriser l’application pour un déploiement simple avec Docker Compose.
+Objectifs :
 
-Tâches :
-1. Générer un Dockerfile optimisé (production-ready)
-2. Générer un docker-compose.yml compatible Portainer
-3. L'application DOIT écouter sur 0.0.0.0 (et non localhost)
-4. Expliquer quel port est exposé (ex: 3000, 8080)
+1. **Dockerisation** :
+   - Crée un Dockerfile optimisé (production-ready).
+   - L'app doit écouter sur 0.0.0.0.
 
-Retour attendu :
-- Dockerfile
-- docker-compose.yml`}
+2. **GitHub Actions (CI/CD)** :
+   - Crée un workflow .github/workflows/deploy.yml.
+   - Build et Push l'image sur GitHub Container Registry (GHCR) à chaque push.
+   - Utilise GITHUB_TOKEN.
+
+3. **Docker Compose** :
+   - Crée un docker-compose.yml qui utilise l'image distante (ghcr.io/...).
+   - Ajoute Watchtower pour auto-update (check 30s).
+   - Pas de "build: .".
+
+4. **Documentation** :
+   - Explique comment rendre le package GHCR public dans les paramètres GitHub pour permettre le téléchargement.`}
                             </div>
                         </div>
                     </div>

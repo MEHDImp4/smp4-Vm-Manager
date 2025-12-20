@@ -20,8 +20,7 @@ startSnapshotCron();
 const { initDailyReminder } = require('./cron/reminder.cron');
 initDailyReminder();
 
-const { initBackupCron } = require('./cron/backup.cron');
-initBackupCron();
+
 
 const { initIdleCheckCron } = require('./cron/idleCheck.cron');
 initIdleCheckCron();

@@ -16,6 +16,7 @@ RUN npx prisma generate
 
 # Copy source code
 COPY src ./src/
+COPY scripts ./scripts/
 COPY .env* ./
 
 # Check if we need to expose a port (defaulting to 3000, but will be overriden by docker-compose)

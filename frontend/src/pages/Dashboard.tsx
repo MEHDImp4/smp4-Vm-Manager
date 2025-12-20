@@ -321,18 +321,20 @@ const Dashboard = () => {
             </div>
             <div className="relative z-10">
               <div className="text-4xl font-bold mb-4 tracking-tight flex items-baseline gap-2">
-                <span className="gradient-text">{totalPoints.toFixed(2)}</span>
+                <span className="gradient-text">
+                  {isAdmin ? '∞' : totalPoints.toFixed(2)}
+                </span>
                 <span className="text-lg text-muted-foreground font-medium">pts</span>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-xs text-muted-foreground font-medium">
                   <span>Recharge</span>
-                  <span>{Math.round((totalPoints / maxPoints) * 100)}%</span>
+                  <span>{isAdmin ? '∞' : `${Math.round((totalPoints / maxPoints) * 100)}%`}</span>
                 </div>
-                <Progress value={(totalPoints / maxPoints) * 100} className="h-1.5 bg-white/10" indicatorClassName="bg-gradient-to-r from-primary to-secondary" />
-                {dailyConsumption > 0 && (
+                <Progress value={isAdmin ? 100 : (totalPoints / maxPoints) * 100} className="h-1.5 bg-white/10" indicatorClassName="bg-gradient-to-r from-primary to-secondary" />
+                {(dailyConsumption > 0 || isAdmin) && (
                   <p className="text-xs text-muted-foreground mt-2 font-mono">
-                    ≈ {Math.floor(totalPoints / (dailyConsumption || 1))} jours d'autonomie
+                    {isAdmin ? 'Autonomie illimitée' : `≈ ${Math.floor(totalPoints / (dailyConsumption || 1))} jours d'autonomie`}
                   </p>
                 )}
               </div>

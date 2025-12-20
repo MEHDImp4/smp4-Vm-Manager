@@ -85,32 +85,32 @@ const deleteUser = async (req, res) => {
     const { reason } = req.body;
 
     try {
-        // 1. Soft Delete User
-        const user = await prisma.user.update({
-            where: { id: parseInt(id) },
+        const userId = parseInt(id);
+
+        // 1. Fetch User Data
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        // 2. Archive User
+        await prisma.deletedUser.create({
             data: {
-                isDeleted: true,
-                isBanned: true, // Also ban to be safe
-                banReason: reason || "Account deleted"
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                userData: JSON.stringify(user)
             }
         });
 
-        // 2. Fetch all user instances to delete them
+        // 3. Fetch all user instances to delete them
         const instances = await prisma.instance.findMany({
             where: { userId: user.id }
         });
 
-        // 3. Delete each instance resources
-        // We import the logic from services directly to avoid circular dependency or req/res mocking issues if possible.
-        // However, to save time and ensure consistency, we can use the existing services (proxmox, vpn, cloudflare)
-        // just like instanceController does.
-
-        // Helper to cleanup instance (duplicated logic from instanceController, but safer than mocking)
+        // 4. Delete each instance resources
         for (const inst of instances) {
             try {
                 if (inst.vmid) {
                     await proxmoxService.stopLXC(inst.vmid).catch(() => { });
-                    // Wait a bit? No, proceed.
                     await proxmoxService.deleteLXC(inst.vmid).catch(() => { });
                 }
                 if (inst.vpnConfig) {
@@ -123,16 +123,30 @@ const deleteUser = async (req, res) => {
                     const hostnames = domains.map(d => `${d.subdomain}.smp4.xyz`);
                     await cloudflareService.removeMultipleTunnelIngress(hostnames).catch(() => { });
                 }
+                // Check if related records need manual cleanup or if onDelete Cascade handles it.
+                // Instance deletion from DB:
                 await prisma.instance.delete({ where: { id: inst.id } });
             } catch (cleanupError) {
                 console.error(`Failed to cleanup instance ${inst.id} for user ${user.id}`, cleanupError);
             }
         }
 
-        // 4. Send Email
+        // 5. Send Email
         await emailService.sendAccountDeletedEmail(user.email, user.name, reason);
 
-        res.json({ message: "User deleted and resources cleaned up" });
+        // 6. Hard Delete User (Resources and dependent records should be gone or cascaded if configured)
+        // Note: Prisma schema relations might need onDelete: Cascade for transactions/spins/claims 
+        // OR we manually delete them. schema.prisma didn't show strict relations with Cascade for these.
+        // Let's safe-delete dependent records first to avoid foreign key constraints.
+
+        await prisma.pointTransaction.deleteMany({ where: { userId } });
+        await prisma.dailySpin.deleteMany({ where: { userId } });
+        await prisma.socialClaim.deleteMany({ where: { userId } });
+
+        // Final delete
+        await prisma.user.delete({ where: { id: userId } });
+
+        res.json({ message: "User archived and permanently deleted" });
     } catch (error) {
         console.error("Delete user error", error);
         res.status(500).json({ error: "Failed to delete user" });

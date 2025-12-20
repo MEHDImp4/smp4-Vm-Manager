@@ -135,3 +135,14 @@ model SocialClaim {
   @@unique([userId, platform])
   @@map("social_claims")
 }
+
+model DeletedUser {
+  id        Int      @id @default(autoincrement())
+  email     String
+  name      String
+  role      String
+  userData  String   // JSON dump of other fields if needed
+  deletedAt DateTime @default(now())
+
+  @@map("deleted_users")
+}

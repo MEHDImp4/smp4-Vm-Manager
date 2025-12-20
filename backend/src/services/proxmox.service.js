@@ -379,6 +379,18 @@ class ProxmoxService {
             throw new Error(`Failed to set firewall options for LXC ${vmid}`);
         }
     }
+    /**
+     * Get Proxmox Node Status (CPU, RAM, Uptime, etc.)
+     */
+    async getNodeStatus() {
+        try {
+            const response = await this.client.get(`/api2/json/nodes/${this.node}/status`);
+            return response.data.data;
+        } catch (error) {
+            console.error('Error getting node status:', error.response?.data || error.message);
+            throw new Error('Failed to get node status');
+        }
+    }
 }
 
 

@@ -31,6 +31,8 @@ const deductPoints = async () => {
         });
 
         for (const user of usersWithInstances) {
+            if (user.role === 'admin') continue;
+
             let totalDailyCost = 0;
             for (const instance of user.instances) {
                 totalDailyCost += instance.pointsPerDay;

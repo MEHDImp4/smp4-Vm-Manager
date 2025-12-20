@@ -4,7 +4,9 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const instanceRoutes = require('./routes/instanceRoutes');
 const templateRoutes = require('./routes/templateRoutes');
+const templateRoutes = require('./routes/templateRoutes');
 const pointsRoutes = require('./routes/pointsRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const { startConsumptionCron } = require('./cron/consumptionCron');
 
 const app = express();
@@ -38,6 +40,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/instances', instanceRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/points', pointsRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
     res.send('SMP4cloud Web Backend is running');

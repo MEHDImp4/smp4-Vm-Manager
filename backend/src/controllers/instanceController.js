@@ -22,8 +22,14 @@ const debugLog = (...args) => {
 
 const createInstance = async (req, res) => {
     try {
-        const { name, template, cpu, ram, storage, pointsPerDay, os } = req.body;
+        let { name, template, cpu, ram, storage, pointsPerDay, os } = req.body;
         const userId = req.user.id;
+        const role = req.user.role;
+
+        // Admins don't pay points
+        if (role === 'admin') {
+            pointsPerDay = 0;
+        }
 
         // Fetch User for Hostname Generation
         const user = await prisma.user.findUnique({ where: { id: userId } });

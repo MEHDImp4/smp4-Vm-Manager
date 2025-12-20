@@ -30,11 +30,11 @@ const register = async (req, res) => {
             }
         });
 
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
 
         res.status(201).json({
             message: 'User registered successfully',
-            user: { id: user.id, name: user.name, email: user.email, points: user.points, token }
+            user: { id: user.id, name: user.name, email: user.email, points: user.points, role: user.role, token }
         });
     } catch (error) {
         console.error(error);
@@ -62,7 +62,7 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
 
         res.status(200).json({
             message: 'Login successful',
@@ -71,6 +71,7 @@ const login = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 points: user.points,
+                role: user.role,
                 token
             }
         });
@@ -95,6 +96,7 @@ const getProfile = async (req, res) => {
             name: user.name,
             email: user.email,
             points: user.points,
+            role: user.role,
             avatarUrl: user.avatarUrl
         });
     } catch (error) {

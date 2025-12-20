@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -16,10 +16,12 @@ model User {
   points     Float    @default(100.0)
   created_at DateTime @default(now())
   avatarUrl  String?
+  role       String   @default("user") // "user", "admin"
+  isBanned   Boolean  @default(false)
 
-  instances  Instance[]
+  instances    Instance[]
   transactions PointTransaction[]
-  dailySpins DailySpin[]
+  dailySpins   DailySpin[]
   socialClaims SocialClaim[]
 
   @@map("users")
@@ -29,42 +31,42 @@ model PointTransaction {
   id        String   @id @default(uuid())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
-  amount    Float    // Negative for deduction, Positive for recharge
-  type      String   // "usage", "recharge", "bonus", "spin", "social", "purchase"
+  amount    Float // Negative for deduction, Positive for recharge
+  type      String // "usage", "recharge", "bonus", "spin", "social", "purchase"
   createdAt DateTime @default(now())
 
   @@map("point_transactions")
 }
 
 model DailySpin {
-  id        String   @id @default(uuid())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  points    Float    // Points won (10-200)
-  spinDate  DateTime @default(now())
+  id       String   @id @default(uuid())
+  userId   Int
+  user     User     @relation(fields: [userId], references: [id])
+  points   Float // Points won (10-200)
+  spinDate DateTime @default(now())
 
   @@map("daily_spins")
 }
 
 model Instance {
-  id           String   @id @default(uuid())
-  vmid         Int?     @unique // Proxmox VMID
-  name         String
-  template     String
-  cpu          String
-  ram          String
-  storage      String
-  pointsPerDay Float
-  status       String   @default("stopped") // "online" or "stopped"
-  vpnConfig    String?  // WireGuard Client Configuration
-  rootPassword String?  // Optional root password generated on creation
+  id                   String    @id @default(uuid())
+  vmid                 Int?      @unique // Proxmox VMID
+  name                 String
+  template             String
+  cpu                  String
+  ram                  String
+  storage              String
+  pointsPerDay         Float
+  status               String    @default("stopped") // "online" or "stopped"
+  vpnConfig            String? // WireGuard Client Configuration
+  rootPassword         String? // Optional root password generated on creation
   lastIdleNotification DateTime? // Track last time we sent "turn off your VM" email
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id])
-  created_at   DateTime @default(now())
+  userId               Int
+  user                 User      @relation(fields: [userId], references: [id])
+  created_at           DateTime  @default(now())
 
-  snapshots    Snapshot[]
-  domains      Domain[]
+  snapshots Snapshot[]
+  domains   Domain[]
 
   @@map("instances")
 }
@@ -73,8 +75,8 @@ model Snapshot {
   id              String   @id @default(uuid())
   instanceId      String
   instance        Instance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
-  name            String   // User-friendly name
-  proxmoxSnapName String   // Internal Proxmox snapshot name (e.g., snap_1702684800)
+  name            String // User-friendly name
+  proxmoxSnapName String // Internal Proxmox snapshot name (e.g., snap_1702684800)
   description     String?
   createdAt       DateTime @default(now())
 
@@ -83,8 +85,8 @@ model Snapshot {
 
 model Domain {
   id         String   @id @default(uuid())
-  subdomain  String   // e.g. "minecraft"
-  port       Int      // e.g. 25565
+  subdomain  String // e.g. "minecraft"
+  port       Int // e.g. 25565
   isPaid     Boolean  @default(false) // Premium domain (2pts/day) beyond free limit
   instanceId String
   instance   Instance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
@@ -111,8 +113,8 @@ model TemplateVersion {
   id         Int      @id @default(autoincrement())
   templateId String
   template   Template @relation(fields: [templateId], references: [id])
-  os         String   // "ubuntu", "debian"
-  proxmoxId  Int      // The ID of the template in Proxmox (e.g., 100, 101)
+  os         String // "ubuntu", "debian"
+  proxmoxId  Int // The ID of the template in Proxmox (e.g., 100, 101)
 
   @@unique([templateId, os])
   @@map("template_versions")
@@ -122,7 +124,7 @@ model SocialClaim {
   id        String   @id @default(uuid())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
-  platform  String   // "github", "twitter", "linkedin"
+  platform  String // "github", "twitter", "linkedin"
   username  String
   status    String   @default("verified") // "verified", "pending", "rejected"
   createdAt DateTime @default(now())

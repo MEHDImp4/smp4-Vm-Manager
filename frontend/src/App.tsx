@@ -11,6 +11,8 @@ import Account from "./pages/Account";
 import CreateInstance from "./pages/CreateInstance";
 import InstanceDetails from "./pages/InstanceDetails";
 import InstanceDomains from "./pages/InstanceDomains";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminRoute from "./components/AdminRoute";
 
 import DockerGuide from "./pages/DockerGuide";
 
@@ -25,6 +27,11 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } />
           <Route path="/account" element={<Account />} />
           <Route path="/guide" element={<DockerGuide />} />
           <Route path="/login" element={<Auth />} />

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Users, Server, Activity, Shield, Search, RefreshCw, Ban, UserCheck, Edit, Plus, Trash2, Power, ArrowLeft, Cpu } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 
 interface NodeStats {
@@ -82,6 +83,8 @@ const AdminDashboard = () => {
     // Template Edit State
     const [editTemplate, setEditTemplate] = useState<Template | null>(null);
     const [newTemplatePrice, setNewTemplatePrice] = useState("");
+    const [isPromo, setIsPromo] = useState(false);
+    const [promoPrice, setPromoPrice] = useState("");
 
     // Ban State
     const [banDialog, setBanDialog] = useState<{ isOpen: boolean; user: User | null }>({ isOpen: false, user: null });
@@ -250,7 +253,10 @@ const AdminDashboard = () => {
                     "Authorization": `Bearer ${user.token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ points: parseFloat(newTemplatePrice) })
+                body: JSON.stringify({
+                    points: parseFloat(newTemplatePrice),
+                    oldPrice: isPromo ? (parseFloat(promoPrice) || null) : null
+                })
             });
 
             if (response.ok) {
@@ -646,6 +652,8 @@ const AdminDashboard = () => {
                                             onClick={() => {
                                                 setEditTemplate(tpl);
                                                 setNewTemplatePrice(tpl.points.toString());
+                                                setIsPromo(!!tpl.oldPrice);
+                                                setPromoPrice(tpl.oldPrice ? tpl.oldPrice.toString() : tpl.points.toString());
                                             }}
                                         >
                                             <Edit className="w-4 h-4 mr-2" />
@@ -698,15 +706,39 @@ const AdminDashboard = () => {
                                 </span>
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="py-4">
-                            <Label htmlFor="tpl-points">Points par jour</Label>
-                            <Input
-                                id="tpl-points"
-                                type="number"
-                                value={newTemplatePrice}
-                                onChange={(e) => setNewTemplatePrice(e.target.value)}
-                                className="mt-2"
-                            />
+                        <div className="py-4 space-y-4">
+                            <div>
+                                <Label htmlFor="tpl-points">Points par jour (Prix Actuel)</Label>
+                                <Input
+                                    id="tpl-points"
+                                    type="number"
+                                    value={newTemplatePrice}
+                                    onChange={(e) => setNewTemplatePrice(e.target.value)}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div className="flex items-center space-x-2 border p-3 rounded-lg border-white/10">
+                                <Switch id="promo-mode" checked={isPromo} onCheckedChange={setIsPromo} />
+                                <Label htmlFor="promo-mode">Activer la promotion</Label>
+                            </div>
+
+                            {isPromo && (
+                                <div className="animate-in slide-in-from-top-2">
+                                    <Label htmlFor="old-price">Prix d'origine (barré)</Label>
+                                    <Input
+                                        id="old-price"
+                                        type="number"
+                                        value={promoPrice}
+                                        onChange={(e) => setPromoPrice(e.target.value)}
+                                        className="mt-2"
+                                        placeholder="Ex: 28"
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Ce prix apparaîtra barré à côté du nouveau prix.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setEditTemplate(null)}>Annuler</Button>

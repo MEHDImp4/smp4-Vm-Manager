@@ -215,7 +215,7 @@ const getTemplates = async (req, res) => {
 
 const updateTemplatePrice = async (req, res) => {
     const { id } = req.params;
-    const { points } = req.body;
+    const { points, oldPrice } = req.body;
 
     if (points === undefined || points < 0) {
         return res.status(400).json({ error: "Invalid points value" });
@@ -225,32 +225,17 @@ const updateTemplatePrice = async (req, res) => {
         const template = await prisma.template.findUnique({ where: { id } });
         if (!template) return res.status(404).json({ error: "Template not found" });
 
-        const currentPoints = template.points;
         const newPoints = parseFloat(points);
-        let oldPrice = template.oldPrice;
-
-        // Logic:
-        // If Price Decreases: It's a promotion. Set oldPrice = currentPoints (if not already set).
-        // If Price Increases: Reference is lost/reset. Clear oldPrice.
-
-        if (newPoints < currentPoints) {
-            // Price drop -> Promotion
-            // If oldPrice is currently null, we set it to the price BEFORE this drop.
-            // If oldPrice is ALREADY set (e.g. 20 -> 15 (old=20)), and we drop to 10.
-            // Do we keep old=20? Yes, usually.
-            if (oldPrice === null) {
-                oldPrice = currentPoints;
-            }
-        } else if (newPoints > currentPoints) {
-            // Price hike -> Clear promo
-            oldPrice = null;
-        }
+        // Explicit logic:
+        // If oldPrice is provided (explicitly set by admin), use it.
+        // If oldPrice is explicitly null (admin unchecked promo), clear it.
+        // We expect req.body.oldPrice to be passed.
 
         const updated = await prisma.template.update({
             where: { id },
             data: {
                 points: newPoints,
-                oldPrice: oldPrice
+                oldPrice: oldPrice !== undefined ? oldPrice : template.oldPrice // If undefined, preserve. If null/value, update.
             }
         });
 

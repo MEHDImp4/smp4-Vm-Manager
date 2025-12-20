@@ -484,7 +484,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                         [
                                             { id: 'twitter', icon: Twitter, label: 'Twitter', color: 'text-sky-400', hover: 'hover:border-sky-500/30 hover:bg-sky-500/5', url: 'https://twitter.com/yourhandle' },
                                             { id: 'github', icon: Github, label: 'GitHub', color: 'text-white', hover: 'hover:border-white/30 hover:bg-white/5', url: 'https://github.com/MEHDImp4' },
-                                            { id: 'linkedin', icon: Linkedin, label: 'LinkedIn', color: 'text-blue-500', hover: 'hover:border-blue-500/30 hover:bg-blue-500/5', url: 'https://linkedin.com/in/yourhandle' }
+                                            { id: 'linkedin', icon: Linkedin, label: 'LinkedIn', color: 'text-blue-500', hover: 'hover:border-blue-500/30 hover:bg-blue-500/5', url: 'https://www.linkedin.com/in/diouri-mehdi-a73579301/' }
                                         ].map((social) => (
                                             <button
                                                 key={social.id}

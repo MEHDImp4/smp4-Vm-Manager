@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Users, Server, Activity, Shield, Search, RefreshCw, Ban, UserCheck, Edit, Plus, Trash2, Power, ArrowLeft, Cpu } from "lucide-react";
+import { Loader2, Users, Server, Activity, Shield, Search, RefreshCw, Ban, UserCheck, Edit, Plus, Trash2, Power, ArrowLeft, Cpu, ShieldAlert, CheckCircle, Box, Database, Save, HardDrive, MoreVertical, Minus, Tag, Globe, Lock, Mail, Send, Eye } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
 
 interface NodeStats {
     cpu: number;
@@ -349,6 +350,12 @@ const AdminDashboard = () => {
                         >
                             <Cpu className="w-4 h-4" /> Templates
                         </TabsTrigger>
+                        <TabsTrigger
+                            value="messages"
+                            className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
+                        >
+                            <Mail className="w-4 h-4" /> Messages
+                        </TabsTrigger>
                     </TabsList>
 
                     {/* Overview Content */}
@@ -664,6 +671,18 @@ const AdminDashboard = () => {
                             })}
                         </div>
                     </TabsContent>
+
+                    <TabsContent value="messages" className="space-y-4 animate-fade-in">
+                        <Card className="glass border-white/10">
+                            <CardHeader>
+                                <CardTitle>Messages reçus</CardTitle>
+                                <CardDescription>Gérez les messages envoyés depuis le formulaire de contact.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <MessagesTable />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
                 </Tabs>
 
                 {/* Edit Points Dialog */}
@@ -823,3 +842,172 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+const MessagesTable = () => {
+    const [messages, setMessages] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [replyOpen, setReplyOpen] = useState(false);
+    const [selectedMessage, setSelectedMessage] = useState<any>(null);
+    const [replySubject, setReplySubject] = useState("");
+    const [replyContent, setReplyContent] = useState("");
+
+    const fetchMessages = async () => {
+        try {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+
+            const res = await fetch("/api/admin/messages", { // Changed to use admin route, wait. Actually contactRoutes has /api/contact/messages? No, route is /api/contact/
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+            // Based on backend routes: router.get('/', authMiddleware, getMessages); mounted at /api/contact
+            // So url is /api/contact
+
+            if (res.ok) {
+                const data = await res.json();
+                setMessages(data);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchMessages();
+    }, []);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Supprimer ce message ?")) return;
+        try {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+
+            const res = await fetch(`/api/contact/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+            if (res.ok) {
+                toast.success("Message supprimé");
+                fetchMessages();
+            }
+        } catch (e) {
+            toast.error("Erreur lors de la suppression");
+        }
+    };
+
+    const handleReply = (msg: any) => {
+        setSelectedMessage(msg);
+        setReplySubject(`Re: Message de ${msg.name}`);
+        setReplyOpen(true);
+    };
+
+    const sendReply = async () => {
+        try {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+
+            const res = await fetch(`/api/contact/${selectedMessage.id}/reply`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${user.token}`
+                },
+                body: JSON.stringify({ subject: replySubject, content: replyContent })
+            });
+
+            if (res.ok) {
+                toast.success("Réponse envoyée");
+                setReplyOpen(false);
+                setReplyContent("");
+                fetchMessages();
+            } else {
+                throw new Error();
+            }
+        } catch (e) {
+            toast.error("Erreur d'envoi");
+        }
+    };
+
+    if (loading) return <div>Chargement...</div>;
+
+    return (
+        <>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Nom</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Message</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {messages.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-center h-24">Aucun message</TableCell>
+                        </TableRow>
+                    ) : (
+                        messages.map((msg) => (
+                            <TableRow key={msg.id}>
+                                <TableCell>{new Date(msg.createdAt).toLocaleDateString()}</TableCell>
+                                <TableCell>{msg.name}</TableCell>
+                                <TableCell>{msg.email}</TableCell>
+                                <TableCell className="max-w-md truncate" title={msg.message}>{msg.message}</TableCell>
+                                <TableCell>
+                                    <Badge variant={msg.isRead ? "outline" : "default"}>
+                                        {msg.isRead ? "Lu/Répondu" : "Nouveau"}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-right space-x-2">
+                                    <Button size="sm" variant="outline" onClick={() => handleReply(msg)}>
+                                        <Mail className="w-4 h-4 mr-2" />
+                                        Répondre
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={() => handleDelete(msg.id)}>
+                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    )}
+                </TableBody>
+            </Table>
+
+            <Dialog open={replyOpen} onOpenChange={setReplyOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Répondre à {selectedMessage?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Sujet</Label>
+                            <Input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Message</Label>
+                            <Textarea
+                                value={replyContent}
+                                onChange={(e) => setReplyContent(e.target.value)}
+                                className="min-h-[150px]"
+                                placeholder="Votre réponse..."
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setReplyOpen(false)}>Annuler</Button>
+                        <Button onClick={sendReply} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                            <Send className="w-4 h-4 mr-2" />
+                            Envoyer
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
+};

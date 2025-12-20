@@ -41,6 +41,7 @@ app.use('/api/instances', instanceRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/points', pointsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/contact', require('./routes/contactRoutes'));
 
 app.get('/', (req, res) => {
     res.send('SMP4cloud Web Backend is running');

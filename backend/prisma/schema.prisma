@@ -149,3 +149,14 @@ model DeletedUser {
 
   @@map("deleted_users")
 }
+
+model Message {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("messages")
+}

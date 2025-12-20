@@ -2,8 +2,8 @@ import { Cloud, Github, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
-  const token = localStorage.getItem("token");
-  const logoLink = token ? "/dashboard" : "/";
+  const user = localStorage.getItem("user");
+  const logoLink = user ? "/dashboard" : "/";
 
   return (
     <footer className="border-t border-border/50 bg-card/50">
@@ -87,9 +87,9 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                <Link to="/contact" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

@@ -13,6 +13,7 @@ import InstanceDetails from "./pages/InstanceDetails";
 import InstanceDomains from "./pages/InstanceDomains";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
+import Contact from "./pages/Contact";
 
 import DockerGuide from "./pages/DockerGuide";
 import Templates from "./pages/Templates";
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/docker-guide" element={<DockerGuide />} />
           <Route path="/templates" element={<Templates />} />
           <Route path="/tarification" element={<Tarification />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Auth />} />
           <Route path="/register" element={<Auth />} />
           <Route path="/register" element={<Auth />} />

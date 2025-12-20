@@ -18,20 +18,9 @@ const Header = () => {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation - Removed as per request */}
         <nav className="hidden md:flex items-center gap-6">
-          <a href="#concept" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-            Concept
-          </a>
-          <a href="#templates" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-            Templates
-          </a>
-          <a href="#points" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-            Tarification
-          </a>
-          <a href="#why" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-            Avantages
-          </a>
+          {/* Links removed for cleaner landing page */}
         </nav>
 
         {/* Desktop CTA */}
@@ -57,18 +46,9 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden glass border-t border-border/50 py-4 px-4 animate-fade-up">
           <nav className="flex flex-col gap-3 mb-4">
-            <a href="#concept" className="text-muted-foreground hover:text-foreground transition-colors py-2">
-              Concept
-            </a>
-            <a href="#templates" className="text-muted-foreground hover:text-foreground transition-colors py-2">
-              Templates
-            </a>
-            <a href="#points" className="text-muted-foreground hover:text-foreground transition-colors py-2">
-              Tarification
-            </a>
-            <a href="#why" className="text-muted-foreground hover:text-foreground transition-colors py-2">
-              Avantages
-            </a>
+            <nav className="flex flex-col gap-3 mb-4">
+              {/* Links removed */}
+            </nav>
           </nav>
           <div className="flex flex-col gap-2">
             <Button variant="outline" className="w-full" asChild>

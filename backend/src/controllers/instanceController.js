@@ -268,7 +268,7 @@ const createInstance = async (req, res) => {
                 // Auto-create Portainer Domain (Port 9000)
                 try {
                     if (ip) {
-                        debugLog(`[Background] Creating Portainer domain for ${parameter_instance_name}...`);
+                        debugLog(`[Background] Creating Portainer domain for ${instance.name}...`);
 
                         // Generate Subdomain: portainer-[user]-[vm]
                         // Ensure strict sanitization matching the createDomain logic

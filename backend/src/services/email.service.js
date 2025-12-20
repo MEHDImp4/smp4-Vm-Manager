@@ -126,28 +126,102 @@ module.exports = {
     sendInstanceCredentials,
     sendEmail,
     sendAccountBannedEmail: async (to, name, reason, expiresAt) => {
-        const subject = "⚠️ Votre compte a été suspendu";
+        const subject = "⚠️ Compte Suspendu - SMP4cloud";
         const html = `
-             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #dc2626;">Compte Suspendu</h2>
-                <p>Bonjour ${name},</p>
-                <p>Votre compte a été suspendu par un administrateur.</p>
-                <p><strong>Raison :</strong> ${reason || 'Non spécifiée'}</p>
-                <p><strong>Expiration :</strong> ${expiresAt ? new Date(expiresAt).toLocaleString() : 'Permanente'}</p>
-                <p>Si vous pensez qu'il s'agit d'une erreur, contactez le support.</p>
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 2px; border-radius: 12px;">
+                <div style="background: white; padding: 40px; border-radius: 10px;">
+                    <!-- Header -->
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); width: 60px; height: 60px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                            <span style="font-size: 30px;">⚠️</span>
+                        </div>
+                        <h1 style="color: #1f2937; margin: 0; font-size: 28px; font-weight: 700;">Compte Suspendu</h1>
+                    </div>
+
+                    <!-- Message -->
+                    <div style="background: #fef2f2; padding: 20px; border-radius: 8px; border-left: 4px solid #dc2626; margin-bottom: 30px;">
+                        <p style="color: #374151; font-size: 16px; margin: 0 0 10px 0;">
+                            Bonjour <strong>${name}</strong>,
+                        </p>
+                        <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.6;">
+                            Votre compte a été suspendu par un administrateur.
+                        </p>
+                    </div>
+
+                    <!-- Details -->
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #6b7280; width: 120px;"><strong>Raison :</strong></td>
+                                <td style="padding: 8px 0; color: #111827;">${reason || 'Non spécifiée'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #6b7280;"><strong>Expiration :</strong></td>
+                                <td style="padding: 8px 0; color: #111827;">${expiresAt ? new Date(expiresAt).toLocaleString('fr-FR') : 'Permanente'}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Contact -->
+                    <div style="background: #fffbeb; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 25px 0;">
+                        <p style="color: #92400e; font-size: 13px; margin: 0;">
+                            <strong>📧 Besoin d'aide ?</strong> Si vous pensez qu'il s'agit d'une erreur, contactez notre support.
+                        </p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 40px; padding-top: 25px; border-top: 2px solid #e5e7eb; text-align: center;">
+                        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0 0;">
+                            L'équipe SMP4cloud<br/>
+                            <span style="color: #d1d5db;">© 2024 SMP4cloud - Tous droits réservés</span>
+                        </p>
+                    </div>
+                </div>
             </div>
         `;
         return module.exports.sendEmail(to, subject, html);
     },
     sendAccountDeletedEmail: async (to, name, reason) => {
-        const subject = "❌ Votre compte a été supprimé";
+        const subject = "❌ Compte Supprimé - SMP4cloud";
         const html = `
-             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #dc2626;">Compte Supprimé</h2>
-                <p>Bonjour ${name},</p>
-                <p>Votre compte a été définitivement supprimé de notre plateforme.</p>
-                 <p><strong>Raison :</strong> ${reason || 'Non spécifiée'}</p>
-                 <p>Toutes vos instances et données associées ont été effacées.</p>
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; background: linear-gradient(135deg, #111827 0%, #1f2937 100%); padding: 2px; border-radius: 12px;">
+                <div style="background: white; padding: 40px; border-radius: 10px;">
+                    <!-- Header -->
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="background: linear-gradient(135deg, #111827 0%, #1f2937 100%); width: 60px; height: 60px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                            <span style="font-size: 30px;">❌</span>
+                        </div>
+                        <h1 style="color: #1f2937; margin: 0; font-size: 28px; font-weight: 700;">Compte Supprimé</h1>
+                    </div>
+
+                    <!-- Message -->
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border-left: 4px solid #1f2937; margin-bottom: 30px;">
+                        <p style="color: #374151; font-size: 16px; margin: 0 0 10px 0;">
+                            Bonjour <strong>${name}</strong>,
+                        </p>
+                        <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.6;">
+                            Votre compte a été définitivement supprimé de notre plateforme.
+                        </p>
+                    </div>
+
+                    <!-- Details -->
+                    <div style="background: #fef2f2; padding: 20px; border-radius: 8px; border-left: 4px solid #dc2626; margin-bottom: 25px;">
+                        <p style="color: #991b1b; font-size: 14px; margin: 0 0 10px 0;">
+                            <strong>Raison :</strong> ${reason || 'Non spécifiée'}
+                        </p>
+                        <p style="color: #7f1d1d; font-size: 13px; margin: 0;">
+                            ⚠️ Toutes vos instances et données associées ont été effacées de manière permanente.
+                        </p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 40px; padding-top: 25px; border-top: 2px solid #e5e7eb; text-align: center;">
+                        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0 0;">
+                            L'équipe SMP4cloud<br/>
+                            <span style="color: #d1d5db;">© 2024 SMP4cloud - Tous droits réservés</span>
+                        </p>
+                    </div>
+                </div>
             </div>
         `;
         return module.exports.sendEmail(to, subject, html);
@@ -238,6 +312,75 @@ module.exports = {
                         <a href="https://smp4.xyz" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 10px 0;">
                             Accéder au Dashboard
                         </a>
+                        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0 0;">
+                            L'équipe SMP4cloud<br/>
+                            <span style="color: #d1d5db;">© 2024 SMP4cloud - Tous droits réservés</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+        return module.exports.sendEmail(to, subject, html);
+    },
+    sendAccountDeletionCode: async (to, name, code) => {
+        const subject = "🔒 Code de vérification - Suppression de compte";
+        const html = `
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 2px; border-radius: 12px;">
+                <div style="background: white; padding: 40px; border-radius: 10px;">
+                    <!-- Header -->
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); width: 60px; height: 60px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                            <span style="font-size: 30px;">⚠️</span>
+                        </div>
+                        <h1 style="color: #1f2937; margin: 0; font-size: 28px; font-weight: 700;">Demande de Suppression de Compte</h1>
+                    </div>
+
+                    <!-- Message -->
+                    <div style="background: #fef2f2; padding: 20px; border-radius: 8px; border-left: 4px solid #dc2626; margin-bottom: 30px;">
+                        <p style="color: #374151; font-size: 16px; margin: 0 0 10px 0;">
+                            Bonjour <strong>${name}</strong>,
+                        </p>
+                        <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.6;">
+                            Vous avez demandé la suppression de votre compte SMP4cloud. Cette action est <strong>irréversible</strong> et entraînera la perte définitive de toutes vos données.
+                        </p>
+                    </div>
+
+                    <!-- Verification Code -->
+                    <div style="text-align: center; margin: 30px 0;">
+                        <p style="color: #374151; font-size: 15px; margin-bottom: 15px;">
+                            Pour confirmer la suppression, entrez ce code de vérification :
+                        </p>
+                        <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); padding: 25px; border-radius: 10px; margin: 20px 0; border: 2px dashed #dc2626;">
+                            <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #dc2626; font-family: 'Courier New', monospace;">
+                                ${code}
+                            </div>
+                        </div>
+                        <p style="color: #9ca3af; font-size: 13px; margin-top: 10px;">
+                            ⏱️ Ce code est valide pour une seule utilisation
+                        </p>
+                    </div>
+
+                    <!-- Warning -->
+                    <div style="background: #fffbeb; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 30px 0;">
+                        <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 16px;">⚠️ Ce qui sera supprimé :</h3>
+                        <ul style="color: #78350f; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                            <li>Votre compte utilisateur</li>
+                            <li>Toutes vos machines virtuelles</li>
+                            <li>Vos snapshots et backups</li>
+                            <li>Vos configurations VPN</li>
+                            <li>Votre historique de points</li>
+                        </ul>
+                    </div>
+
+                    <!-- Cancel Notice -->
+                    <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; margin: 25px 0;">
+                        <p style="color: #065f46; font-size: 13px; margin: 0;">
+                            <strong>💡 Vous avez changé d'avis ?</strong> Ignorez simplement cet email. Si vous n'avez pas demandé cette suppression, contactez-nous immédiatement.
+                        </p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 40px; padding-top: 25px; border-top: 2px solid #e5e7eb; text-align: center;">
                         <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0 0;">
                             L'équipe SMP4cloud<br/>
                             <span style="color: #d1d5db;">© 2024 SMP4cloud - Tous droits réservés</span>

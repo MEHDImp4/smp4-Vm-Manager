@@ -13,7 +13,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Cloud, LogOut, User, Shield, Key, LayoutDashboard, Settings, Loader2, Camera, TrendingUp, Server } from "lucide-react";
+import { Cloud, LogOut, User, Shield, Key, LayoutDashboard, Settings, Loader2, Camera, TrendingUp, Server, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -35,6 +35,11 @@ const Account = () => {
     const [instances, setInstances] = useState<any[]>([]);
 
     const [usageData, setUsageData] = useState<any[]>([]);
+
+    // Account Deletion State
+    const [deleteStep, setDeleteStep] = useState(0); // 0=closed, 1=warning, 2=code input
+    const [deleteCode, setDeleteCode] = useState("");
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -189,6 +194,63 @@ const Account = () => {
             toast.error("Erreur de connexion");
         } finally {
             setPassLoading(false);
+        }
+    };
+
+    // Account Deletion Handlers
+    const handleRequestDeletion = async () => {
+        setDeleteLoading(true);
+        try {
+            const res = await fetch('/api/auth/request-deletion', {
+                method: 'POST',
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+
+            if (res.ok) {
+                toast.success("Code de vérification envoyé à votre email");
+                setDeleteStep(2); // Move to code input step
+            } else {
+                const data = await res.json();
+                toast.error(data.message || "Erreur lors de l'envoi du code");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Erreur de connexion");
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
+    const handleConfirmDeletion = async () => {
+        if (!deleteCode) {
+            toast.error("Veuillez entrer le code de vérification");
+            return;
+        }
+
+        setDeleteLoading(true);
+        try {
+            const res = await fetch('/api/auth/confirm-deletion', {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${user.token}`
+                },
+                body: JSON.stringify({ code: deleteCode })
+            });
+
+            if (res.ok) {
+                toast.success("Votre compte a été supprimé");
+                localStorage.removeItem('user');
+                navigate("/");
+            } else {
+                const data = await res.json();
+                toast.error(data.message || "Code invalide");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Erreur de connexion");
+        } finally {
+            setDeleteLoading(false);
         }
     };
 
@@ -422,8 +484,124 @@ const Account = () => {
                         </div>
                     </div>
 
-                    {/* Danger Zone */}
-                    <div className="mt-8 animate-fade-up-delay-3 pb-8">
+                    {/* Danger Zone - Account Deletion */}
+                    <div className="glass rounded-2xl p-6 border border-red-500/20 relative overflow-hidden group animate-fade-up-delay-3">
+                        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-red-500/10 rounded-full blur-[100px]" />
+
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
+                                    <AlertTriangle className="w-5 h-5" />
+                                </div>
+                                <h3 className="font-semibold text-red-500">Zone Dangereuse</h3>
+                            </div>
+
+                            <p className="text-sm text-muted-foreground mb-4">
+                                La suppression de votre compte est <strong>irréversible</strong> et entraînera la perte définitive de toutes vos données, instances et configurations.
+                            </p>
+
+                            <Dialog open={deleteStep > 0} onOpenChange={(open) => !open && setDeleteStep(0)}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-red-500/30 hover:bg-red-500/10 text-red-500 hover:text-red-400 gap-2"
+                                        onClick={() => setDeleteStep(1)}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        Supprimer mon compte définitivement
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md glass border-red-500/20">
+                                    <DialogHeader>
+                                        <DialogTitle className="flex items-center gap-2 text-red-500">
+                                            <AlertTriangle className="w-5 h-5" />
+                                            {deleteStep === 1 ? "Confirmer la suppression" : "Entrez le code de vérification"}
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                            {deleteStep === 1 ? (
+                                                "Cette action est irréversible. Toutes vos données seront définitivement supprimées."
+                                            ) : (
+                                                "Un code de vérification a été envoyé à votre adresse email."
+                                            )}
+                                        </DialogDescription>
+                                    </DialogHeader>
+
+                                    {deleteStep === 1 && (
+                                        <div className="py-4 space-y-4">
+                                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                                                <h4 className="font-semibold text-sm text-red-500 mb-2">Ce qui sera supprimé :</h4>
+                                                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                                                    <li>Votre compte utilisateur</li>
+                                                    <li>Toutes vos machines virtuelles</li>
+                                                    <li>Vos snapshots et backups</li>
+                                                    <li>Vos configurations VPN</li>
+                                                    <li>Votre historique de points</li>
+                                                </ul>
+                                            </div>
+                                            <p className="text-sm text-center text-muted-foreground">
+                                                Vous recevrez un email avec un code de vérification pour confirmer la suppression.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {deleteStep === 2 && (
+                                        <div className="py-4 space-y-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="deleteCode">Code de vérification</Label>
+                                                <Input
+                                                    id="deleteCode"
+                                                    placeholder="000000"
+                                                    value={deleteCode}
+                                                    onChange={(e) => setDeleteCode(e.target.value)}
+                                                    maxLength={6}
+                                                    className="text-center text-2xl tracking-widest font-mono"
+                                                />
+                                            </div>
+                                            <p className="text-xs text-center text-muted-foreground">
+                                                Vérifiez votre boîte email et entrez le code à 6 chiffres.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <DialogFooter>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setDeleteStep(0);
+                                                setDeleteCode("");
+                                            }}
+                                        >
+                                            Annuler
+                                        </Button>
+                                        {deleteStep === 1 && (
+                                            <Button
+                                                variant="destructive"
+                                                onClick={handleRequestDeletion}
+                                                disabled={deleteLoading}
+                                            >
+                                                {deleteLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                                Envoyer le code
+                                            </Button>
+                                        )}
+                                        {deleteStep === 2 && (
+                                            <Button
+                                                variant="destructive"
+                                                onClick={handleConfirmDeletion}
+                                                disabled={deleteLoading || deleteCode.length !== 6}
+                                            >
+                                                {deleteLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                                Confirmer la suppression
+                                            </Button>
+                                        )}
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    </div>
+
+                    {/* Logout Button */}
+                    <div className="mt-6 animate-fade-up-delay-4 pb-8">
                         <Button
                             variant="destructive"
                             className="w-full h-12 text-base shadow-lg shadow-destructive/20 hover:shadow-destructive/40 transition-all"

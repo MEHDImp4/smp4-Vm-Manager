@@ -99,6 +99,7 @@ const login = async (req, res) => {
                 email: user.email,
                 points: user.points,
                 role: user.role,
+                isVerified: user.isVerified,
                 token
             }
         });
@@ -124,6 +125,7 @@ const getProfile = async (req, res) => {
             email: user.email,
             points: user.points,
             role: user.role,
+            isVerified: user.isVerified,
             avatarUrl: user.avatarUrl
         });
     } catch (error) {
@@ -265,4 +267,95 @@ const resendVerificationCode = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory, verifyEmail, resendVerificationCode };
+const requestAccountDeletion = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Generate deletion code
+        const deletionCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Store code in user record
+        await prisma.user.update({
+            where: { id: userId },
+            data: { verificationCode: deletionCode }
+        });
+
+        // Send email
+        await emailService.sendAccountDeletionCode(user.email, user.name, deletionCode);
+
+        res.json({ message: 'Code de suppression envoyé à votre email' });
+    } catch (error) {
+        console.error('Error requesting account deletion:', error);
+        res.status(500).json({ message: 'Erreur lors de l\'envoi du code' });
+    }
+};
+
+const confirmAccountDeletion = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { code } = req.body;
+
+        if (!code) {
+            return res.status(400).json({ message: 'Code requis' });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { instances: true }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Verify code
+        if (user.verificationCode !== code) {
+            return res.status(400).json({ message: 'Code invalide' });
+        }
+
+        // Delete all user instances from Proxmox
+        const ProxmoxService = require('../services/proxmox.service');
+        for (const instance of user.instances) {
+            if (instance.vmid) {
+                try {
+                    // Stop VM if running
+                    try {
+                        await ProxmoxService.stopLXC(instance.vmid);
+                    } catch (e) {
+                        // VM might already be stopped
+                    }
+                    // Delete VM
+                    await ProxmoxService.deleteLXC(instance.vmid);
+                } catch (error) {
+                    console.error(`Failed to delete VM ${instance.vmid}:`, error.message);
+                }
+            }
+        }
+
+        // Delete user (cascade will delete instances, transactions, etc.)
+        await prisma.user.delete({ where: { id: userId } });
+
+        res.json({ message: 'Votre compte a été supprimé avec succès' });
+    } catch (error) {
+        console.error('Error confirming account deletion:', error);
+        res.status(500).json({ message: 'Erreur lors de la suppression du compte' });
+    }
+};
+
+module.exports = {
+    register,
+    login,
+    getProfile,
+    updatePassword,
+    uploadAvatar,
+    getPointsHistory,
+    verifyEmail,
+    resendVerificationCode,
+    requestAccountDeletion,
+    confirmAccountDeletion
+};

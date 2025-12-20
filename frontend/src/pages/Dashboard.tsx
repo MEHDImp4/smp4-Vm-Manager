@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner"; // Assuming sonner is available as used in InstanceDetails
 import EarnPointsModal from "@/components/EarnPointsModal";
+import Footer from "@/components/Footer";
 
 interface Instance {
   id: string;
@@ -813,6 +814,9 @@ const Dashboard = () => {
           fetchUserData();
         }}
       />
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

@@ -31,6 +31,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
     const [canSpin, setCanSpin] = useState(false);
     const [isSpinning, setIsSpinning] = useState(false);
     const [rotation, setRotation] = useState(0);
+    const [shouldAnimate, setShouldAnimate] = useState(false);
     const [wonPrize, setWonPrize] = useState<number | null>(null);
     const [nextSpinTime, setNextSpinTime] = useState("");
     const [isVerified, setIsVerified] = useState(true);
@@ -165,18 +166,21 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                 const data = await response.json();
                 const prizeIndex = WHEEL_PRIZES.indexOf(data.points);
 
-                // Reset rotation without animation first
+                // Disable animation and reset rotation
+                setShouldAnimate(false);
                 setRotation(0);
 
-                // Small delay to ensure rotation is reset before starting animation
+                // Wait for DOM to update, then enable animation and spin
                 setTimeout(() => {
+                    setShouldAnimate(true);
+
                     // Calculate rotation to land on the prize
                     const segmentAngle = 360 / WHEEL_PRIZES.length;
                     const targetRotation = 360 * 5 + (prizeIndex * segmentAngle); // 5 full rotations + target
 
                     setRotation(targetRotation);
 
-                    // Wait for animation
+                    // Wait for animation to complete
                     setTimeout(() => {
                         setWonPrize(data.points);
                         setIsSpinning(false);
@@ -189,7 +193,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                         toast.success(`🎉 ${data.message}`);
                         onPointsEarned();
                     }, 4000);
-                }, 50); // Short delay for the reset
+                }, 100); // Increased delay to ensure reset is applied
 
             } else {
                 const error = await response.json();
@@ -322,7 +326,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
 
                                 {/* Wheel SVG */}
                                 <svg
-                                    className={`w-full h-full drop-shadow-2xl relative z-10 ${rotation > 0 ? 'transition-transform duration-[4000ms]' : 'transition-none'}`}
+                                    className={`w-full h-full drop-shadow-2xl relative z-10 ${shouldAnimate ? 'transition-transform duration-[4000ms]' : 'transition-none'}`}
                                     viewBox="0 0 200 200"
                                     style={{
                                         transform: `rotate(${rotation}deg)`,

@@ -57,6 +57,7 @@ model Instance {
   status       String   @default("stopped") // "online" or "stopped"
   vpnConfig    String?  // WireGuard Client Configuration
   rootPassword String?  // Optional root password generated on creation
+  lastIdleNotification DateTime? // Track last time we sent "turn off your VM" email
   userId       Int
   user         User     @relation(fields: [userId], references: [id])
   created_at   DateTime @default(now())
@@ -114,4 +115,17 @@ model TemplateVersion {
 
   @@unique([templateId, os])
   @@map("template_versions")
+}
+
+model SocialClaim {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  platform  String   // "github", "twitter", "linkedin"
+  username  String
+  status    String   @default("verified") // "verified", "pending", "rejected"
+  createdAt DateTime @default(now())
+
+  @@unique([userId, platform])
+  @@map("social_claims")
 }

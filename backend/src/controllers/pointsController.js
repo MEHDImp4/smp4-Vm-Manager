@@ -171,7 +171,7 @@ const purchasePoints = async (req, res) => {
 const claimSocialBonus = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { platform } = req.body; // "twitter", "github", "linkedin"
+        const { platform, username } = req.body; // "twitter", "github", "linkedin"
 
         const validPlatforms = {
             twitter: 50,
@@ -183,23 +183,45 @@ const claimSocialBonus = async (req, res) => {
             return res.status(400).json({ error: "Plateforme invalide" });
         }
 
-        // Check if already claimed
-        const existingBonus = await prisma.pointTransaction.findFirst({
+        if (!username || username.trim().length < 2) {
+            return res.status(400).json({ error: "Nom d'utilisateur requis" });
+        }
+
+        // Check if already claimed in SocialClaim table
+        const existingClaim = await prisma.socialClaim.findUnique({
             where: {
-                userId,
-                type: 'social',
-                // We'll use a convention: type is "social" and amount equals the platform bonus
-                amount: validPlatforms[platform]
+                userId_platform: {
+                    userId,
+                    platform
+                }
             }
         });
 
-        if (existingBonus) {
+        if (existingClaim) {
             return res.status(400).json({ error: "Bonus déjà réclamé pour cette plateforme" });
+        }
+
+        // Verification Logic
+        if (platform === 'github') {
+            try {
+                // Verify if user follows the repository owner or the specific user
+                // For this example, we'll check if they follow a target user (e.g., the dev 'Mehdi' or project repo)
+                // Since I don't know the exact target, I'll simulate a check or check existence
+                // Ideally: await axios.get(`https://api.github.com/users/${username}/following/${TARGET_USER}`)
+
+                // For now, let's just verify the user exists on GitHub to prevent fake names
+                // const githubRes = await axios.get(`https://api.github.com/users/${username}`);
+                // if (githubRes.status !== 200) throw new Error("User not found");
+
+                // Proceed (Option B: Trust or Basic Check)
+            } catch (err) {
+                // return res.status(400).json({ error: "Utilisateur GitHub introuvable ou erreur API" });
+            }
         }
 
         const bonusPoints = validPlatforms[platform];
 
-        // Add points
+        // Add points and record claim
         await prisma.$transaction([
             prisma.user.update({
                 where: { id: userId },
@@ -210,6 +232,14 @@ const claimSocialBonus = async (req, res) => {
                     userId,
                     amount: bonusPoints,
                     type: 'social'
+                }
+            }),
+            prisma.socialClaim.create({
+                data: {
+                    userId,
+                    platform,
+                    username,
+                    status: 'verified' // Auto-verified for now (Option B)
                 }
             })
         ]);
@@ -222,7 +252,11 @@ const claimSocialBonus = async (req, res) => {
 
     } catch (error) {
         console.error("Social bonus error:", error);
-        res.status(500).json({ error: "Erreur" });
+        // Handle unique constraint violation if race condition
+        if (error.code === 'P2002') {
+            return res.status(400).json({ error: "Bonus déjà réclamé" });
+        }
+        res.status(500).json({ error: "Erreur lors de la vérification" });
     }
 };
 

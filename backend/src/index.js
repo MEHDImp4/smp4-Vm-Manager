@@ -21,6 +21,9 @@ initDailyReminder();
 const { initBackupCron } = require('./cron/backup.cron');
 initBackupCron();
 
+const { initIdleCheckCron } = require('./cron/idleCheck.cron');
+initIdleCheckCron();
+
 // Seed templates on startup
 const { seedTemplates } = require('./scripts/seedTemplates');
 seedTemplates();

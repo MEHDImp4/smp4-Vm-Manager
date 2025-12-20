@@ -94,6 +94,35 @@ const sendInstanceCredentials = async (to, userName, instanceName, ip, password)
     }
 };
 
+/**
+ * Send a generic email
+ * @param {string} to - Recipient email
+ * @param {string} subject - Email subject
+ * @param {string} html - HTML content
+ */
+const sendEmail = async (to, subject, html) => {
+    try {
+        if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+            console.warn('[Email] SMTP not configured, skipping email.');
+            return;
+        }
+
+        const mailOptions = {
+            from: process.env.SMTP_FROM || '"SMP4cloud" <noreply@smp4.xyz>',
+            to: to,
+            subject: subject,
+            html: html,
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`[Email] Sent "${subject}" to ${to}: ${info.messageId}`);
+        return info;
+    } catch (error) {
+        console.error('[Email] Failed to send email:', error);
+    }
+};
+
 module.exports = {
     sendInstanceCredentials,
+    sendEmail
 };

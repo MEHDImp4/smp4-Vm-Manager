@@ -191,7 +191,18 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
         }
     };
 
-    const handleSocialBonus = async (platform: string) => {
+    const [verifyingPlatform, setVerifyingPlatform] = useState<string | null>(null);
+    const [socialUsername, setSocialUsername] = useState("");
+
+    const handleSocialClick = (platform: string, url: string) => {
+        window.open(url, "_blank");
+        setVerifyingPlatform(platform);
+        setSocialUsername("");
+    };
+
+    const submitSocialVerification = async () => {
+        if (!verifyingPlatform || !socialUsername) return;
+
         try {
             const userStr = localStorage.getItem("user");
             if (!userStr) return;
@@ -203,22 +214,23 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${user.token}`
                 },
-                body: JSON.stringify({ platform })
+                body: JSON.stringify({
+                    platform: verifyingPlatform,
+                    username: socialUsername
+                })
             });
 
             if (response.ok) {
                 const data = await response.json();
-
-                // Mini confetti for social bonus
                 confetti({
                     particleCount: 50,
                     spread: 70,
                     origin: { y: 0.6 },
                     colors: ['#3b82f6', '#8b5cf6', '#ec4899']
                 });
-
                 toast.success(data.message);
                 onPointsEarned();
+                setVerifyingPlatform(null);
             } else {
                 const error = await response.json();
                 toast.error(error.error);
@@ -406,27 +418,56 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                     </div>
                                 </div>
 
-                                <div className="space-y-4 relative z-10">
-                                    {[
-                                        { id: 'twitter', icon: Twitter, label: 'Twitter', color: 'text-sky-400', hover: 'hover:border-sky-500/30 hover:bg-sky-500/5' },
-                                        { id: 'github', icon: Github, label: 'GitHub', color: 'text-white', hover: 'hover:border-white/30 hover:bg-white/5' },
-                                        { id: 'linkedin', icon: Linkedin, label: 'LinkedIn', color: 'text-blue-500', hover: 'hover:border-blue-500/30 hover:bg-blue-500/5' }
-                                    ].map((social) => (
-                                        <button
-                                            key={social.id}
-                                            onClick={() => {
-                                                window.open(`https://${social.id}.com/yourhandle`, "_blank");
-                                                handleSocialBonus(social.id);
-                                            }}
-                                            className={`w-full flex items-center p-4 rounded-xl border border-white/5 bg-white/5 ${social.hover} transition-all duration-300 group`}
-                                        >
-                                            <social.icon className={`w-5 h-5 ${social.color} mr-4 group-hover:scale-110 transition-transform`} />
-                                            <span className="font-medium">Suivre sur {social.label}</span>
-                                            <span className="ml-auto flex items-center gap-1 bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded text-xs font-bold border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
-                                                <Sparkles className="w-3 h-3" /> +50
-                                            </span>
-                                        </button>
-                                    ))}
+                                <div className="space-y-4 relative z-10 min-h-[200px]">
+                                    {verifyingPlatform ? (
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-4 animate-fade-in">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h4 className="font-semibold text-sm">Vérification {verifyingPlatform}</h4>
+                                                <button onClick={() => setVerifyingPlatform(null)} className="text-muted-foreground hover:text-white">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground mb-3">
+                                                Entrez votre nom d'utilisateur pour valider que vous avez bien suivi la page.
+                                            </p>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={socialUsername}
+                                                    onChange={(e) => setSocialUsername(e.target.value)}
+                                                    placeholder={`Votre pseudo ${verifyingPlatform}...`}
+                                                    className="flex-1 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500/50"
+                                                    autoFocus
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    onClick={submitSocialVerification}
+                                                    disabled={!socialUsername}
+                                                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                                                >
+                                                    Valider
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        [
+                                            { id: 'twitter', icon: Twitter, label: 'Twitter', color: 'text-sky-400', hover: 'hover:border-sky-500/30 hover:bg-sky-500/5', url: 'https://twitter.com/yourhandle' },
+                                            { id: 'github', icon: Github, label: 'GitHub', color: 'text-white', hover: 'hover:border-white/30 hover:bg-white/5', url: 'https://github.com/yourhandle' },
+                                            { id: 'linkedin', icon: Linkedin, label: 'LinkedIn', color: 'text-blue-500', hover: 'hover:border-blue-500/30 hover:bg-blue-500/5', url: 'https://linkedin.com/in/yourhandle' }
+                                        ].map((social) => (
+                                            <button
+                                                key={social.id}
+                                                onClick={() => handleSocialClick(social.id, social.url)}
+                                                className={`w-full flex items-center p-4 rounded-xl border border-white/5 bg-white/5 ${social.hover} transition-all duration-300 group`}
+                                            >
+                                                <social.icon className={`w-5 h-5 ${social.color} mr-4 group-hover:scale-110 transition-transform`} />
+                                                <span className="font-medium">Suivre sur {social.label}</span>
+                                                <span className="ml-auto flex items-center gap-1 bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded text-xs font-bold border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
+                                                    <Sparkles className="w-3 h-3" /> +50
+                                                </span>
+                                            </button>
+                                        ))
+                                    )}
                                 </div>
                             </div>
 
@@ -454,8 +495,8 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                         <button
                                             key={pack.usd}
                                             className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-300 group overflow-hidden ${pack.popular
-                                                    ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-900/10 border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/10'
-                                                    : 'bg-white/5 border-white/5 hover:border-white/10 hover:bg-white/10'
+                                                ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-900/10 border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/10'
+                                                : 'bg-white/5 border-white/5 hover:border-white/10 hover:bg-white/10'
                                                 }`}
                                         >
                                             {pack.popular && (

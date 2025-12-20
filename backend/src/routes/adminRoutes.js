@@ -12,5 +12,7 @@ router.put('/users/:id', adminController.updateUser);
 router.delete('/users/:id', adminController.deleteUser);
 router.get('/instances', adminController.getAllInstances);
 router.get('/node/stats', adminController.getNodeStats);
+router.get('/templates', adminController.getTemplates);
+router.put('/templates/:id', adminController.updateTemplatePrice);
 
 module.exports = router;

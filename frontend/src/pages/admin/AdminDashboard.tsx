@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Users, Server, Activity, Shield, Search, RefreshCw, Ban, UserCheck, Edit, Plus, Trash2, Power, ArrowLeft } from "lucide-react";
+import { Loader2, Users, Server, Activity, Shield, Search, RefreshCw, Ban, UserCheck, Edit, Plus, Trash2, Power, ArrowLeft, Cpu } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface NodeStats {
@@ -55,6 +55,17 @@ interface Instance {
         email: string;
         name: string;
     };
+
+}
+
+interface Template {
+    id: string;
+    name: string;
+    cpu: string;
+    ram: string;
+    storage: string;
+    points: number;
+    oldPrice?: number;
 }
 
 const AdminDashboard = () => {
@@ -63,9 +74,14 @@ const AdminDashboard = () => {
     const [nodeStats, setNodeStats] = useState<NodeStats | null>(null);
     const [users, setUsers] = useState<User[]>([]);
     const [allInstances, setAllInstances] = useState<Instance[]>([]);
+    const [templates, setTemplates] = useState<Template[]>([]);
     const [searchUser, setSearchUser] = useState("");
     const [editUser, setEditUser] = useState<User | null>(null);
     const [editPoints, setEditPoints] = useState("");
+
+    // Template Edit State
+    const [editTemplate, setEditTemplate] = useState<Template | null>(null);
+    const [newTemplatePrice, setNewTemplatePrice] = useState("");
 
     // Ban State
     const [banDialog, setBanDialog] = useState<{ isOpen: boolean; user: User | null }>({ isOpen: false, user: null });
@@ -86,15 +102,17 @@ const AdminDashboard = () => {
             const headers = { "Authorization": `Bearer ${user.token}` };
 
             // Fetch in parallel
-            const [usersRes, instancesRes, nodeRes] = await Promise.all([
+            const [usersRes, instancesRes, nodeRes, templatesRes] = await Promise.all([
                 fetch('/api/admin/users', { headers }),
                 fetch('/api/admin/instances', { headers }),
-                fetch('/api/admin/node/stats', { headers })
+                fetch('/api/admin/node/stats', { headers }),
+                fetch('/api/admin/templates', { headers })
             ]);
 
             if (usersRes.ok) setUsers(await usersRes.json());
             if (instancesRes.ok) setAllInstances(await instancesRes.json());
             if (nodeRes.ok) setNodeStats(await nodeRes.json());
+            if (templatesRes.ok) setTemplates(await templatesRes.json());
 
         } catch (error) {
             console.error("Failed to fetch admin data", error);
@@ -218,6 +236,35 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleUpdateTemplate = async () => {
+        if (!editTemplate || !newTemplatePrice) return;
+
+        try {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+
+            const response = await fetch(`/api/admin/templates/${editTemplate.id}`, {
+                method: 'PUT',
+                headers: {
+                    "Authorization": `Bearer ${user.token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ points: parseFloat(newTemplatePrice) })
+            });
+
+            if (response.ok) {
+                toast.success("Prix du template mis à jour");
+                setEditTemplate(null);
+                fetchData();
+            } else {
+                toast.error("Erreur lors de la mise à jour");
+            }
+        } catch (e) {
+            toast.error("Erreur de connexion");
+        }
+    };
+
     const filteredUsers = users.filter(u =>
         u.name.toLowerCase().includes(searchUser.toLowerCase()) ||
         u.email.toLowerCase().includes(searchUser.toLowerCase())
@@ -271,24 +318,30 @@ const AdminDashboard = () => {
                 </div>
 
                 <Tabs defaultValue="overview" className="space-y-8 animate-fade-up-delay-1">
-                    <TabsList className="bg-black/40 backdrop-blur-xl p-1.5 border border-white/10 rounded-2xl w-full max-w-2xl mx-auto grid grid-cols-3 gap-1">
+                    <TabsList className="bg-black/40 backdrop-blur-xl p-1.5 border border-white/10 rounded-2xl w-full max-w-2xl mx-auto grid grid-cols-4 gap-1">
                         <TabsTrigger
                             value="overview"
                             className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
                         >
-                            <Activity className="w-4 h-4" /> Vue d'ensemble
+                            <Activity className="w-4 h-4" /> Vue
                         </TabsTrigger>
                         <TabsTrigger
                             value="users"
                             className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
                         >
-                            <Users className="w-4 h-4" /> Utilisateurs
+                            <Users className="w-4 h-4" /> Users
                         </TabsTrigger>
                         <TabsTrigger
                             value="instances"
                             className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
                         >
-                            <Server className="w-4 h-4" /> Instances Globales
+                            <Server className="w-4 h-4" /> Globales
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="templates"
+                            className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
+                        >
+                            <Cpu className="w-4 h-4" /> Templates
                         </TabsTrigger>
                     </TabsList>
 
@@ -535,6 +588,74 @@ const AdminDashboard = () => {
                             </Table>
                         </div>
                     </TabsContent>
+
+                    <TabsContent value="templates" className="space-y-6 animate-fade-in">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {templates.map((tpl) => {
+                                const isPromo = tpl.oldPrice && tpl.points < tpl.oldPrice;
+                                return (
+                                    <div key={tpl.id} className="glass rounded-xl p-6 border-white/10 relative overflow-hidden group hover:border-primary/50 transition-colors">
+                                        {isPromo && (
+                                            <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-l from-red-500 to-pink-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-xl shadow-lg z-10">
+                                                Promotion
+                                            </div>
+                                        )}
+
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="p-3 rounded-xl bg-white/5 border border-white/5 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                                <Cpu className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-bold">{tpl.name}</h3>
+                                                <p className="text-xs text-muted-foreground font-mono">{tpl.id}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3 mb-6">
+                                            <div className="flex justify-between text-sm py-1 border-b border-white/5">
+                                                <span className="text-muted-foreground">CPU</span>
+                                                <span className="font-mono">{tpl.cpu}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm py-1 border-b border-white/5">
+                                                <span className="text-muted-foreground">RAM</span>
+                                                <span className="font-mono">{tpl.ram}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm py-1 border-b border-white/5">
+                                                <span className="text-muted-foreground">Storage</span>
+                                                <span className="font-mono">{tpl.storage}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-end justify-between mb-6">
+                                            <div>
+                                                <div className="text-xs text-muted-foreground mb-1">Prix par jour</div>
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-2xl font-bold gradient-text">{tpl.points} pts</span>
+                                                    {isPromo && (
+                                                        <span className="text-sm text-muted-foreground line-through decoration-red-500/50 decoration-2">
+                                                            {tpl.oldPrice} pts
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            variant="outline"
+                                            className="w-full border-white/10 hover:bg-white/5"
+                                            onClick={() => {
+                                                setEditTemplate(tpl);
+                                                setNewTemplatePrice(tpl.points.toString());
+                                            }}
+                                        >
+                                            <Edit className="w-4 h-4 mr-2" />
+                                            Modifier le prix
+                                        </Button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </TabsContent>
                 </Tabs>
 
                 {/* Edit Points Dialog */}
@@ -557,7 +678,39 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleUpdatePoints}>Sauvegarder</Button>
+                            <Button variant="outline" onClick={() => setEditUser(null)}>Annuler</Button>
+                            <Button onClick={handleUpdatePoints}>Enregistrer</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Template Dialog */}
+                <Dialog open={!!editTemplate} onOpenChange={(o) => !o && setEditTemplate(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Modifier le prix du Template</DialogTitle>
+                            <DialogDescription>
+                                Changer le prix journalier pour {editTemplate?.name}.
+                                <br />
+                                <span className="text-xs text-muted-foreground mt-2 block">
+                                    Note: Si vous baissez le prix, une étiquette "Promotion" sera affichée.
+                                    Si vous l'augmentez, la promotion sera retirée.
+                                </span>
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <Label htmlFor="tpl-points">Points par jour</Label>
+                            <Input
+                                id="tpl-points"
+                                type="number"
+                                value={newTemplatePrice}
+                                onChange={(e) => setNewTemplatePrice(e.target.value)}
+                                className="mt-2"
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setEditTemplate(null)}>Annuler</Button>
+                            <Button onClick={handleUpdateTemplate}>Enregistrer</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

@@ -13,6 +13,7 @@ interface Template {
     ram: string;
     storage: string;
     points: number;
+    oldPrice?: number | null;
 }
 
 const CreateInstance = () => {
@@ -142,6 +143,7 @@ const CreateInstance = () => {
                             {templates.map((template) => {
                                 const isRecommended = template.name === 'Small';
                                 const isSelected = selectedTemplate === template.id;
+                                const isPromo = template.oldPrice && template.points < template.oldPrice;
 
                                 return (
                                     <div
@@ -158,8 +160,16 @@ const CreateInstance = () => {
                                                 Recommandé
                                             </div>
                                         )}
+
+                                        {/* Promo Badge - show on left if Recommended exists, or right if not */}
+                                        {isPromo && (
+                                            <div className={`absolute top-0 ${isRecommended ? 'left-0 rounded-br-xl bg-gradient-to-br' : 'right-0 rounded-bl-xl bg-gradient-to-bl'} px-3 py-1 from-red-500 to-pink-600 text-white text-[10px] font-bold uppercase tracking-wider shadow-lg z-10`}>
+                                                Promotion
+                                            </div>
+                                        )}
+
                                         {/* Selection Check */}
-                                        {isSelected && !isRecommended && (
+                                        {isSelected && !isRecommended && !isPromo && (
                                             <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-primary shadow-glow-sm" />
                                         )}
 
@@ -178,9 +188,17 @@ const CreateInstance = () => {
                                                 {isRecommended ? <Sparkles className="w-6 h-6" /> : <Server className="w-6 h-6" />}
                                             </div>
                                             <h3 className="font-bold text-lg mb-1">{template.name}</h3>
-                                            <div className={`text-xs font-mono font-bold flex items-center gap-1 ${isSelected ? 'text-primary' : isRecommended ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                                                <Zap className="w-3 h-3 fill-current" />
-                                                {template.points} pts/jour
+                                            <div className={`text-xs font-mono font-bold flex flex-col gap-1 ${isSelected ? 'text-primary' : isRecommended ? 'text-amber-500' : 'text-muted-foreground'}`}>
+
+                                                <div className="flex items-center gap-1">
+                                                    <Zap className="w-3 h-3 fill-current" />
+                                                    {template.points} pts/jour
+                                                </div>
+                                                {isPromo && (
+                                                    <span className="text-muted-foreground line-through decoration-red-500/50 ml-4 opacity-70">
+                                                        {template.oldPrice} pts
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
 

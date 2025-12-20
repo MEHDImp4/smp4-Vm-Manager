@@ -11,10 +11,17 @@ async function seedTemplates() {
             const { versions, ...templateData } = template;
 
             // Upsert Template
+            // Look for existing template to decide on points update logic?
+            // Actually, we can just exclude 'points' from the update payload.
+            // If the template exists, we keep its points (which might be custom admin set).
+            // If it doesn't exist, we use the JSON value.
+
+            const { points, ...updateData } = templateData;
+
             await prisma.template.upsert({
                 where: { id: template.id },
-                update: templateData,
-                create: templateData,
+                update: updateData, // Do NOT update points on existing records
+                create: templateData, // Do create with points on new records
             });
 
             // Upsert Template Versions

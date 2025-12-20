@@ -200,10 +200,74 @@ const getNodeStats = async (req, res) => {
     }
 };
 
+const getTemplates = async (req, res) => {
+    try {
+        const templates = await prisma.template.findMany({
+            orderBy: { points: 'asc' },
+            include: { versions: true }
+        });
+        res.json(templates);
+    } catch (error) {
+        console.error("Get templates error", error);
+        res.status(500).json({ error: "Failed to fetch templates" });
+    }
+};
+
+const updateTemplatePrice = async (req, res) => {
+    const { id } = req.params;
+    const { points } = req.body;
+
+    if (points === undefined || points < 0) {
+        return res.status(400).json({ error: "Invalid points value" });
+    }
+
+    try {
+        const template = await prisma.template.findUnique({ where: { id } });
+        if (!template) return res.status(404).json({ error: "Template not found" });
+
+        const currentPoints = template.points;
+        const newPoints = parseFloat(points);
+        let oldPrice = template.oldPrice;
+
+        // Logic:
+        // If Price Decreases: It's a promotion. Set oldPrice = currentPoints (if not already set).
+        // If Price Increases: Reference is lost/reset. Clear oldPrice.
+
+        if (newPoints < currentPoints) {
+            // Price drop -> Promotion
+            // If oldPrice is currently null, we set it to the price BEFORE this drop.
+            // If oldPrice is ALREADY set (e.g. 20 -> 15 (old=20)), and we drop to 10.
+            // Do we keep old=20? Yes, usually.
+            if (oldPrice === null) {
+                oldPrice = currentPoints;
+            }
+        } else if (newPoints > currentPoints) {
+            // Price hike -> Clear promo
+            oldPrice = null;
+        }
+
+        const updated = await prisma.template.update({
+            where: { id },
+            data: {
+                points: newPoints,
+                oldPrice: oldPrice
+            }
+        });
+
+        res.json(updated);
+    } catch (error) {
+        console.error("Update template error", error);
+        res.status(500).json({ error: "Failed to update template" });
+    }
+};
+
+
 module.exports = {
     getAllUsers,
     updateUser,
     deleteUser,
     getAllInstances,
-    getNodeStats
+    getNodeStats,
+    getTemplates,
+    updateTemplatePrice
 };

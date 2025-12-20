@@ -106,6 +106,7 @@ model Template {
   ram     String
   storage String
   points  Float
+  oldPrice Float?
 
   versions TemplateVersion[]
 

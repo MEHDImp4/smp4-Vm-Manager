@@ -57,6 +57,27 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
+        if (user.isDeleted) {
+            return res.status(403).json({ message: 'Account deleted' });
+        }
+
+        if (user.isBanned) {
+            if (user.banExpiresAt && new Date() > new Date(user.banExpiresAt)) {
+                // Ban expired, unban user
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { isBanned: false, banReason: null, banExpiresAt: null }
+                });
+                user.isBanned = false; // Update local object for login
+            } else {
+                return res.status(403).json({
+                    message: 'Account banned',
+                    reason: user.banReason,
+                    expiresAt: user.banExpiresAt
+                });
+            }
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials' });

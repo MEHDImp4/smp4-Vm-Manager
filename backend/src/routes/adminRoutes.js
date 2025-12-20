@@ -9,6 +9,7 @@ router.use(verifyToken, adminMiddleware);
 
 router.get('/users', adminController.getAllUsers);
 router.put('/users/:id', adminController.updateUser);
+router.delete('/users/:id', adminController.deleteUser);
 router.get('/instances', adminController.getAllInstances);
 router.get('/node/stats', adminController.getNodeStats);
 

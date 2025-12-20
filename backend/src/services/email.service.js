@@ -124,5 +124,32 @@ const sendEmail = async (to, subject, html) => {
 
 module.exports = {
     sendInstanceCredentials,
-    sendEmail
+    sendEmail,
+    sendAccountBannedEmail: async (to, name, reason, expiresAt) => {
+        const subject = "⚠️ Votre compte a été suspendu";
+        const html = `
+             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #dc2626;">Compte Suspendu</h2>
+                <p>Bonjour ${name},</p>
+                <p>Votre compte a été suspendu par un administrateur.</p>
+                <p><strong>Raison :</strong> ${reason || 'Non spécifiée'}</p>
+                <p><strong>Expiration :</strong> ${expiresAt ? new Date(expiresAt).toLocaleString() : 'Permanente'}</p>
+                <p>Si vous pensez qu'il s'agit d'une erreur, contactez le support.</p>
+            </div>
+        `;
+        return module.exports.sendEmail(to, subject, html);
+    },
+    sendAccountDeletedEmail: async (to, name, reason) => {
+        const subject = "❌ Votre compte a été supprimé";
+        const html = `
+             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #dc2626;">Compte Supprimé</h2>
+                <p>Bonjour ${name},</p>
+                <p>Votre compte a été définitivement supprimé de notre plateforme.</p>
+                 <p><strong>Raison :</strong> ${reason || 'Non spécifiée'}</p>
+                 <p>Toutes vos instances et données associées ont été effacées.</p>
+            </div>
+        `;
+        return module.exports.sendEmail(to, subject, html);
+    }
 };

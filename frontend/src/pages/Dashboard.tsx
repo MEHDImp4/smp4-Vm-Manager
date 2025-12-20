@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Cloud, Play, Square, Trash2, Plus, Coins, TrendingDown, Lightbulb, Server, Container, BarChart3, Loader2, ArrowRight, Zap, Activity, BookOpen, Gift } from "lucide-react";
+import { Cloud, Play, Square, Trash2, Plus, Coins, TrendingDown, Lightbulb, Server, Container, BarChart3, Loader2, ArrowRight, Zap, Activity, BookOpen, Gift, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner"; // Assuming sonner is available as used in InstanceDetails
@@ -17,37 +17,17 @@ interface Instance {
 }
 
 const LOADING_MESSAGES = [
-  "Initialisation du conteneur...",
-  "Configuration du réseau...",
-  "Sécurisation des accès...",
-  "Mise en place du pare-feu...",
-  "Démarrage des services...",
-  "Préparation de votre environnement...",
-  "Vérification des systèmes...",
-  "Presque prêt..."
+  // ... (omitted)
 ];
 
 const PRO_TIPS = [
-  {
-    text: "Pour optimiser vos coûts, pensez à éteindre vos instances de développement la nuit. Utilisez ",
-    linkText: "docker-compose",
-    linkTo: "/guide",
-    suffix: " sur les templates Medium+."
-  },
-  {
-    text: "Besoin d'héberger votre application web ? Suivez notre ",
-    linkText: "guide de déploiement",
-    linkTo: "/guide",
-    suffix: " complet pour configurer votre environnement."
-  },
-  {
-    text: "N'oubliez pas d'éteindre vos machines quand vous ne développez pas ! Cela évite de consommer des points inutilement."
-  }
+  // ... (omitted)
 ];
 
 const Dashboard = () => {
   const [instances, setInstances] = useState<Instance[]>([]);
   const [totalPoints, setTotalPoints] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [showEarnModal, setShowEarnModal] = useState(false);
@@ -114,6 +94,7 @@ const Dashboard = () => {
     if (userStr) {
       const user = JSON.parse(userStr);
       setTotalPoints(user.points || 0);
+      setIsAdmin(user.role === 'admin');
     }
 
     fetchInstances();
@@ -280,6 +261,14 @@ const Dashboard = () => {
             <Button variant="ghost" size="sm" asChild className="hover:bg-white/5">
               <Link to="/account">Mon compte</Link>
             </Button>
+            {isAdmin && (
+              <Button variant="default" size="sm" asChild className="bg-red-600 hover:bg-red-700 text-white border border-red-500/50 shadow-lg shadow-red-900/20">
+                <Link to="/admin">
+                  <ShieldAlert className="w-4 h-4 mr-2" />
+                  Admin Panel
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>

@@ -65,6 +65,15 @@ const AdminDashboard = () => {
     const [editUser, setEditUser] = useState<User | null>(null);
     const [editPoints, setEditPoints] = useState("");
 
+    // Ban State
+    const [banDialog, setBanDialog] = useState<{ isOpen: boolean; user: User | null }>({ isOpen: false, user: null });
+    const [banReason, setBanReason] = useState("");
+    const [banDuration, setBanDuration] = useState("");
+
+    // Delete State
+    const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; user: User | null }>({ isOpen: false, user: null });
+    const [deleteReason, setDeleteReason] = useState("");
+
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -99,13 +108,30 @@ const AdminDashboard = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const handleBanUser = async (userId: number, currentStatus: boolean) => {
-        if (!confirm(`Voulez-vous vraiment ${currentStatus ? 'débannir' : 'bannir'} cet utilisateur ?`)) return;
+    const handleBanClick = (user: User) => {
+        if (user.isBanned) {
+            // Unban immediately with confirmation
+            if (confirm(`Voulez-vous débannir ${user.name} ?`)) {
+                performBan(user.id, false);
+            }
+        } else {
+            setBanDialog({ isOpen: true, user });
+            setBanReason("");
+            setBanDuration("");
+        }
+    };
 
+    const performBan = async (userId: number, isBanned: boolean, reason?: string, duration?: string) => {
         try {
             const userStr = localStorage.getItem("user");
             if (!userStr) return;
             const user = JSON.parse(userStr);
+
+            const body: any = { isBanned };
+            if (isBanned) {
+                body.banReason = reason;
+                if (duration) body.banDuration = duration;
+            }
 
             const response = await fetch(`/api/admin/users/${userId}`, {
                 method: 'PUT',
@@ -113,14 +139,48 @@ const AdminDashboard = () => {
                     "Authorization": `Bearer ${user.token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ isBanned: !currentStatus })
+                body: JSON.stringify(body)
             });
 
             if (response.ok) {
-                toast.success(`Utilisateur ${!currentStatus ? 'banni' : 'débanni'}`);
+                toast.success(`Utilisateur ${isBanned ? 'banni' : 'débanni'}`);
+                setBanDialog({ isOpen: false, user: null });
                 fetchData();
             } else {
                 toast.error("Erreur lors de la mise à jour");
+            }
+        } catch (e) {
+            toast.error("Erreur de connexion");
+        }
+    };
+
+    const handleDeleteClick = (user: User) => {
+        setDeleteDialog({ isOpen: true, user });
+        setDeleteReason("");
+    };
+
+    const performDelete = async () => {
+        if (!deleteDialog.user) return;
+        try {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+
+            const response = await fetch(`/api/admin/users/${deleteDialog.user.id}`, {
+                method: 'DELETE',
+                headers: {
+                    "Authorization": `Bearer ${user.token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ reason: deleteReason })
+            });
+
+            if (response.ok) {
+                toast.success("Utilisateur supprimé et ressources nettoyées");
+                setDeleteDialog({ isOpen: false, user: null });
+                fetchData();
+            } else {
+                toast.error("Erreur lors de la suppression");
             }
         } catch (e) {
             toast.error("Erreur de connexion");
@@ -351,9 +411,18 @@ const AdminDashboard = () => {
                                                     <Button
                                                         variant={user.isBanned ? "default" : "destructive"}
                                                         size="sm"
-                                                        onClick={() => handleBanUser(user.id, user.isBanned)}
+                                                        onClick={() => handleBanClick(user)}
                                                     >
                                                         {user.isBanned ? <UserCheck className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                                    </Button>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                        onClick={() => handleDeleteClick(user)}
+                                                    >
+                                                        <Trash2 className="w-3 h-3" />
                                                     </Button>
                                                 </div>
                                             </TableCell>
@@ -406,6 +475,102 @@ const AdminDashboard = () => {
                         </div>
                     </TabsContent>
                 </Tabs>
+
+                {/* Edit Points Dialog */}
+                <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Modifier les points</DialogTitle>
+                            <DialogDescription>
+                                Mettre à jour le solde de {editUser?.name}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Points</Label>
+                                <Input
+                                    type="number"
+                                    value={editPoints}
+                                    onChange={(e) => setEditPoints(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={handleUpdatePoints}>Sauvegarder</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Ban Dialog */}
+                <Dialog open={banDialog.isOpen} onOpenChange={(o) => setBanDialog(prev => ({ ...prev, isOpen: o }))}>
+                    <DialogContent className="border-destructive/20">
+                        <DialogHeader>
+                            <DialogTitle className="text-destructive flex items-center gap-2">
+                                <Ban className="w-5 h-5" />
+                                Bannir l'utilisateur
+                            </DialogTitle>
+                            <DialogDescription>
+                                Vous êtes sur le point de bannir {banDialog.user?.name}. L'utilisateur ne pourra plus se connecter.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Raison du bannissement</Label>
+                                <Input
+                                    placeholder="Non respect des règles..."
+                                    value={banReason}
+                                    onChange={(e) => setBanReason(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Durée (heures) - Laisser vide pour permanent</Label>
+                                <Input
+                                    type="number"
+                                    placeholder="Ex: 24"
+                                    value={banDuration}
+                                    onChange={(e) => setBanDuration(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setBanDialog({ isOpen: false, user: null })}>Annuler</Button>
+                            <Button variant="destructive" onClick={() => performBan(banDialog.user!.id, true, banReason, banDuration)}>
+                                Bannir
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Delete Dialog */}
+                <Dialog open={deleteDialog.isOpen} onOpenChange={(o) => setDeleteDialog(prev => ({ ...prev, isOpen: o }))}>
+                    <DialogContent className="border-destructive/50">
+                        <DialogHeader>
+                            <DialogTitle className="text-destructive flex items-center gap-2">
+                                <Trash2 className="w-5 h-5" />
+                                Supprimer définitivement
+                            </DialogTitle>
+                            <DialogDescription>
+                                ⚠️ Cette action est irréversible. L'utilisateur {deleteDialog.user?.name} sera supprimé, ainsi que toutes ses instances.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Raison de la suppression (envoyée par email)</Label>
+                                <Input
+                                    placeholder="Violation grave des CGU..."
+                                    value={deleteReason}
+                                    onChange={(e) => setDeleteReason(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setDeleteDialog({ isOpen: false, user: null })}>Annuler</Button>
+                            <Button variant="destructive" onClick={performDelete}>
+                                Supprimer définitivement
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     );

@@ -165,25 +165,31 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                 const data = await response.json();
                 const prizeIndex = WHEEL_PRIZES.indexOf(data.points);
 
-                // Calculate rotation to land on the prize
-                const segmentAngle = 360 / WHEEL_PRIZES.length;
-                const targetRotation = 360 * 5 + (prizeIndex * segmentAngle); // 5 full rotations + target
+                // Reset rotation without animation first
+                setRotation(0);
 
-                setRotation(targetRotation);
-
-                // Wait for animation
+                // Small delay to ensure rotation is reset before starting animation
                 setTimeout(() => {
-                    setWonPrize(data.points);
-                    setIsSpinning(false);
-                    setCanSpin(false);
+                    // Calculate rotation to land on the prize
+                    const segmentAngle = 360 / WHEEL_PRIZES.length;
+                    const targetRotation = 360 * 5 + (prizeIndex * segmentAngle); // 5 full rotations + target
 
-                    // Trigger effects!
-                    playWinSound(data.points);
-                    triggerConfetti(data.points);
+                    setRotation(targetRotation);
 
-                    toast.success(`🎉 ${data.message}`);
-                    onPointsEarned();
-                }, 4000);
+                    // Wait for animation
+                    setTimeout(() => {
+                        setWonPrize(data.points);
+                        setIsSpinning(false);
+                        setCanSpin(false);
+
+                        // Trigger effects!
+                        playWinSound(data.points);
+                        triggerConfetti(data.points);
+
+                        toast.success(`🎉 ${data.message}`);
+                        onPointsEarned();
+                    }, 4000);
+                }, 50); // Short delay for the reset
 
             } else {
                 const error = await response.json();
@@ -316,10 +322,11 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
 
                                 {/* Wheel SVG */}
                                 <svg
-                                    className="w-full h-full drop-shadow-2xl relative z-10 transition-transform duration-[4000ms] cubic-bezier(0.17, 0.67, 0.12, 0.99)"
+                                    className={`w-full h-full drop-shadow-2xl relative z-10 ${rotation > 0 ? 'transition-transform duration-[4000ms]' : 'transition-none'}`}
                                     viewBox="0 0 200 200"
                                     style={{
                                         transform: `rotate(${rotation}deg)`,
+                                        transitionTimingFunction: 'cubic-bezier(0.17, 0.67, 0.12, 0.99)'
                                     }}
                                 >
                                     {WHEEL_PRIZES.map((prize, index) => {

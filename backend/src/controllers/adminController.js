@@ -162,7 +162,28 @@ const getAllInstances = async (req, res) => {
                 }
             }
         });
-        res.json(instances);
+
+        // Fetch IP addresses from Proxmox for online instances
+        // We do this in parallel, but handle failures gracefully
+        const enhancedInstances = await Promise.all(instances.map(async (inst) => {
+            let ip = "-";
+
+            // Only fetch IP if instance is supposedly online and has a VMID
+            if (inst.status === 'online' && inst.vmid) {
+                try {
+                    const interfaces = await proxmoxService.getLXCInterfaces(inst.vmid);
+                    const eth0 = interfaces.find(i => i.name === 'eth0');
+                    if (eth0 && eth0.inet) {
+                        ip = eth0.inet.split('/')[0];
+                    }
+                } catch (e) {
+                    // Fail silently, IP remains "-"
+                }
+            }
+            return { ...inst, ip };
+        }));
+
+        res.json(enhancedInstances);
     } catch (error) {
         console.error("Get all instances error", error);
         res.status(500).json({ error: "Failed to fetch instances" });

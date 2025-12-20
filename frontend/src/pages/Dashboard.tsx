@@ -287,7 +287,7 @@ const Dashboard = () => {
               <div className="p-1 rounded-full bg-primary/20 text-primary">
                 <Coins className="w-3.5 h-3.5" />
               </div>
-              <span className="font-mono font-bold text-sm">{totalPoints.toFixed(2)}</span>
+              <span className="font-mono font-bold text-sm">{isAdmin ? '∞' : totalPoints.toFixed(2)}</span>
               <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold">pts</span>
             </div>
             <Button variant="ghost" size="sm" asChild className="hover:bg-white/5">

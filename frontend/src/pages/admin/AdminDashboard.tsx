@@ -44,10 +44,12 @@ interface Instance {
     name: string;
     template: string;
     vmid: number;
+    ip?: string;
     cpu: string;
     ram: string;
     storage: string;
     pointsPerDay: number;
+    created_at: string;
     status: string;
     user?: {
         email: string;
@@ -442,8 +444,11 @@ const AdminDashboard = () => {
                                         <TableHead>Nom</TableHead>
                                         <TableHead>Propriétaire</TableHead>
                                         <TableHead>Template</TableHead>
-                                        <TableHead>VMID</TableHead>
+                                        <TableHead>PVE ID</TableHead>
+                                        <TableHead>IP</TableHead>
                                         <TableHead>Ressources</TableHead>
+                                        <TableHead>Coût/Jour</TableHead>
+                                        <TableHead>Créée le</TableHead>
                                         <TableHead>Statut</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -456,8 +461,15 @@ const AdminDashboard = () => {
                                                 <Badge variant="outline" className="font-mono text-xs">{inst.template}</Badge>
                                             </TableCell>
                                             <TableCell className="font-mono text-xs">{inst.vmid}</TableCell>
+                                            <TableCell className="font-mono text-xs text-blue-400">{inst.ip || '-'}</TableCell>
                                             <TableCell className="text-xs text-muted-foreground">
                                                 {inst.cpu} vCPU / {inst.ram} GB / {inst.storage} GB
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs">
+                                                {inst.pointsPerDay} pts
+                                            </TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">
+                                                {new Date(inst.created_at).toLocaleDateString()}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className={

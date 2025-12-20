@@ -314,36 +314,56 @@ const confirmAccountDeletion = async (req, res) => {
         }
 
         // Verify code
-        if (user.verificationCode !== code) {
+        console.log('[Delete] Comparing codes:', { stored: user.verificationCode, received: code });
+        const storedCode = String(user.verificationCode || '').trim();
+        const receivedCode = String(code || '').trim();
+
+        if (storedCode !== receivedCode) {
+            console.log('[Delete] Code mismatch:', { storedCode, receivedCode });
             return res.status(400).json({ message: 'Code invalide' });
         }
 
-        // Delete all user instances from Proxmox
-        const ProxmoxService = require('../services/proxmox.service');
+        console.log('[Delete] Code verified, proceeding with account deletion for user:', userId);
+
+        // Delete all user instances from Proxmox first
+        const proxmox = require('../services/proxmox.service');
         for (const instance of user.instances) {
             if (instance.vmid) {
                 try {
-                    // Stop VM if running
+                    console.log(`[Delete] Stopping VM ${instance.vmid}...`);
                     try {
-                        await ProxmoxService.stopLXC(instance.vmid);
+                        await proxmox.stopLXC(instance.vmid);
                     } catch (e) {
-                        // VM might already be stopped
+                        console.log(`[Delete] VM ${instance.vmid} already stopped or error:`, e.message);
                     }
-                    // Delete VM
-                    await ProxmoxService.deleteLXC(instance.vmid);
+
+                    console.log(`[Delete] Deleting VM ${instance.vmid}...`);
+                    await proxmox.deleteLXC(instance.vmid);
+                    console.log(`[Delete] VM ${instance.vmid} deleted from Proxmox`);
                 } catch (error) {
-                    console.error(`Failed to delete VM ${instance.vmid}:`, error.message);
+                    console.error(`[Delete] Failed to delete VM ${instance.vmid}:`, error.message);
+                    // Continue anyway - don't block user deletion on Proxmox errors
                 }
             }
         }
 
-        // Delete user (cascade will delete instances, transactions, etc.)
-        await prisma.user.delete({ where: { id: userId } });
+        // Delete user from database (cascade will handle related records)
+        console.log('[Delete] Deleting user from database...');
+        try {
+            await prisma.user.delete({ where: { id: userId } });
+            console.log('[Delete] User deleted successfully');
 
-        res.json({ message: 'Votre compte a été supprimé avec succès' });
+            res.json({ message: 'Votre compte a été supprimé avec succès' });
+        } catch (dbError) {
+            console.error('[Delete] Database deletion error:', dbError);
+            throw new Error('Impossible de supprimer le compte: ' + dbError.message);
+        }
     } catch (error) {
         console.error('Error confirming account deletion:', error);
-        res.status(500).json({ message: 'Erreur lors de la suppression du compte' });
+        res.status(500).json({
+            message: 'Erreur lors de la suppression du compte',
+            error: error.message
+        });
     }
 };
 

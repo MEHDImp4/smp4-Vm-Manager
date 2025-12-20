@@ -70,7 +70,9 @@ class SSHService {
                 username: username,
                 password: password,
                 tryKeyboard: true,
-                readyTimeout: 10000
+                readyTimeout: 10000,
+                keepaliveInterval: 30000, // Send keepalive every 30 seconds
+                keepaliveCountMax: 60 // 60 missed keepalives = 30 minutes timeout
             });
         };
 
@@ -286,6 +288,8 @@ class SSHService {
                 password: authPassword,
                 tryKeyboard: true,
                 readyTimeout: 10000,
+                keepaliveInterval: 30000,
+                keepaliveCountMax: 60,
                 debug: (msg) => console.log(`[SSH-DEBUG] ${msg}`)
             });
         });

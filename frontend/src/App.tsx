@@ -15,6 +15,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
 
 import DockerGuide from "./pages/DockerGuide";
+import Templates from "./pages/Templates";
+import Tarification from "./pages/Tarification";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,9 @@ const App = () => (
           } />
           <Route path="/account" element={<Account />} />
           <Route path="/guide" element={<DockerGuide />} />
+          <Route path="/docker-guide" element={<DockerGuide />} />
+          <Route path="/templates" element={<Templates />} />
+          <Route path="/tarification" element={<Tarification />} />
           <Route path="/login" element={<Auth />} />
           <Route path="/register" element={<Auth />} />
           <Route path="/register" element={<Auth />} />

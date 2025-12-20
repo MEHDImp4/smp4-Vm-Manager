@@ -34,14 +34,14 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Produit</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#templates" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                <Link to="/templates" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
                   Templates
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#points" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                <Link to="/tarification" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
                   Tarification
-                </a>
+                </Link>
               </li>
               <li>
                 <Link to="/docker-guide" className="text-muted-foreground text-sm hover:text-foreground transition-colors">

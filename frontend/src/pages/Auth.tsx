@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Cloud, Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,14 +146,14 @@ const Auth = () => {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 mb-8">
+          <div className="flex items-center gap-2 mb-8 select-none">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
               <Cloud className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="text-2xl font-bold">
               SMP4<span className="gradient-text">cloud</span>
             </span>
-          </Link>
+          </div>
 
           {/* Title */}
           <h1 className="text-3xl font-bold mb-2">

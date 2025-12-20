@@ -2,8 +2,7 @@ import { Cloud, Github, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
-  const user = localStorage.getItem("user");
-  const logoLink = user ? "/dashboard" : "/";
+
 
   return (
     <footer className="border-t border-border/50 bg-card/50">
@@ -11,12 +10,12 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Link to={logoLink} className="flex items-center gap-2 mb-4 md:mb-0 hover-lift">
+            <div className="flex items-center gap-2 mb-4 md:mb-0 select-none">
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                 <Cloud className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">SMP4cloud</span>
-            </Link>
+            </div>
             <p className="text-muted-foreground text-sm mb-4">
               SMP4cloud - La solution simple pour vos VMs et conteneurs.
             </p>

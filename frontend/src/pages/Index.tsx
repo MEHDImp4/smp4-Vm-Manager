@@ -5,7 +5,7 @@ import ConceptSection from "@/components/ConceptSection";
 import TemplatesSection from "@/components/TemplatesSection";
 import PointsSection from "@/components/PointsSection";
 import WhySection from "@/components/WhySection";
-import Footer from "@/components/Footer";
+
 
 const Index = () => {
   return (
@@ -18,7 +18,7 @@ const Index = () => {
         <TemplatesSection />
         <WhySection />
       </main>
-      <Footer />
+
     </div>
   );
 };

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+
 
 const contactSchema = z.object({
     name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
@@ -168,7 +168,7 @@ const Contact = () => {
                 </div>
             </main>
 
-            <Footer />
+
         </div>
     );
 };

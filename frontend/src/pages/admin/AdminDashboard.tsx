@@ -325,7 +325,7 @@ const AdminDashboard = () => {
                 </div>
 
                 <Tabs defaultValue="overview" className="space-y-8 animate-fade-up-delay-1">
-                    <TabsList className="bg-black/40 backdrop-blur-xl p-1.5 border border-white/10 rounded-2xl w-full max-w-2xl mx-auto grid grid-cols-4 gap-1">
+                    <TabsList className="bg-black/40 backdrop-blur-xl p-1.5 border border-white/10 rounded-2xl w-full max-w-2xl mx-auto grid grid-cols-5 gap-1">
                         <TabsTrigger
                             value="overview"
                             className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
@@ -866,7 +866,7 @@ const MessagesTable = () => {
             if (!userStr) return;
             const user = JSON.parse(userStr);
 
-            const res = await fetch("/api/admin/messages", { // Changed to use admin route, wait. Actually contactRoutes has /api/contact/messages? No, route is /api/contact/
+            const res = await fetch("/api/contact", { // Changed to use admin route, wait. Actually contactRoutes has /api/contact/messages? No, route is /api/contact/
                 headers: { "Authorization": `Bearer ${user.token}` }
             });
             // Based on backend routes: router.get('/', authMiddleware, getMessages); mounted at /api/contact

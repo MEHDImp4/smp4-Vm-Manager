@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../db');
+const emailService = require('../services/email.service');
 
 const BCRYPT_SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
@@ -26,15 +27,20 @@ const register = async (req, res) => {
             data: {
                 name,
                 email,
-                password: hashedPassword
+                password: hashedPassword,
+                verificationCode: Math.floor(100000 + Math.random() * 900000).toString(),
+                points: 10.0 // Explicitly setting initial points though schema default is 10
             }
         });
+
+        // Send Verification Email
+        await emailService.sendVerificationCode(user.email, user.name, user.verificationCode);
 
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
 
         res.status(201).json({
             message: 'User registered successfully',
-            user: { id: user.id, name: user.name, email: user.email, points: user.points, role: user.role, token }
+            user: { id: user.id, name: user.name, email: user.email, points: user.points, role: user.role, isVerified: user.isVerified, token }
         });
     } catch (error) {
         console.error(error);
@@ -195,4 +201,68 @@ const getPointsHistory = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory };
+const verifyEmail = async (req, res) => {
+    const { email, code } = req.body;
+
+    try {
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+        if (user.isVerified) return res.status(400).json({ message: "Email already verified" });
+        if (user.verificationCode !== code) return res.status(400).json({ message: "Invalid verification code" });
+
+        const updatedUser = await prisma.user.update({
+            where: { email },
+            data: {
+                isVerified: true,
+                verificationCode: null,
+                points: { increment: 90 } // Bonus to reach 100
+            }
+        });
+
+        // Log transaction
+        await prisma.pointTransaction.create({
+            data: {
+                userId: user.id,
+                amount: 90,
+                type: 'bonus'
+            }
+        });
+
+        res.json({
+            success: true,
+            points: updatedUser.points,
+            message: "Email verified! You received 90 bonus points."
+        });
+
+    } catch (error) {
+        console.error("Verification error", error);
+        res.status(500).json({ message: "Verification failed" });
+    }
+};
+
+const resendVerificationCode = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) return res.status(404).json({ message: "User not found" });
+        if (user.isVerified) return res.status(400).json({ message: "Email already verified" });
+
+        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        await prisma.user.update({
+            where: { email },
+            data: { verificationCode: newCode }
+        });
+
+        await emailService.sendVerificationCode(user.email, user.name, newCode);
+
+        res.json({ message: "Verification code resent" });
+    } catch (error) {
+        console.error("Resend code error", error);
+        res.status(500).json({ message: "Failed to resend code" });
+    }
+};
+
+module.exports = { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory, verifyEmail, resendVerificationCode };

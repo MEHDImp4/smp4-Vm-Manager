@@ -40,11 +40,13 @@ const upload = multer({
     }
 });
 
-const { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory } = require('../controllers/authController');
+const { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory, verifyEmail, resendVerificationCode } = require('../controllers/authController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerificationCode);
 router.get('/me', verifyToken, getProfile);
 router.put('/password', verifyToken, updatePassword);
 router.post('/avatar', verifyToken, upload.single('avatar'), uploadAvatar);

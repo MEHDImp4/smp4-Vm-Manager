@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Sparkles, Gift, DollarSign, Twitter, Github, Linkedin, TrendingUp, Coins, Clock, Zap } from "lucide-react";
+import { X, Sparkles, Gift, DollarSign, Twitter, Github, Linkedin, TrendingUp, Coins, Clock, Zap, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -33,6 +33,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
     const [rotation, setRotation] = useState(0);
     const [wonPrize, setWonPrize] = useState<number | null>(null);
     const [nextSpinTime, setNextSpinTime] = useState("");
+    const [isVerified, setIsVerified] = useState(true);
     const navigate = useNavigate();
 
     // Play win sound
@@ -129,6 +130,11 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
 
     useEffect(() => {
         if (isOpen) {
+            const userStr = localStorage.getItem("user");
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                setIsVerified(user.isVerified !== false);
+            }
             void checkSpinStatus();
         }
     }, [isOpen, checkSpinStatus]);
@@ -269,7 +275,21 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                         <p className="text-muted-foreground text-lg">Tournez la roue, suivez-nous, ou boostez votre solde !</p>
                     </div>
 
-                    <div className="grid lg:grid-cols-2 gap-8">
+                    <div className="grid lg:grid-cols-2 gap-8 relative">
+                        {!isVerified && (
+                            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center text-center p-8 animate-fade-in border border-white/10">
+                                <div className="p-4 bg-yellow-500/10 rounded-full mb-6">
+                                    <ShieldAlert className="w-16 h-16 text-yellow-500" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-3">Vérification Requise</h3>
+                                <p className="text-muted-foreground max-w-md mb-8 text-lg">
+                                    Vérifiez votre adresse email pour débloquer la roue quotidienne, les bonus et la boutique.
+                                </p>
+                                <Button onClick={onClose} size="lg" className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-bold border-none shadow-lg shadow-yellow-500/20">
+                                    Retourner au Tableau de Bord
+                                </Button>
+                            </div>
+                        )}
                         {/* Daily Wheel Column */}
                         <div className="glass rounded-3xl p-8 border border-amber-500/20 relative overflow-hidden flex flex-col items-center">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[60px]" />

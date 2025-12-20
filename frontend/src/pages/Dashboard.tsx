@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 import { Cloud, Play, Square, Trash2, Plus, Coins, TrendingDown, Lightbulb, Server, Container, BarChart3, Loader2, ArrowRight, Zap, Activity, BookOpen, Gift, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner"; // Assuming sonner is available as used in InstanceDetails
 import EarnPointsModal from "@/components/EarnPointsModal";
 
@@ -40,7 +44,7 @@ const PRO_TIPS: ProTip[] = [
   {
     text: "Utilisez Portainer pour gérer vos conteneurs Docker facilement. ",
     linkText: "Lire la documentation",
-    linkTo: "/docs/portainer"
+    linkTo: "https://docs.portainer.io/faqs/getting-started"
   }
 ];
 
@@ -51,6 +55,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [showEarnModal, setShowEarnModal] = useState(false);
+  const [isVerified, setIsVerified] = useState(true);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
   const hasProvisioning = instances.some(i => i.status === 'provisioning');
 
   // Rotate Pro Tips
@@ -99,9 +107,10 @@ const Dashboard = () => {
         if (response.ok) {
           const userData = await response.json();
           setTotalPoints(userData.points);
+          setIsVerified(userData.isVerified);
 
           // Update local storage
-          const updatedUser = { ...user, points: userData.points };
+          const updatedUser = { ...user, points: userData.points, isVerified: userData.isVerified };
           localStorage.setItem("user", JSON.stringify(updatedUser));
         }
       } catch (error) {
@@ -114,6 +123,7 @@ const Dashboard = () => {
     if (userStr) {
       const user = JSON.parse(userStr);
       setTotalPoints(user.points || 0);
+      setIsVerified(user.isVerified !== false); // Default true if undefined to avoid flash
       setIsAdmin(user.role === 'admin');
     }
 
@@ -233,6 +243,55 @@ const Dashboard = () => {
     setDeleteConfirm({ step: 0, instance: null, inputValue: '' });
   };
 
+  const handleVerifyEmail = async () => {
+    setIsVerifying(true);
+    try {
+      const userStr = localStorage.getItem("user");
+      if (!userStr) return;
+      const user = JSON.parse(userStr);
+
+      const response = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, code: verifyCode }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message);
+        setTotalPoints(data.points);
+        setIsVerified(true);
+        setShowVerifyModal(false);
+        // Update storage
+        const updatedUser = { ...user, points: data.points, isVerified: true };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error("Erreur de verification");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (!userStr) return;
+      const user = JSON.parse(userStr);
+      await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email }),
+      });
+      toast.success("Code renvoyé avec succès");
+    } catch (e) {
+      toast.error("Erreur d'envoi");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden font-sans selection:bg-primary/20">
       {/* Background Effects */}
@@ -293,7 +352,60 @@ const Dashboard = () => {
         </div>
       </header>
 
+      {/* Verify Modal */}
+      <Dialog open={showVerifyModal} onOpenChange={setShowVerifyModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-primary" />
+              Vérification Email
+            </DialogTitle>
+            <DialogDescription>
+              Un code à 6 chiffres a été envoyé à votre adresse email. Entrez-le ci-dessous pour activer votre compte.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-2 flex flex-col items-center">
+              <Label htmlFor="code" className="sr-only">Code de vérification</Label>
+              <Input
+                id="code"
+                placeholder="123456"
+                value={verifyCode}
+                onChange={(e) => setVerifyCode(e.target.value)}
+                className="text-center text-3xl font-mono tracking-[0.5em] h-16 w-full max-w-[200px] border-primary/20 bg-primary/5 focus:border-primary/50 transition-all shadow-inner"
+                maxLength={6}
+              />
+              <p className="text-xs text-muted-foreground mt-2">Vérifiez vos spams si nécessaire</p>
+            </div>
+            <div className="text-center">
+              <Button variant="link" size="sm" className="text-xs text-primary/80 hover:text-primary" onClick={handleResendCode}>
+                Renvoyer le code
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowVerifyModal(false)}>Annuler</Button>
+            <Button onClick={handleVerifyEmail} disabled={isVerifying || verifyCode.length < 6} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              {isVerifying ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+              {isVerifying ? "Vérification..." : "Valider & Recevoir 100pts"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <main className="container mx-auto px-4 py-8 relative z-10 max-w-7xl">
+        {!isVerified && !loading && (
+          <Alert className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/20 text-yellow-500 mb-6 animate-fade-in shadow-lg shadow-yellow-500/5">
+            <ShieldAlert className="h-4 w-4 stroke-yellow-500" />
+            <AlertTitle className="font-bold flex items-center gap-2">Vérification Requise <span className="text-[10px] bg-yellow-500/20 px-1.5 py-0.5 rounded text-yellow-300 border border-yellow-500/30">+100pts</span></AlertTitle>
+            <AlertDescription className="flex items-center justify-between mt-1">
+              <span className="text-yellow-500/80 text-sm">Vérifiez votre email pour sécuriser votre compte et recevoir votre bonus de bienvenue !</span>
+              <Button size="sm" variant="outline" className="ml-4 border-yellow-500/30 hover:bg-yellow-500/10 hover:text-yellow-400 text-yellow-500" onClick={() => setShowVerifyModal(true)}>
+                Vérifier maintenant
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Stats Grid */}
         <div className="grid md:grid-cols-3 gap-6 mb-10 animate-fade-up-delay-1">
           {/* Points Balance Card */}

@@ -151,5 +151,23 @@ module.exports = {
             </div>
         `;
         return module.exports.sendEmail(to, subject, html);
+    },
+    sendVerificationCode: async (to, name, code) => {
+        const subject = "Vérifiez votre adresse email - SMP4cloud";
+        const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                <h2 style="color: #333;">Bienvenue sur SMP4cloud, ${name} !</h2>
+                <p style="color: #666; font-size: 16px;">
+                    Merci de votre inscription. Pour activer votre compte et recevoir <strong>100 points bonus</strong>, veuillez vérifier votre adresse email.
+                </p>
+                <div style="background-color: #f5f5f5; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                    <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #007bff;">${code}</span>
+                </div>
+                <p style="color: #888; font-size: 14px;">
+                    Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.
+                </p>
+            </div>
+        `;
+        return module.exports.sendEmail(to, subject, html);
     }
 };

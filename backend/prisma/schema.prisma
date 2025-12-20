@@ -13,10 +13,12 @@ model User {
   name       String
   email      String   @unique
   password   String
-  points     Float    @default(100.0)
+  points     Float    @default(10.0)
   created_at DateTime @default(now())
   avatarUrl  String?
   role       String   @default("user") // "user", "admin"
+  isVerified Boolean  @default(false)
+  verificationCode String?
   isBanned   Boolean  @default(false)
   banReason  String?
   banExpiresAt DateTime?

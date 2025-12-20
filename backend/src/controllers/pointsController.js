@@ -2,12 +2,18 @@ const { prisma } = require('../db');
 const emailService = require('../services/email.service');
 
 const SPIN_PRIZES = [10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 200];
-const SPIN_WEIGHTS = [15, 14, 13, 12, 10, 8, 7, 6, 5, 4, 3, 3]; // Adjusted weights
+const SPIN_WEIGHTS = [35, 20, 15, 10, 8, 5, 3, 2, 1, 0.5, 0.3, 0.2]; // Skewed towards lower prizes, rare prizes are much rarer
 
 // Daily Spin Wheel
 const spinWheel = async (req, res) => {
     try {
         const userId = req.user.id;
+
+        // Check verification
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user.isVerified) {
+            return res.status(403).json({ error: "Veuillez vérifier votre email pour accéder à cette fonctionnalité." });
+        }
 
         // Check if user already spun in the last 24h
         const lastSpin = await prisma.dailySpin.findFirst({
@@ -64,7 +70,7 @@ const spinWheel = async (req, res) => {
 
         // Send confirmation email
         try {
-            if (req.user.email) {
+            if (user.email) {
                 // Next spin is exactly 24h from now
                 const nextSpinTime = new Date();
                 nextSpinTime.setDate(nextSpinTime.getDate() + 1);
@@ -73,7 +79,7 @@ const spinWheel = async (req, res) => {
                 const nextSpinDateStr = nextSpinTime.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 
                 await emailService.sendEmail(
-                    req.user.email,
+                    user.email,
                     "🎉 Vous avez gagné des points !",
                     `<div style="font-family: sans-serif; color: #333;">
                         <h2>Félicitations ! 🎁</h2>
@@ -138,6 +144,13 @@ const canSpinToday = async (req, res) => {
 const purchasePoints = async (req, res) => {
     try {
         const userId = req.user.id;
+
+        // Check verification
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user.isVerified) {
+            return res.status(403).json({ error: "Veuillez vérifier votre email pour acheter des points." });
+        }
+
         const { amount } = req.body; // Amount in USD (1, 2, 5, 10)
 
         // Validate amount
@@ -171,6 +184,13 @@ const purchasePoints = async (req, res) => {
 const claimSocialBonus = async (req, res) => {
     try {
         const userId = req.user.id;
+
+        // Check verification
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user.isVerified) {
+            return res.status(403).json({ error: "Veuillez vérifier votre email pour réclamer ce bonus." });
+        }
+
         const { platform, username } = req.body; // "twitter", "github", "linkedin"
 
         const validPlatforms = {

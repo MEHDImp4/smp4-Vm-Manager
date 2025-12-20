@@ -153,19 +153,97 @@ module.exports = {
         return module.exports.sendEmail(to, subject, html);
     },
     sendVerificationCode: async (to, name, code) => {
-        const subject = "Vérifiez votre adresse email - SMP4cloud";
+        const subject = "🎉 Bienvenue sur SMP4cloud - Vérifiez votre compte";
         const html = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                <h2 style="color: #333;">Bienvenue sur SMP4cloud, ${name} !</h2>
-                <p style="color: #666; font-size: 16px;">
-                    Merci de votre inscription. Pour activer votre compte et recevoir <strong>100 points bonus</strong>, veuillez vérifier votre adresse email.
-                </p>
-                <div style="background-color: #f5f5f5; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-                    <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #007bff;">${code}</span>
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2px; border-radius: 12px;">
+                <div style="background: white; padding: 40px; border-radius: 10px;">
+                    <!-- Header -->
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 60px; height: 60px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                            <span style="font-size: 30px;">☁️</span>
+                        </div>
+                        <h1 style="color: #1f2937; margin: 0; font-size: 28px; font-weight: 700;">Bienvenue sur SMP4cloud !</h1>
+                    </div>
+
+                    <!-- Welcome Message -->
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 30px;">
+                        <p style="color: #374151; font-size: 16px; margin: 0 0 10px 0;">
+                            Bonjour <strong>${name}</strong> 👋
+                        </p>
+                        <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.6;">
+                            Merci d'avoir rejoint SMP4cloud, votre plateforme de gestion de machines virtuelles dans le cloud. 
+                            Nous sommes ravis de vous compter parmi nous !
+                        </p>
+                    </div>
+
+                    <!-- Verification Code -->
+                    <div style="text-align: center; margin: 30px 0;">
+                        <p style="color: #374151; font-size: 15px; margin-bottom: 15px;">
+                            Pour activer votre compte et recevoir votre <strong style="color: #667eea;">bonus de 100 points</strong>, 
+                            veuillez entrer ce code de vérification :
+                        </p>
+                        <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 25px; border-radius: 10px; margin: 20px 0; border: 2px dashed #667eea;">
+                            <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #667eea; font-family: 'Courier New', monospace;">
+                                ${code}
+                            </div>
+                        </div>
+                        <p style="color: #9ca3af; font-size: 13px; margin-top: 10px;">
+                            ⏱️ Ce code est valide jusqu'à la vérification de votre compte
+                        </p>
+                    </div>
+
+                    <!-- What's Next -->
+                    <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin: 30px 0;">
+                        <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 16px;">🚀 Prochaines étapes :</h3>
+                        <ul style="color: #047857; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                            <li><strong>Vérifiez votre email</strong> avec le code ci-dessus</li>
+                            <li><strong>Recevez 100 points</strong> pour créer votre première VM</li>
+                            <li><strong>Explorez</strong> nos templates et créez vos instances</li>
+                            <li><strong>Gagnez des points</strong> quotidiennement avec la roue de fortune</li>
+                        </ul>
+                    </div>
+
+                    <!-- Features -->
+                    <div style="margin: 30px 0;">
+                        <h3 style="color: #1f2937; font-size: 16px; margin-bottom: 15px; text-align: center;">✨ Ce qui vous attend</h3>
+                        <div style="display: grid; gap: 10px;">
+                            <div style="background: #f9fafb; padding: 12px 15px; border-radius: 6px; border-left: 3px solid #667eea;">
+                                <strong style="color: #374151; font-size: 14px;">💻 Machines Virtuelles</strong>
+                                <p style="color: #6b7280; font-size: 13px; margin: 5px 0 0 0;">Déployez des VMs en quelques clics</p>
+                            </div>
+                            <div style="background: #f9fafb; padding: 12px 15px; border-radius: 6px; border-left: 3px solid #8b5cf6;">
+                                <strong style="color: #374151; font-size: 14px;">🎯 Snapshots & Backups</strong>
+                                <p style="color: #6b7280; font-size: 13px; margin: 5px 0 0 0;">Protégez vos données facilement</p>
+                            </div>
+                            <div style="background: #f9fafb; padding: 12px 15px; border-radius: 6px; border-left: 3px solid #ec4899;">
+                                <strong style="color: #374151; font-size: 14px;">🎁 Système de Points</strong>
+                                <p style="color: #6b7280; font-size: 13px; margin: 5px 0 0 0;">Gagnez des points et économisez</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Notice -->
+                    <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 25px 0;">
+                        <p style="color: #92400e; font-size: 13px; margin: 0;">
+                            <strong>🔒 Note de sécurité :</strong> Si vous n'avez pas créé de compte sur SMP4cloud, 
+                            ignorez cet email. Votre adresse n'a pas été compromise.
+                        </p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 40px; padding-top: 25px; border-top: 2px solid #e5e7eb; text-align: center;">
+                        <p style="color: #6b7280; font-size: 14px; margin: 0 0 10px 0;">
+                            Besoin d'aide ? Nous sommes là pour vous !
+                        </p>
+                        <a href="https://smp4.xyz" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 10px 0;">
+                            Accéder au Dashboard
+                        </a>
+                        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0 0;">
+                            L'équipe SMP4cloud<br/>
+                            <span style="color: #d1d5db;">© 2024 SMP4cloud - Tous droits réservés</span>
+                        </p>
+                    </div>
                 </div>
-                <p style="color: #888; font-size: 14px;">
-                    Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.
-                </p>
             </div>
         `;
         return module.exports.sendEmail(to, subject, html);

@@ -29,7 +29,7 @@ const register = async (req, res) => {
                 email,
                 password: hashedPassword,
                 verificationCode: Math.floor(100000 + Math.random() * 900000).toString(),
-                points: 10.0 // Explicitly setting initial points though schema default is 10
+                points: 0.0
             }
         });
 
@@ -216,7 +216,7 @@ const verifyEmail = async (req, res) => {
             data: {
                 isVerified: true,
                 verificationCode: null,
-                points: { increment: 90 } // Bonus to reach 100
+                points: { increment: 100 }
             }
         });
 
@@ -224,7 +224,7 @@ const verifyEmail = async (req, res) => {
         await prisma.pointTransaction.create({
             data: {
                 userId: user.id,
-                amount: 90,
+                amount: 100,
                 type: 'bonus'
             }
         });

@@ -73,6 +73,11 @@ describe('ProxmoxService', () => {
       const result = await service.startLXC(102);
       expect(result).toBeDefined();
     });
+
+    it('should throw error when start fails', async () => {
+      service.client = { post: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.startLXC(102)).rejects.toThrow();
+    });
   });
 
   describe('stopLXC', () => {
@@ -81,6 +86,11 @@ describe('ProxmoxService', () => {
       const result = await service.stopLXC(102);
       expect(result).toBeDefined();
     });
+
+    it('should throw error when stop fails', async () => {
+      service.client = { post: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.stopLXC(102)).rejects.toThrow();
+    });
   });
 
   describe('configureLXC', () => {
@@ -88,6 +98,11 @@ describe('ProxmoxService', () => {
       service.client = { put: jest.fn().mockResolvedValueOnce({ data: { data: 'UPID:...' } }) };
       const result = await service.configureLXC(102, { tags: 'test' });
       expect(result).toBeDefined();
+    });
+
+    it('should throw error when configure fails', async () => {
+      service.client = { put: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.configureLXC(102, {})).rejects.toThrow();
     });
   });
 
@@ -126,6 +141,11 @@ describe('ProxmoxService', () => {
       const result = await service.deleteLXC(102);
       expect(result).toBeDefined();
     });
+
+    it('should throw error when delete fails', async () => {
+      service.client = { delete: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.deleteLXC(102)).rejects.toThrow();
+    });
   });
 
   describe('waitForTask', () => {
@@ -160,12 +180,22 @@ describe('ProxmoxService', () => {
       );
     });
 
+    it('should throw error when create snapshot fails', async () => {
+      service.client = { post: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.createLXCSnapshot(100, 'snap1')).rejects.toThrow();
+    });
+
     it('should list snapshots', async () => {
       const mockSnaps = [{ name: 'snap1' }, { name: 'current' }];
       service.client = { get: jest.fn().mockResolvedValue({ data: { data: mockSnaps } }) };
       const result = await service.listLXCSnapshots(100);
       expect(result).toHaveLength(1); // 'current' filtered out
       expect(result[0].name).toBe('snap1');
+    });
+
+    it('should throw error when list snapshots fails', async () => {
+      service.client = { get: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.listLXCSnapshots(100)).rejects.toThrow();
     });
 
     it('should delete snapshot', async () => {
@@ -176,6 +206,11 @@ describe('ProxmoxService', () => {
       );
     });
 
+    it('should throw error when delete snapshot fails', async () => {
+      service.client = { delete: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.deleteLXCSnapshot(100, 'snap1')).rejects.toThrow();
+    });
+
     it('should rollback snapshot', async () => {
       service.client = { post: jest.fn().mockResolvedValue({ data: { data: 'UPID:roll' } }) };
       await service.rollbackLXCSnapshot(100, 'snap1');
@@ -183,6 +218,11 @@ describe('ProxmoxService', () => {
         expect.stringContaining('/snapshot/snap1/rollback'),
         {}
       );
+    });
+
+    it('should throw error when rollback snapshot fails', async () => {
+      service.client = { post: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.rollbackLXCSnapshot(100, 'snap1')).rejects.toThrow();
     });
   });
 
@@ -196,6 +236,11 @@ describe('ProxmoxService', () => {
       );
     });
 
+    it('should throw error when create backup fails', async () => {
+      service.client = { post: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.createLXCBackup(100)).rejects.toThrow();
+    });
+
     it('should list backups', async () => {
       const mockBackups = [{ vmid: 100, volid: 'backup1' }, { vmid: 101 }];
       service.client = { get: jest.fn().mockResolvedValue({ data: { data: mockBackups } }) };
@@ -204,10 +249,20 @@ describe('ProxmoxService', () => {
       expect(result[0].volid).toBe('backup1');
     });
 
+    it('should throw error when list backups fails', async () => {
+      service.client = { get: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.listBackups('local')).rejects.toThrow();
+    });
+
     it('should delete backup', async () => {
       service.client = { delete: jest.fn().mockResolvedValue({ data: { data: 'UPID:del' } }) };
       await service.deleteBackup('local', 'backup1');
       expect(service.client.delete).toHaveBeenCalled();
+    });
+
+    it('should throw error when delete backup fails', async () => {
+      service.client = { delete: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.deleteBackup('local', 'bkp1')).rejects.toThrow();
     });
 
     it('should get backup download ticket', async () => {
@@ -233,6 +288,11 @@ describe('ProxmoxService', () => {
       );
     });
 
+    it('should throw error when add rule fails', async () => {
+      service.client = { post: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.addFirewallRule(100, {})).rejects.toThrow();
+    });
+
     it('should set firewall options', async () => {
       service.client = { put: jest.fn().mockResolvedValue({ data: { data: 'ok' } }) };
       await service.setFirewallOptions(100, { enable: 1 });
@@ -240,6 +300,11 @@ describe('ProxmoxService', () => {
         expect.stringContaining('/firewall/options'),
         { enable: 1 }
       );
+    });
+
+    it('should throw error when set options fails', async () => {
+      service.client = { put: jest.fn().mockRejectedValue(new Error('Failed')) };
+      await expect(service.setFirewallOptions(100, {})).rejects.toThrow();
     });
   });
 
@@ -268,6 +333,23 @@ describe('ProxmoxService', () => {
     it('should throw error when get config fails', async () => {
       service.client = { get: jest.fn().mockRejectedValue(new Error('Failed')) };
       await expect(service.getLXCConfig('100')).rejects.toThrow();
+    });
+  });
+
+  describe('deleteVolume', () => {
+    it('should delete volume', async () => {
+      service.client = { delete: jest.fn().mockResolvedValue({ data: { data: 'UPID:ok' } }) };
+      await service.deleteVolume('local:backup/vzdump-100.tar');
+      expect(service.client.delete).toHaveBeenCalledWith(expect.stringContaining('local'));
+    });
+
+    it('should throw on invalid format', async () => {
+      await expect(service.deleteVolume('invalid')).rejects.toThrow('Invalid volid format');
+    });
+
+    it('should throw on api error', async () => {
+      service.client = { delete: jest.fn().mockRejectedValue(new Error('Fail')) };
+      await expect(service.deleteVolume('local:bkp/file')).rejects.toThrow();
     });
   });
 });

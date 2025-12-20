@@ -16,12 +16,44 @@ interface Instance {
   type: "ct" | "vm";
 }
 
+interface ProTip {
+  text: string;
+  linkText?: string;
+  linkTo?: string;
+  suffix?: string;
+}
+
 const LOADING_MESSAGES = [
-  // ... (omitted)
+  "Initialisation des hyperviseurs...",
+  "Vérification des ressources...",
+  "Connexion aux nœuds Proxmox...",
+  "Chargement de vos instances...",
+  "Synchronisation des états..."
 ];
 
-const PRO_TIPS = [
-  // ... (omitted)
+const PRO_TIPS: ProTip[] = [
+  {
+    text: "Économisez des points en arrêtant vos instances inutilisées !",
+    linkText: "Voir mes instances",
+    linkTo: "/dashboard#instances"
+  },
+  {
+    text: "Besoin de plus de puissance ? ",
+    linkText: "Passez au plan Pro",
+    linkTo: "/subscription",
+    suffix: "."
+  },
+  {
+    text: "Gagnez des points bonus en invitant des amis via le ",
+    linkText: "programme de parrainage",
+    linkTo: "/referrals",
+    suffix: "."
+  },
+  {
+    text: "Utilisez Portainer pour gérer vos conteneurs Docker facilement. ",
+    linkText: "Lire la documentation",
+    linkTo: "/docs/portainer"
+  }
 ];
 
 const Dashboard = () => {

@@ -53,7 +53,7 @@ describe('Dashboard Page', () => {
   it('should render dashboard title', async () => {
     render(<Dashboard />);
     await waitFor(() => {
-      expect(screen.getByText(/mes instances/i)).toBeTruthy();
+      expect(screen.getByRole('heading', { name: /mes instances/i })).toBeTruthy();
     });
   });
 

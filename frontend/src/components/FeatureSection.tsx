@@ -80,23 +80,6 @@ const FeatureSection = () => {
                     ))}
                 </div>
 
-                {/* Big Showcase Section */}
-                <div className="mt-32 relative">
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
-                    <div className="glass rounded-3xl border border-white/10 p-2 md:p-4 overflow-hidden shadow-2xl feature-card opacity-0 translate-y-10 transition-all duration-1000">
-                        <div className="bg-black/80 rounded-2xl overflow-hidden relative aspect-video md:aspect-[21/9] flex items-center justify-center border border-white/5">
-                            {/* Simulated Dashboard Integration */}
-                            <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(to_bottom,transparent,black)]" />
-                            <div className="text-center z-10">
-                                <Terminal className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                                <p className="text-muted-foreground font-mono text-sm">Dashboard Preview</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-                    <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[120px] pointer-events-none" />
-                </div>
-
             </div>
         </section>
     );

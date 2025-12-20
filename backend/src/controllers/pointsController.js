@@ -1,7 +1,8 @@
 const { prisma } = require('../db');
+const emailService = require('../services/email.service');
 
-const SPIN_PRIZES = [10, 25, 50, 75, 100, 150, 200];
-const SPIN_WEIGHTS = [30, 25, 20, 12, 8, 4, 1]; // Higher chance for lower prizes
+const SPIN_PRIZES = [10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 200];
+const SPIN_WEIGHTS = [15, 14, 13, 12, 10, 8, 7, 6, 5, 4, 3, 3]; // Adjusted weights
 
 // Daily Spin Wheel
 const spinWheel = async (req, res) => {
@@ -45,7 +46,7 @@ const spinWheel = async (req, res) => {
         }
 
         // Update user points and record spin
-        await prisma.$transaction([
+        const [updatedUser] = await prisma.$transaction([
             prisma.user.update({
                 where: { id: userId },
                 data: { points: { increment: wonPoints } }
@@ -64,6 +65,33 @@ const spinWheel = async (req, res) => {
                 }
             })
         ]);
+
+        // Send confirmation email
+        try {
+            // Check if user has an email (should be required, but good to be safe)
+            if (req.user.email) {
+                const nextSpinTime = new Date();
+                nextSpinTime.setDate(nextSpinTime.getDate() + 1);
+                nextSpinTime.setHours(0, 0, 0, 0);
+                const nextSpinStr = nextSpinTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+                await emailService.sendEmail(
+                    req.user.email,
+                    "🎉 Vous avez gagné des points !",
+                    `<div style="font-family: sans-serif; color: #333;">
+                        <h2>Félicitations ! 🎁</h2>
+                        <p>Vous avez gagné <strong>${wonPoints} points</strong> sur la roue quotidienne SMP4.</p>
+                        <p>Votre nouveau solde : <strong>${updatedUser.points} points</strong>.</p>
+                        <p>Vous pourrez tourner la roue à nouveau demain dès <strong>00:00</strong> !</p>
+                        <br/>
+                        <a href="https://smp4.xyz" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Revenir sur SMP4</a>
+                    </div>`
+                );
+            }
+        } catch (emailErr) {
+            console.error("Failed to send spin email:", emailErr);
+            // Don't fail the request, just log it
+        }
 
         res.json({
             success: true,

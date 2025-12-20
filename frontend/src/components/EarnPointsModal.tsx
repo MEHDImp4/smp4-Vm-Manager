@@ -5,15 +5,20 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 
-const WHEEL_PRIZES = [10, 25, 50, 75, 100, 150, 200];
+const WHEEL_PRIZES = [10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 200];
 const PRIZE_COLORS = [
-    "#ef4444", // red
-    "#f59e0b", // amber
-    "#10b981", // emerald
-    "#3b82f6", // blue
-    "#8b5cf6", // violet
-    "#ec4899", // pink
-    "#f59e0b", // gold
+    "#94a3b8", // 10 - slate
+    "#64748b", // 15 - slate dark
+    "#60a5fa", // 20 - blue
+    "#3b82f6", // 25 - blue
+    "#2563eb", // 30 - blue dark
+    "#818cf8", // 40 - indigo
+    "#a78bfa", // 50 - violet
+    "#c084fc", // 75 - purple
+    "#e879f9", // 100 - fuchsia
+    "#f472b6", // 125 - pink
+    "#fb7185", // 150 - rose
+    "#facc15", // 200 - yellow/gold
 ];
 
 interface EarnPointsModalProps {
@@ -35,18 +40,18 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
         const audioContext = new (window.AudioContext || (window as unknown as Window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        
+
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
+
         // Different pitch based on prize amount
         const frequency = points >= 150 ? 800 : points >= 75 ? 600 : 400;
         oscillator.frequency.value = frequency;
         oscillator.type = 'sine';
-        
+
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        
+
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.5);
     };
@@ -55,13 +60,13 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
     const triggerConfetti = (points: number) => {
         const duration = points >= 150 ? 5000 : points >= 75 ? 3000 : 2000;
         const particleCount = points >= 150 ? 200 : points >= 75 ? 100 : 50;
-        
+
         const end = Date.now() + duration;
-        const colors = points >= 150 
+        const colors = points >= 150
             ? ['#FFD700', '#FFA500', '#FF6347'] // Gold colors for big wins
             : points >= 75
-            ? ['#10b981', '#3b82f6', '#8b5cf6'] // Mixed colors for medium
-            : ['#3b82f6', '#60a5fa']; // Blue for small
+                ? ['#10b981', '#3b82f6', '#8b5cf6'] // Mixed colors for medium
+                : ['#3b82f6', '#60a5fa']; // Blue for small
 
         (function frame() {
             confetti({
@@ -83,7 +88,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                 requestAnimationFrame(frame);
             }
         }());
-        
+
         // Extra burst for big wins
         if (points >= 150) {
             setTimeout(() => {
@@ -153,11 +158,11 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
             if (response.ok) {
                 const data = await response.json();
                 const prizeIndex = WHEEL_PRIZES.indexOf(data.points);
-                
+
                 // Calculate rotation to land on the prize
                 const segmentAngle = 360 / WHEEL_PRIZES.length;
                 const targetRotation = 360 * 5 + (prizeIndex * segmentAngle); // 5 full rotations + target
-                
+
                 setRotation(targetRotation);
 
                 // Wait for animation
@@ -165,11 +170,11 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                     setWonPrize(data.points);
                     setIsSpinning(false);
                     setCanSpin(false);
-                    
+
                     // Trigger effects!
                     playWinSound(data.points);
                     triggerConfetti(data.points);
-                    
+
                     toast.success(`🎉 ${data.message}`);
                     onPointsEarned();
                 }, 4000);
@@ -203,7 +208,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
 
             if (response.ok) {
                 const data = await response.json();
-                
+
                 // Mini confetti for social bonus
                 confetti({
                     particleCount: 50,
@@ -211,7 +216,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                     origin: { y: 0.6 },
                     colors: ['#3b82f6', '#8b5cf6', '#ec4899']
                 });
-                
+
                 toast.success(data.message);
                 onPointsEarned();
             } else {
@@ -250,7 +255,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                         {/* Daily Wheel */}
                         <div className="glass rounded-2xl p-6 border border-amber-500/20 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
-                            
+
                             <div className="flex items-center gap-3 mb-6 relative z-10">
                                 <div className="p-2 rounded-xl bg-amber-500/10">
                                     <Gift className="w-6 h-6 text-amber-400" />
@@ -267,7 +272,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                 {canSpin && !isSpinning && (
                                     <div className="absolute inset-0 rounded-full bg-amber-500/20 blur-2xl animate-pulse" />
                                 )}
-                                
+
                                 {/* Pointer */}
                                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-20">
                                     {isSpinning && (
@@ -279,7 +284,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                 </div>
 
                                 {/* Wheel SVG */}
-                                <svg 
+                                <svg
                                     className="w-full h-full drop-shadow-2xl relative z-10"
                                     viewBox="0 0 200 200"
                                     style={{
@@ -291,20 +296,20 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                         const segmentAngle = 360 / WHEEL_PRIZES.length;
                                         const startAngle = index * segmentAngle - 90;
                                         const endAngle = startAngle + segmentAngle;
-                                        
+
                                         const startRad = (startAngle * Math.PI) / 180;
                                         const endRad = (endAngle * Math.PI) / 180;
-                                        
+
                                         const x1 = 100 + 100 * Math.cos(startRad);
                                         const y1 = 100 + 100 * Math.sin(startRad);
                                         const x2 = 100 + 100 * Math.cos(endRad);
                                         const y2 = 100 + 100 * Math.sin(endRad);
-                                        
+
                                         const textAngle = startAngle + segmentAngle / 2;
                                         const textRad = (textAngle * Math.PI) / 180;
                                         const textX = 100 + 60 * Math.cos(textRad);
                                         const textY = 100 + 60 * Math.sin(textRad);
-                                        
+
                                         return (
                                             <g key={index}>
                                                 <path
@@ -328,7 +333,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                             </g>
                                         );
                                     })}
-                                    
+
                                     {/* Center circle */}
                                     <circle cx="100" cy="100" r="25" fill="white" stroke="#f59e0b" strokeWidth="4" />
                                     <text x="100" y="100" fill="#f59e0b" fontSize="24" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">
@@ -339,13 +344,12 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
 
                             {wonPrize && (
                                 <div className="text-center mb-4">
-                                    <div className={`inline-block px-6 py-3 rounded-2xl bg-gradient-to-r ${
-                                        wonPrize >= 150 
-                                            ? 'from-yellow-400 to-orange-500 shadow-2xl shadow-yellow-500/50' 
+                                    <div className={`inline-block px-6 py-3 rounded-2xl bg-gradient-to-r ${wonPrize >= 150
+                                            ? 'from-yellow-400 to-orange-500 shadow-2xl shadow-yellow-500/50'
                                             : wonPrize >= 75
-                                            ? 'from-amber-500 to-orange-500 shadow-2xl shadow-amber-500/50'
-                                            : 'from-blue-500 to-indigo-500 shadow-xl shadow-blue-500/30'
-                                    } ${wonPrize >= 150 ? 'animate-celebrate' : 'animate-bounce'}`}>
+                                                ? 'from-amber-500 to-orange-500 shadow-2xl shadow-amber-500/50'
+                                                : 'from-blue-500 to-indigo-500 shadow-xl shadow-blue-500/30'
+                                        } ${wonPrize >= 150 ? 'animate-celebrate' : 'animate-bounce'}`}>
                                         <p className="text-3xl font-bold text-white flex items-center gap-2">
                                             {wonPrize >= 150 ? (
                                                 <>

@@ -15,6 +15,9 @@ startConsumptionCron();
 const { startSnapshotCron } = require('./cron/snapshotCron');
 startSnapshotCron();
 
+const { initDailyReminder } = require('./cron/reminder.cron');
+initDailyReminder();
+
 // Seed templates on startup
 const { seedTemplates } = require('./scripts/seedTemplates');
 seedTemplates();

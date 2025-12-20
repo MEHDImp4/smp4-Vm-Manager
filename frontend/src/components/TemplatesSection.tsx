@@ -23,19 +23,15 @@ const templateMetadata: Record<string, { usage: string; popular: boolean }> = {
 };
 
 const TemplatesSection = () => {
-  useScrollAnimation();
   const [templates, setTemplates] = useState<Template[]>([]);
+  useScrollAnimation(".animate-on-scroll", [templates]);
 
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        console.log("Fetching templates from /api/templates...");
         const res = await fetch('/api/templates');
-        console.log("Response status:", res.status);
-
         if (res.ok) {
           const data = await res.json();
-          console.log("Templates data:", data);
           setTemplates(data);
         } else {
           console.error("Fetch failed with status:", res.status);

@@ -141,21 +141,8 @@ const getSnapshots = async (req, res) => {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Also fetch VZDump backups (files)
-        let backups = [];
-        if (instance.vmid) {
-            try {
-                // Try 'local' storage (standard for pve)
-                backups = await proxmoxService.listBackups('local', instance.vmid);
-                // If needed, check other storages, but 'local' is standard for vz-dump
-            } catch (e) {
-                console.error("Failed to list backups:", e.message);
-            }
-        }
-
         res.json({
             snapshots: finalSnapshots,
-            backups: backups,
             maxSnapshots: MAX_SNAPSHOTS,
             remaining: Math.max(0, MAX_SNAPSHOTS - finalSnapshots.length)
         });
@@ -332,10 +319,50 @@ const downloadSnapshot = async (req, res) => {
     }
 };
 
+// Delete a VZDump backup (DELETE /instances/:id/backups/:volid)
+const deleteBackup = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const volid = decodeURIComponent(req.query.volid || '');
+        const userId = req.userId;
+
+        if (!volid) {
+            return res.status(400).json({ error: 'Volume ID is required' });
+        }
+
+        // Verify instance ownership
+        const instance = await prisma.instance.findFirst({
+            where: { id, userId }
+        });
+
+        if (!instance) {
+            return res.status(404).json({ error: 'Instance not found' });
+        }
+
+        // Parse volid to check if it belongs to this VMID (security check)
+        // Volid format: storage:backup/vzdump-lxc-{vmid}-...
+        if (instance.vmid && !volid.includes(`-${instance.vmid}-`)) {
+            return res.status(403).json({ error: 'Backup does not belong to this instance' });
+        }
+
+        // Delete from Proxmox
+        // Assume 'local' storage or extract from volid
+        const storage = volid.split(':')[0] || 'local';
+        await proxmoxService.deleteVolume(volid);
+
+        res.json({ message: 'Backup deleted successfully' });
+
+    } catch (error) {
+        console.error('Delete backup error:', error);
+        res.status(500).json({ error: 'Failed to delete backup' });
+    }
+};
+
 module.exports = {
     createSnapshot,
     getSnapshots,
     restoreSnapshot,
     deleteSnapshot,
-    downloadSnapshot
+    downloadSnapshot,
+    deleteBackup
 };

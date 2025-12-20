@@ -21,6 +21,7 @@ router.get('/:id/snapshots', getSnapshots);
 router.post('/:id/snapshots/:snapId/restore', restoreSnapshot);
 router.delete('/:id/snapshots/:snapId', deleteSnapshot);
 router.get('/:id/snapshots/:snapId/download', downloadSnapshot);
+router.delete('/:id/backups', require('../controllers/snapshotController').deleteBackup);
 
 // Domain routes
 router.post('/:id/domains', createDomain);

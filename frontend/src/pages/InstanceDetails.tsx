@@ -977,7 +977,7 @@ const InstanceDetails = () => {
                                     <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
                                         <History className="w-5 h-5" />
                                     </div>
-                                    Backups & Snapshots
+                                    Snapshots (Points de restauration)
                                 </h3>
                                 <div className="flex items-center gap-2">
                                     {(loading || snapshotLoading) && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
@@ -991,10 +991,10 @@ const InstanceDetails = () => {
                                 <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 p-4 rounded-xl flex items-start gap-3">
                                     <Shield className="w-5 h-5 mt-0.5 shrink-0" />
                                     <div className="text-sm">
-                                        <p className="font-semibold mb-1">Système de Backups</p>
+                                        <p className="font-semibold mb-1">Système de Snapshots</p>
                                         <p className="opacity-80">
                                             Vous pouvez créer jusqu'à {maxSnapshots} snapshots manuels.
-                                            Sécurisez vos données avant toute modification importante.
+                                            Utile pour tester des modifications sans risque.
                                         </p>
                                     </div>
                                 </div>
@@ -1002,7 +1002,7 @@ const InstanceDetails = () => {
                                 <div className="space-y-3">
                                     {snapshots.length === 0 ? (
                                         <div className="text-center py-8 text-muted-foreground bg-white/5 rounded-xl border border-white/5 border-dashed">
-                                            Aucun backup pour le moment.
+                                            Aucun snapshot pour le moment.
                                             <br />
                                             <span className="text-xs opacity-50">Créez-en un manuellement ci-dessus.</span>
                                         </div>
@@ -1027,16 +1027,6 @@ const InstanceDetails = () => {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        onClick={() => handleDownloadSnapshot(snap.id)}
-                                                        disabled={snapshotLoading}
-                                                        title="Télécharger (Backup)"
-                                                        className="h-8 w-8 text-muted-foreground hover:text-indigo-400 hover:bg-indigo-500/10"
-                                                    >
-                                                        <Download className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
                                                         onClick={() => handleRestoreSnapshot(snap.id, snap.name)}
                                                         disabled={snapshotLoading}
                                                         title="Restaurer"
@@ -1055,37 +1045,6 @@ const InstanceDetails = () => {
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>
                                                 </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="mt-6 pt-6 border-t border-white/5">
-                                <h4 className="font-semibold text-sm mb-4 flex items-center gap-2">
-                                    <div className="p-1.5 rounded-md bg-amber-500/10 text-amber-500">
-                                        <Download className="w-3.5 h-3.5" />
-                                    </div>
-                                    Archives de Sauvegarde (Fichiers)
-                                </h4>
-                                <div className="space-y-3">
-                                    {(instance?.backups || []).length === 0 ? (
-                                        <div className="text-sm text-muted-foreground opacity-60 pl-8">Aucune archive ( .zst ) trouvée.</div>
-                                    ) : (
-                                        (instance.backups || []).map((backup: any) => (
-                                            <div key={backup.volid} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-amber-500/30 transition-all">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 rounded-lg bg-amber-500/20 text-amber-500">
-                                                        <Shield className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-sm text-foreground break-all">{backup.volid.split('/').pop()}</div>
-                                                        <div className="text-xs text-muted-foreground flex items-center gap-2">
-                                                            {new Date(backup.ctime * 1000).toLocaleString()} • {formatBytes(backup.size)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                {/* Actions for backups not implemented yet (requires tricky restore) */}
                                             </div>
                                         ))
                                     )}

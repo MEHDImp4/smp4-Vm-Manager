@@ -844,10 +844,19 @@ const AdminDashboard = () => {
 export default AdminDashboard;
 
 const MessagesTable = () => {
-    const [messages, setMessages] = useState<any[]>([]);
+    interface Message {
+        id: string;
+        createdAt: string;
+        name: string;
+        email: string;
+        message: string;
+        isRead: boolean;
+    }
+
+    const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
     const [replyOpen, setReplyOpen] = useState(false);
-    const [selectedMessage, setSelectedMessage] = useState<any>(null);
+    const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
     const [replySubject, setReplySubject] = useState("");
     const [replyContent, setReplyContent] = useState("");
 
@@ -898,7 +907,7 @@ const MessagesTable = () => {
         }
     };
 
-    const handleReply = (msg: any) => {
+    const handleReply = (msg: Message) => {
         setSelectedMessage(msg);
         setReplySubject(`Re: Message de ${msg.name}`);
         setReplyOpen(true);

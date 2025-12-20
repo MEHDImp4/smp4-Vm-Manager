@@ -8,6 +8,29 @@ const DockerGuide = () => {
     const isLoggedIn = !!localStorage.getItem('token');
     const homeLink = isLoggedIn ? '/dashboard' : '/';
 
+    const handleCopy = async (text: string) => {
+        try {
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+                toast.success("Prompt copié !");
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand("copy");
+                    toast.success("Prompt copié !");
+                } catch (err) {
+                    toast.error("Erreur de copie");
+                }
+                document.body.removeChild(textArea);
+            }
+        } catch (err) {
+            toast.error("Erreur inattendue");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-background relative overflow-hidden font-sans selection:bg-primary/20">
             {/* Background Effects */}
@@ -115,7 +138,7 @@ const DockerGuide = () => {
                         </p>
                         <div className="bg-black/40 rounded-xl p-6 font-mono text-sm text-blue-300 overflow-x-auto border border-white/10 relative group shadow-inner">
                             <Button size="sm" variant="outline" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/50 hover:bg-background" onClick={() => {
-                                navigator.clipboard.writeText(`Tu es un expert DevOps et Docker.
+                                handleCopy(`Tu es un expert DevOps et Docker.
 J'ai un projet dans ce repository. Je veux que tu mettes en place une pipeline CI/CD complète et moderne.
 
 Voici tes objectifs :
@@ -146,7 +169,6 @@ Voici tes objectifs :
     *   À la fin, génère une section "IMPORTANT" expliquant comment rendre le package GHCR public sur GitHub pour que mon serveur puisse le télécharger sans mot de passe (Package Settings -> Change visibility -> Public).
 
 Analyse mon code pour détecter le langage et les besoins, puis fournis-moi tous ces fichiers.`);
-                                toast.success("Prompt copié dans le presse-papier !");
                             }}>
                                 Copier
                             </Button>
@@ -186,9 +208,10 @@ Objectifs :
                             {[
                                 { title: "Accès à Portainer", sub: "Clique sur 'Accès Portainer' depuis la page de détails de ta VM." },
                                 { title: "Créer une Stack", sub: "Menu 'Stacks' → 'Add stack' (en haut à droite)." },
-                                { title: "Source Git", sub: "Sélectionne 'Git Repository' comme méthode de build." },
+                                { title: "Source Git", sub: "Sélectionne 'Repository' comme méthode. Portainer utilisera le docker-compose.yml de ton dépôt qui pointe vers GHCR." },
                                 { title: "Configuration", sub: "Repo URL: https://github.com/ton-user/ton-repo\nBranche: main\nCompose path: docker-compose.yml" },
-                                { title: "Déploiement", sub: "Clique sur 'Deploy the stack'. Portainer va télécharger ton code et lancer les conteneurs." },
+                                { title: "Déploiement", sub: "Clique sur 'Deploy the stack'. L'image sera téléchargée depuis GitHub (GHCR) automatiquement." },
+                                { title: "Mises à jour Auto", sub: "Grâce à Watchtower (inclus dans le compose), tes conteneurs se mettront à jour 30s après chaque nouveau push sur GitHub !" },
                             ].map((step, i) => (
                                 <div key={i} className="relative">
                                     <div className="absolute -left-[41px] top-0 w-5 h-5 rounded-full bg-primary border-4 border-background" />
@@ -292,7 +315,7 @@ Objectifs :
 
                 </div>
             </main>
-        </div>
+        </div >
     );
 };
 

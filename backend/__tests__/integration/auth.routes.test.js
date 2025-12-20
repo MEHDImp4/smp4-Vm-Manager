@@ -5,6 +5,10 @@ jest.mock('bcrypt');
 jest.mock('../../src/services/proxmox.service');
 jest.mock('../../src/services/vpn.service');
 jest.mock('../../src/services/cloudflare.service');
+jest.mock('../../src/services/email.service', () => ({
+  sendVerificationCode: jest.fn().mockResolvedValue({}),
+  sendAccountDeletionCode: jest.fn().mockResolvedValue({}),
+}));
 
 const request = require('supertest');
 const express = require('express');
@@ -124,6 +128,117 @@ describe('Auth Routes', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe('All fields are required');
+    });
+  });
+
+  describe('POST /api/auth/request-deletion', () => {
+    it('should send deletion code to authenticated user', async () => {
+      // First register and login
+      prisma.user.findUnique.mockResolvedValueOnce(null);
+      prisma.user.create.mockResolvedValueOnce({
+        id: 'user1',
+        name: 'Delete Test',
+        email: 'delete@test.com',
+        points: 100,
+      });
+
+      const registerRes = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Delete Test',
+          email: 'delete@test.com',
+          password: 'password123'
+        });
+
+      const token = registerRes.body.user.token;
+
+      prisma.user.findUnique.mockResolvedValueOnce({
+        id: 'user1',
+        email: 'delete@test.com',
+        name: 'Delete Test'
+      });
+      prisma.user.update.mockResolvedValueOnce({});
+
+      const res = await request(app)
+        .post('/api/auth/request-deletion')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body).toHaveProperty('message');
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      const res = await request(app)
+        .post('/api/auth/request-deletion');
+
+      expect(res.statusCode).toEqual(401);
+    });
+  });
+
+  describe('POST /api/auth/confirm-deletion', () => {
+    it('should return 400 if code is missing', async () => {
+      // First register and login
+      prisma.user.findUnique.mockResolvedValueOnce(null);
+      prisma.user.create.mockResolvedValueOnce({
+        id: 'user1',
+        name: 'Delete Confirm Test',
+        email: 'deleteconfirm@test.com',
+        points: 100,
+      });
+
+      const registerRes = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Delete Confirm Test',
+          email: 'deleteconfirm@test.com',
+          password: 'password123'
+        });
+
+      const token = registerRes.body.user.token;
+
+      const res = await request(app)
+        .post('/api/auth/confirm-deletion')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.message).toContain('Code requis');
+    });
+
+    it('should return 400 if code is invalid', async () => {
+      // First register and login
+      prisma.user.findUnique.mockResolvedValueOnce(null);
+      prisma.user.create.mockResolvedValueOnce({
+        id: 'user1',
+        name: 'Delete Invalid Test',
+        email: 'deleteinvalid@test.com',
+        points: 100,
+      });
+
+      const registerRes = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Delete Invalid Test',
+          email: 'deleteinvalid@test.com',
+          password: 'password123'
+        });
+
+      const token = registerRes.body.user.token;
+
+      prisma.user.findUnique.mockResolvedValueOnce({
+        id: 'user1',
+        email: 'deleteinvalid@test.com',
+        verificationCode: '123456',
+        instances: []
+      });
+
+      const res = await request(app)
+        .post('/api/auth/confirm-deletion')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ code: '999999' });
+
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.message).toContain('Code invalide');
     });
   });
 });

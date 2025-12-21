@@ -2,6 +2,137 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Cloud, ArrowLeft, BookOpen, Terminal, Box, Layers, Globe, AlertTriangle, CheckCircle2, Lock } from "lucide-react";
 import { toast } from "sonner";
+import ReactMarkdown from 'react-markdown';
+
+const DOCKER_PROMPT = `# 🔧 Prompt – Mise en place d’une pipeline CI/CD Docker moderne et complète
+
+Tu es un **expert DevOps / Cloud Native**, spécialisé en **Docker, GitHub Actions et CI/CD de production**.
+
+Je dispose d’un projet déjà existant dans ce repository GitHub. Tu dois **analyser automatiquement le code du projet** afin d’identifier le langage principal (Node.js, Python, Java, Go, etc.), le type d’application (API, web app, service, worker…), les ports nécessaires, ainsi que les dépendances et contraintes de runtime.
+
+À partir de cette analyse, tu dois mettre en place **une pipeline CI/CD complète, moderne et prête pour la production**, conforme aux meilleures pratiques actuelles.
+
+---
+
+## 🎯 Objectifs techniques
+
+### 1️⃣ Dockerisation (production-ready)
+
+- Crée un \`Dockerfile\` **optimisé pour la production**
+- Utilise un **multi-stage build** lorsque c’est pertinent
+- L’image finale doit être :
+  - la plus légère possible
+  - exempte d’outils de build inutiles
+- L’application **doit écouter sur \`0.0.0.0\`**
+- Expose uniquement les ports strictement nécessaires
+- Applique les bonnes pratiques :
+  - cache efficace des dépendances
+  - utilisateur non-root si possible
+  - variables d’environnement adaptées
+
+---
+
+### 2️⃣ CI/CD avec GitHub Actions
+
+Crée un workflow GitHub Actions complet situé dans :
+\`\`\`
+.github/workflows/deploy.yml
+\`\`\`
+
+Le workflow doit :
+
+- Se déclencher automatiquement lors d’un **push sur la branche \`main\`**
+- Builder l’image Docker
+- Tagger correctement l’image
+- Pousser l’image vers **GitHub Container Registry (GHCR)**
+- Utiliser **exclusivement \`GITHUB_TOKEN\`** pour l’authentification
+- Nommer l’image **en minuscules** avec le format exact :
+\`\`\`
+ghcr.io/OWNER/REPO:latest
+\`\`\`
+
+- Inclure :
+  - le login au registre GHCR
+  - les permissions nécessaires
+  - une configuration robuste, lisible et adaptée à un usage réel en production
+
+---
+
+### 3️⃣ Docker Compose (déploiement serveur)
+
+Crée un fichier \`docker-compose.yml\` **directement exploitable en production**.
+
+Contraintes obligatoires :
+
+- Utiliser l’image Docker publiée sur GHCR :
+  \`\`\`yaml
+  image: ghcr.io/OWNER/REPO:latest
+  \`\`\`
+
+* ❌ Ne pas utiliser \`build: .\`
+* Exposer les ports nécessaires
+* Configurer le redémarrage automatique :
+  \`\`\`yaml
+  restart: unless-stopped
+  \`\`\`
+
+#### 🔄 Mise à jour automatique avec Watchtower
+
+Ajoute un service **Watchtower** chargé de mettre à jour automatiquement l’application :
+
+* Image :
+  \`\`\`
+  containrrr/watchtower
+  \`\`\`
+* Commande :
+  \`\`\`
+  --interval 30
+  \`\`\`
+* Volumes :
+  \`\`\`
+  /var/run/docker.sock:/var/run/docker.sock
+  \`\`\`
+* Variables d’environnement :
+  \`\`\`
+  DOCKER_API_VERSION=1.44
+  \`\`\`
+
+Watchtower doit détecter automatiquement les nouvelles images poussées sur GHCR et redéployer le container sans intervention manuelle.
+
+---
+
+### 4️⃣ Documentation post-installation (OBLIGATOIRE)
+
+À la fin de ta réponse, tu dois générer une section clairement intitulée :
+
+## ⚠️ IMPORTANT – Rendre l’image GHCR publique
+
+Cette section doit expliquer précisément :
+
+* Comment rendre le package GHCR **public**
+* Le chemin exact dans l’interface GitHub :
+  \`\`\`
+  Repository → Packages → Package → Package settings → Change visibility → Public
+  \`\`\`
+* Pourquoi cette étape est indispensable pour permettre à un serveur de télécharger l’image **sans authentification**
+
+---
+
+## 📦 Livrables attendus
+
+Tu dois fournir :
+
+* Un \`Dockerfile\` complet et optimisé
+* Le workflow \`.github/workflows/deploy.yml\`
+* Le fichier \`docker-compose.yml\`
+* Des explications claires et concises pour chaque fichier
+* La section **IMPORTANT** finale
+
+---
+
+## 🎯 Objectif final
+
+> Un simple \`docker compose up -d\` sur un serveur doit suffire pour déployer l’application et la maintenir automatiquement à jour grâce à la CI/CD et à Watchtower.`;
 
 const DockerGuide = () => {
     const navigate = useNavigate();
@@ -137,269 +268,11 @@ const DockerGuide = () => {
                             Utilise ce prompt avancé avec ton assistant IA préféré (ChatGPT, Claude, Copilot) pour générer une configuration complète incluant le déploiement automatique via GitHub Actions.
                         </p>
                         <div className="bg-black/40 rounded-xl p-6 font-mono text-sm text-blue-300 overflow-x-auto border border-white/10 relative group shadow-inner">
-                            <Button size="sm" variant="outline" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/50 hover:bg-background" onClick={() => {
-                                handleCopy(`# 🔧 Prompt – Mise en place d’une pipeline CI/CD Docker moderne et complète
-
-Tu es un **expert DevOps / Cloud Native**, spécialisé en **Docker, GitHub Actions et CI/CD de production**.
-
-Je dispose d’un projet déjà existant dans ce repository GitHub. Tu dois **analyser automatiquement le code du projet** afin d’identifier le langage principal (Node.js, Python, Java, Go, etc.), le type d’application (API, web app, service, worker…), les ports nécessaires, ainsi que les dépendances et contraintes de runtime.
-
-À partir de cette analyse, tu dois mettre en place **une pipeline CI/CD complète, moderne et prête pour la production**, conforme aux meilleures pratiques actuelles.
-
----
-
-## 🎯 Objectifs techniques
-
-### 1️⃣ Dockerisation (production-ready)
-
-- Crée un \`Dockerfile\` **optimisé pour la production**
-- Utilise un **multi-stage build** lorsque c’est pertinent
-- L’image finale doit être :
-  - la plus légère possible
-  - exempte d’outils de build inutiles
-- L’application **doit écouter sur \`0.0.0.0\`**
-- Expose uniquement les ports strictement nécessaires
-- Applique les bonnes pratiques :
-  - cache efficace des dépendances
-  - utilisateur non-root si possible
-  - variables d’environnement adaptées
-
----
-
-### 2️⃣ CI/CD avec GitHub Actions
-
-Crée un workflow GitHub Actions complet situé dans :
-\`\`\`
-.github/workflows/deploy.yml
-\`\`\`
-
-Le workflow doit :
-
-- Se déclencher automatiquement lors d’un **push sur la branche \`main\`**
-- Builder l’image Docker
-- Tagger correctement l’image
-- Pousser l’image vers **GitHub Container Registry (GHCR)**
-- Utiliser **exclusivement \`GITHUB_TOKEN\`** pour l’authentification
-- Nommer l’image **en minuscules** avec le format exact :
-\`\`\`
-ghcr.io/OWNER/REPO:latest
-\`\`\`
-
-- Inclure :
-  - le login au registre GHCR
-  - les permissions nécessaires
-  - une configuration robuste, lisible et adaptée à un usage réel en production
-
----
-
-### 3️⃣ Docker Compose (déploiement serveur)
-
-Crée un fichier \`docker-compose.yml\` **directement exploitable en production**.
-
-Contraintes obligatoires :
-
-- Utiliser l’image Docker publiée sur GHCR :
-  \`\`\`yaml
-  image: ghcr.io/OWNER/REPO:latest
-  \`\`\`
-
-* ❌ Ne pas utiliser \`build: .\`
-* Exposer les ports nécessaires
-* Configurer le redémarrage automatique :
-  \`\`\`yaml
-  restart: unless-stopped
-  \`\`\`
-
-#### 🔄 Mise à jour automatique avec Watchtower
-
-Ajoute un service **Watchtower** chargé de mettre à jour automatiquement l’application :
-
-* Image :
-  \`\`\`
-  containrrr/watchtower
-  \`\`\`
-* Commande :
-  \`\`\`
-  --interval 30
-  \`\`\`
-* Volumes :
-  \`\`\`
-  /var/run/docker.sock:/var/run/docker.sock
-  \`\`\`
-* Variables d’environnement :
-  \`\`\`
-  DOCKER_API_VERSION=1.44
-  \`\`\`
-
-Watchtower doit détecter automatiquement les nouvelles images poussées sur GHCR et redéployer le container sans intervention manuelle.
-
----
-
-### 4️⃣ Documentation post-installation (OBLIGATOIRE)
-
-À la fin de ta réponse, tu dois générer une section clairement intitulée :
-
-## ⚠️ IMPORTANT – Rendre l’image GHCR publique
-
-Cette section doit expliquer précisément :
-
-* Comment rendre le package GHCR **public**
-* Le chemin exact dans l’interface GitHub :
-  \`\`\`
-  Repository → Packages → Package → Package settings → Change visibility → Public
-  \`\`\`
-* Pourquoi cette étape est indispensable pour permettre à un serveur de télécharger l’image **sans authentification**
-
----
-
-## 📦 Livrables attendus
-
-Tu dois fournir :
-
-* Un \`Dockerfile\` complet et optimisé
-* Le workflow \`.github/workflows/deploy.yml\`
-* Le fichier \`docker-compose.yml\`
-* Des explications claires et concises pour chaque fichier
-* La section **IMPORTANT** finale
-
----
-
-## 🎯 Objectif final
-
-> Un simple \`docker compose up -d\` sur un serveur doit suffire pour déployer l’application et la maintenir automatiquement à jour grâce à la CI/CD et à Watchtower.`);
-                            }}>
+                            <Button size="sm" variant="outline" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/50 hover:bg-background" onClick={() => handleCopy(DOCKER_PROMPT)}>
                                 Copier
                             </Button>
-                            <div className="whitespace-pre-wrap opacity-80 text-xs md:text-sm leading-relaxed">
-                                {`# 🔧 Prompt – Mise en place d’une pipeline CI/CD Docker moderne et complète
-
-Tu es un **expert DevOps / Cloud Native**, spécialisé en **Docker, GitHub Actions et CI/CD de production**.
-
-Je dispose d’un projet déjà existant dans ce repository GitHub. Tu dois **analyser automatiquement le code du projet** afin d’identifier le langage principal (Node.js, Python, Java, Go, etc.), le type d’application (API, web app, service, worker…), les ports nécessaires, ainsi que les dépendances et contraintes de runtime.
-
-À partir de cette analyse, tu dois mettre en place **une pipeline CI/CD complète, moderne et prête pour la production**, conforme aux meilleures pratiques actuelles.
-
----
-
-## 🎯 Objectifs techniques
-
-### 1️⃣ Dockerisation (production-ready)
-
-- Crée un \`Dockerfile\` **optimisé pour la production**
-- Utilise un **multi-stage build** lorsque c’est pertinent
-- L’image finale doit être :
-  - la plus légère possible
-  - exempte d’outils de build inutiles
-- L’application **doit écouter sur \`0.0.0.0\`**
-- Expose uniquement les ports strictement nécessaires
-- Applique les bonnes pratiques :
-  - cache efficace des dépendances
-  - utilisateur non-root si possible
-  - variables d’environnement adaptées
-
----
-
-### 2️⃣ CI/CD avec GitHub Actions
-
-Crée un workflow GitHub Actions complet situé dans :
-\`\`\`
-.github/workflows/deploy.yml
-\`\`\`
-
-Le workflow doit :
-
-- Se déclencher automatiquement lors d’un **push sur la branche \`main\`**
-- Builder l’image Docker
-- Tagger correctement l’image
-- Pousser l’image vers **GitHub Container Registry (GHCR)**
-- Utiliser **exclusivement \`GITHUB_TOKEN\`** pour l’authentification
-- Nommer l’image **en minuscules** avec le format exact :
-\`\`\`
-ghcr.io/OWNER/REPO:latest
-\`\`\`
-
-- Inclure :
-  - le login au registre GHCR
-  - les permissions nécessaires
-  - une configuration robuste, lisible et adaptée à un usage réel en production
-
----
-
-### 3️⃣ Docker Compose (déploiement serveur)
-
-Crée un fichier \`docker-compose.yml\` **directement exploitable en production**.
-
-Contraintes obligatoires :
-
-- Utiliser l’image Docker publiée sur GHCR :
-  \`\`\`yaml
-  image: ghcr.io/OWNER/REPO:latest
-  \`\`\`
-
-* ❌ Ne pas utiliser \`build: .\`
-* Exposer les ports nécessaires
-* Configurer le redémarrage automatique :
-  \`\`\`yaml
-  restart: unless-stopped
-  \`\`\`
-
-#### 🔄 Mise à jour automatique avec Watchtower
-
-Ajoute un service **Watchtower** chargé de mettre à jour automatiquement l’application :
-
-* Image :
-  \`\`\`
-  containrrr/watchtower
-  \`\`\`
-* Commande :
-  \`\`\`
-  --interval 30
-  \`\`\`
-* Volumes :
-  \`\`\`
-  /var/run/docker.sock:/var/run/docker.sock
-  \`\`\`
-* Variables d’environnement :
-  \`\`\`
-  DOCKER_API_VERSION=1.44
-  \`\`\`
-
-Watchtower doit détecter automatiquement les nouvelles images poussées sur GHCR et redéployer le container sans intervention manuelle.
-
----
-
-### 4️⃣ Documentation post-installation (OBLIGATOIRE)
-
-À la fin de ta réponse, tu dois générer une section clairement intitulée :
-
-## ⚠️ IMPORTANT – Rendre l’image GHCR publique
-
-Cette section doit expliquer précisément :
-
-* Comment rendre le package GHCR **public**
-* Le chemin exact dans l’interface GitHub :
-  \`\`\`
-  Repository → Packages → Package → Package settings → Change visibility → Public
-  \`\`\`
-* Pourquoi cette étape est indispensable pour permettre à un serveur de télécharger l’image **sans authentification**
-
----
-
-## 📦 Livrables attendus
-
-Tu dois fournir :
-
-* Un \`Dockerfile\` complet et optimisé
-* Le workflow \`.github/workflows/deploy.yml\`
-* Le fichier \`docker-compose.yml\`
-* Des explications claires et concises pour chaque fichier
-* La section **IMPORTANT** finale
-
----
-
-## 🎯 Objectif final
-
-> Un simple \`docker compose up -d\` sur un serveur doit suffire pour déployer l’application et la maintenir automatiquement à jour grâce à la CI/CD et à Watchtower.`}
+                            <div className="prose prose-invert prose-blue max-w-none text-xs md:text-sm leading-relaxed whitespace-normal p-2">
+                                <ReactMarkdown>{DOCKER_PROMPT}</ReactMarkdown>
                             </div>
                         </div>
                     </div>

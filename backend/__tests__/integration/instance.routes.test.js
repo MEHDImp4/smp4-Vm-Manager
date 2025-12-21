@@ -31,6 +31,9 @@ describe('Instance Routes', () => {
     jest.clearAllMocks();
   });
 
+  const DEFAULT_STORAGE_GB = 20;
+  const DEFAULT_POINTS_PER_DAY = 10;
+
   describe('GET /api/instances', () => {
     it('should get all user instances', async () => {
       const mockInstances = [
@@ -55,8 +58,6 @@ describe('Instance Routes', () => {
     });
   });
 
-
-
   describe('POST /api/instances', () => {
     it('should create new instance', async () => {
       prisma.user.findUnique.mockResolvedValueOnce({ id: 'user1', name: 'Test User' });
@@ -80,8 +81,8 @@ describe('Instance Routes', () => {
           name: 'new-vm',
           cpu: 1,
           ram: 1024,
-          storage: 20,
-          pointsPerDay: 10,
+          storage: DEFAULT_STORAGE_GB,
+          pointsPerDay: DEFAULT_POINTS_PER_DAY,
           os: 'default'
         });
 

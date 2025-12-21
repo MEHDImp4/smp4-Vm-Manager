@@ -44,7 +44,7 @@ describe('Auth Routes', () => {
         .send({
           name: 'Test User',
           email: 'test@test.com',
-          password: 'password123',
+          password: 'password123'
         });
 
       expect(response.status).toBe(201);
@@ -64,7 +64,7 @@ describe('Auth Routes', () => {
         .send({
           name: 'Test User',
           email: 'test@test.com',
-          password: 'password123',
+          password: 'password123'
         });
 
       expect(response.status).toBe(400);

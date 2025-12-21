@@ -4,7 +4,7 @@ import { Cloud, ArrowLeft, BookOpen, Terminal, Box, Layers, Globe, AlertTriangle
 import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
 
-const DOCKER_PROMPT = `# 🔧 Prompt – Mise en place d’une pipeline CI/CD Docker moderne et complète
+const DOCKER_PROMPT = `
 
 Tu es un **expert DevOps / Cloud Native**, spécialisé en **Docker, GitHub Actions et CI/CD de production**.
 

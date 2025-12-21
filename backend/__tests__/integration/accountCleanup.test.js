@@ -12,7 +12,8 @@ jest.mock('../../src/db', () => ({
 // Mock Services
 jest.mock('../../src/services/proxmox.service', () => ({
     stopLXC: jest.fn(),
-    deleteLXC: jest.fn()
+    deleteLXC: jest.fn(),
+    waitForTask: jest.fn().mockResolvedValue()
 }));
 jest.mock('../../src/services/vpn.service', () => ({
     deleteClient: jest.fn()
@@ -100,6 +101,7 @@ describe('Account Cleanup Integration', () => {
 
         // 3. Verify Proxmox Cleanup
         expect(proxmoxService.stopLXC).toHaveBeenCalledTimes(2);
+        expect(proxmoxService.waitForTask).toHaveBeenCalledTimes(2);
         expect(proxmoxService.deleteLXC).toHaveBeenCalledTimes(2);
         expect(proxmoxService.deleteLXC).toHaveBeenCalledWith(100);
         expect(proxmoxService.deleteLXC).toHaveBeenCalledWith(101);

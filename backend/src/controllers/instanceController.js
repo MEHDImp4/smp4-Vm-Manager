@@ -457,9 +457,8 @@ const deleteInstance = async (req, res) => {
         if (instance.vmid) {
             try {
                 debugLog(`Ensuring VM ${instance.vmid} is stopped before deletion...`);
-                await proxmoxService.stopLXC(instance.vmid);
-                // Wait for stop to complete
-                await new Promise(r => setTimeout(r, 3000));
+                const upid = await proxmoxService.stopLXC(instance.vmid);
+                await proxmoxService.waitForTask(upid);
             } catch (e) {
                 console.warn(`Stop failed (maybe already stopped): ${e.message}`);
             }

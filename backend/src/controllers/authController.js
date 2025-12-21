@@ -385,13 +385,13 @@ const confirmAccountDeletion = async (req, res) => {
                 try {
                     console.log(`[Delete] Stopping VM ${instance.vmid}...`);
                     try {
-                        await proxmox.stopLXC(instance.vmid);
+                        const upid = await proxmox.stopLXC(instance.vmid);
+                        console.log(`[Delete] Waiting for stop task ${upid}...`);
+                        await proxmox.waitForTask(upid);
                     } catch (e) {
-                        // Ignore if already stopped
+                        // Ignore if already stopped or error
+                        console.log(`[Delete] VM stop warning: ${e.message}`);
                     }
-
-                    // Small delay to ensure unlock?
-                    await new Promise(r => setTimeout(r, 1000));
 
                     console.log(`[Delete] Deleting VM ${instance.vmid}...`);
                     await proxmox.deleteLXC(instance.vmid);

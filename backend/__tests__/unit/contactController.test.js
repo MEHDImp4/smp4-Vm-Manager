@@ -3,6 +3,7 @@ const mockPrisma = {
     message: {
         create: jest.fn(),
         findMany: jest.fn(),
+        count: jest.fn(),
         delete: jest.fn(),
         update: jest.fn(),
         findUnique: jest.fn(),
@@ -82,16 +83,21 @@ describe('Contact Controller Unit Tests', () => {
 
     describe('getMessages', () => {
         it('should get all messages', async () => {
+            req.query = { page: 1, limit: 20 };
+            mockPrisma.message.count.mockResolvedValue(2);
             mockPrisma.message.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }]);
 
             await getMessages(req, res);
 
-            expect(mockPrisma.message.findMany).toHaveBeenCalledWith({ orderBy: { createdAt: 'desc' } });
-            expect(res.json).toHaveBeenCalledWith([{ id: 1 }, { id: 2 }]);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                data: [{ id: 1 }, { id: 2 }],
+                pagination: expect.objectContaining({ total: 2 })
+            }));
         });
 
         it('should return 500 on db error', async () => {
-            mockPrisma.message.findMany.mockRejectedValue(new Error('DB Error'));
+            req.query = { page: 1, limit: 20 };
+            mockPrisma.message.count.mockRejectedValue(new Error('DB Error'));
 
             await getMessages(req, res);
 

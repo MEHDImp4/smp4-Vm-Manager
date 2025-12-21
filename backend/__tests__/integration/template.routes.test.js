@@ -40,22 +40,26 @@ describe('Template Routes', () => {
         },
       ];
 
+      prisma.template.count.mockResolvedValueOnce(1);
       prisma.template.findMany.mockResolvedValueOnce(mockTemplates);
 
       const response = await request(app).get('/api/templates');
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body[0].name).toBe('Ubuntu 22.04');
+      expect(response.body.data).toBeDefined();
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data[0].name).toBe('Ubuntu 22.04');
     });
 
-    it('should return empty array if no templates exist', async () => {
+    it('should return empty data array if no templates exist', async () => {
+      prisma.template.count.mockResolvedValueOnce(0);
       prisma.template.findMany.mockResolvedValueOnce([]);
 
       const response = await request(app).get('/api/templates');
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual([]);
+      expect(response.body.data).toEqual([]);
+      expect(response.body.pagination).toBeDefined();
     });
   });
 

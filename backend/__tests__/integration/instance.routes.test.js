@@ -66,6 +66,7 @@ describe('Instance Routes', () => {
         },
       ];
 
+      prisma.instance.count.mockResolvedValueOnce(1);
       prisma.instance.findMany.mockResolvedValueOnce(mockInstances);
 
       const response = await request(app)
@@ -73,8 +74,10 @@ describe('Instance Routes', () => {
         .set('Authorization', 'Bearer token');
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBe(1);
+      expect(response.body.data).toBeDefined();
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBe(1);
+      expect(response.body.pagination).toBeDefined();
     });
   });
 

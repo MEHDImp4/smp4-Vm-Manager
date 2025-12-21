@@ -7,18 +7,12 @@ const systemOs = require('os');
 const cloudflareService = require('../services/cloudflare.service');
 const vpnService = require('../services/vpn.service');
 const { vmCreationQueue, vmAllocationQueue } = require('../services/queue.service');
-
+const log = require('../services/logger.service');
 const ROOT_PASSWORD_BYTES = 8; // yields 16 hex chars
 const IP_MAX_ATTEMPTS = 30; // poll limit for VM IP
 const IP_POLL_DELAY_MS = 2000;
 const SSH_READY_DELAY_MS = 10000;
 const SSH_RESTART_DELAY_MS = 2000;
-
-const debugLog = (...args) => {
-    if (process.env.NODE_ENV !== 'production') {
-        console.log(...args);
-    }
-};
 
 
 
@@ -91,7 +85,7 @@ const createInstance = async (req, res) => {
             while (await prisma.instance.findFirst({ where: { vmid: vmid } })) {
                 vmid++;
             }
-            debugLog(`Allocated VMID ${vmid} for instance ${name}`);
+            log.debug(`Allocated VMID ${vmid} for instance ${name}`);
 
             // Generate Root Password
             const rootPassword = crypto.randomBytes(ROOT_PASSWORD_BYTES).toString('hex');
@@ -130,21 +124,21 @@ const createInstance = async (req, res) => {
         // 4. Background Process: Clone, Start, Configure (Queued)
         vmCreationQueue.add(async () => {
             try {
-                debugLog(`[Queue] Starting processing for ${vmid}...`);
-                debugLog(`[Background] Cloning VM ${vmid} from template ${templateVersion.proxmoxId} as ${technicalHostname}...`);
+                log.debug(`[Queue] Starting processing for ${vmid}...`);
+                log.debug(`[Background] Cloning VM ${vmid} from template ${templateVersion.proxmoxId} as ${technicalHostname}...`);
                 // Use technicalHostname for Proxmox
                 const upid = await proxmoxService.cloneLXC(templateVersion.proxmoxId, vmid, technicalHostname);
 
                 await proxmoxService.waitForTask(upid);
-                debugLog(`[Background] Clone complete for ${vmid}. Starting...`);
+                log.debug(`[Background] Clone complete for ${vmid}. Starting...`);
 
                 // Set User & Date Tag
                 try {
                     const dateTag = new Date().toISOString().split('T')[0];
-                    debugLog(`[Background] Setting tags '${sanitizedUser},${template},${dateTag}' for ${vmid}...`);
+                    log.debug(`[Background] Setting tags '${sanitizedUser},${template},${dateTag}' for ${vmid}...`);
                     await proxmoxService.configureLXC(vmid, { tags: `${sanitizedUser},${template},${dateTag}` });
                 } catch (tagError) {
-                    console.warn(`[Background] Failed to set tag for ${vmid}:`, tagError.message);
+                    log.warn(`[Background] Failed to set tag for ${vmid}:`, tagError.message);
                     // Continue creation even if tagging fails
                 }
 
@@ -154,7 +148,7 @@ const createInstance = async (req, res) => {
                 await proxmoxService.startLXC(vmid);
                 // Note: We do NOT set status to 'online' here anymore. We wait for SSH config.
 
-                debugLog(`[Background] LXC ${vmid} started.`);
+                log.debug(`[Background] LXC ${vmid} started.`);
 
                 // Wait for IP and Configure 'smp4' user
                 let ip = null;
@@ -173,7 +167,7 @@ const createInstance = async (req, res) => {
                 }
 
                 if (ip) {
-                    debugLog(`[Background] VM ${vmid} is up at ${ip}. Configuring 'smp4' user...`);
+                    log.debug(`[Background] VM ${vmid} is up at ${ip}. Configuring 'smp4' user...`);
 
                     // Allow SSH to come up fully (sometimes IP is ready before SSHd)
                     await new Promise(r => setTimeout(r, SSH_READY_DELAY_MS));
@@ -197,11 +191,11 @@ const createInstance = async (req, res) => {
                         // 5. Set Password for root (LAST - changes root password, locks us out)
                         await sshService.execCommand(ip, `echo "root:${rootPassword}" | chpasswd`);
 
-                        debugLog(`[Background] User 'smp4' configured successfully for ${vmid}`);
+                        log.debug(`[Background] User 'smp4' configured successfully for ${vmid}`);
 
                         // Send Email Notification
                         if (user && user.email) {
-                            debugLog(`[Background] Sending credential email to ${user.email}...`);
+                            log.debug(`[Background] Sending credential email to ${user.email}...`);
                             await emailService.sendInstanceCredentials(user.email, user.name, instance.name, ip, rootPassword);
                         }
 
@@ -229,7 +223,7 @@ const createInstance = async (req, res) => {
                             }
 
                             // 6b. Allow ALL Inbound Traffic
-                            debugLog(`[Background] Adding firewall rule: ACCEPT ALL INBOUND for ${vmid}...`);
+                            log.debug(`[Background] Adding firewall rule: ACCEPT ALL INBOUND for ${vmid}...`);
                             await proxmoxService.addFirewallRule(vmid, {
                                 type: 'in',
                                 action: 'ACCEPT',
@@ -238,7 +232,7 @@ const createInstance = async (req, res) => {
                             });
 
                             // 6c. Allow LAN Access but Protect Gateway
-                            debugLog(`[Background] Adding firewall DROP rule for Gateway 192.168.1.254 to ${vmid}...`);
+                            log.debug(`[Background] Adding firewall DROP rule for Gateway 192.168.1.254 to ${vmid}...`);
                             await proxmoxService.addFirewallRule(vmid, {
                                 type: 'out',
                                 action: 'DROP',
@@ -247,25 +241,25 @@ const createInstance = async (req, res) => {
                                 comment: 'Block access to Gateway Admin Interface'
                             });
 
-                            debugLog(`[Background] Firewall rules added for ${vmid}`);
+                            log.debug(`[Background] Firewall rules added for ${vmid}`);
 
                             // 7. Security: Enable Firewall
-                            debugLog(`[Background] Enabling firewall for ${vmid}...`);
+                            log.debug(`[Background] Enabling firewall for ${vmid}...`);
                             await proxmoxService.setFirewallOptions(vmid, { enable: 1 });
                         } catch (fwError) {
-                            console.warn(`[Background] Failed to add firewall rule via API:`, fwError.message);
+                            log.warn(`[Background] Failed to add firewall rule via API:`, fwError.message);
                         }
                     } catch (sshError) {
-                        console.error(`[Background] Failed to configure 'smp4' user via SSH:`, sshError.message);
+                        log.error(`[Background] Failed to configure 'smp4' user via SSH:`, sshError.message);
                     }
                 } else {
-                    console.error(`[Background] Timed out waiting for IP for ${vmid}`);
+                    log.error(`[Background] Timed out waiting for IP for ${vmid}`);
                 }
 
                 // Create VPN Client
                 try {
                     if (ip) {
-                        debugLog(`[Background] Creating WireGuard VPN access for ${ip}...`);
+                        log.debug(`[Background] Creating WireGuard VPN access for ${ip}...`);
                         const vpnData = await vpnService.createClient(ip);
 
                         // Parse VPN Config to get PublicKey (simple helper)
@@ -277,17 +271,17 @@ const createInstance = async (req, res) => {
                                 vpnConfig: vpnData.config
                             }
                         });
-                        debugLog(`[Background] VPN configured for ${vmid}`);
+                        log.debug(`[Background] VPN configured for ${vmid}`);
                     }
                 } catch (vpnError) {
-                    console.error(`[Background] VPN creation failed for ${vmid}:`, vpnError.message);
+                    log.error(`[Background] VPN creation failed for ${vmid}:`, vpnError.message);
                     // Non-fatal, continue
                 }
 
                 // Auto-create Portainer Domain (Port 9000)
                 try {
                     if (ip) {
-                        debugLog(`[Background] Creating Portainer domain for ${instance.name}...`);
+                        log.debug(`[Background] Creating Portainer domain for ${instance.name}...`);
 
                         // Generate Subdomain: portainer-[user]-[vm]
                         // Ensure strict sanitization matching the createDomain logic
@@ -299,7 +293,7 @@ const createInstance = async (req, res) => {
                         const fullHostname = `${subdomain}.smp4.xyz`;
                         const serviceUrl = `http://${ip}:9000`;
 
-                        debugLog(`[Background] Attempting to create Portainer domain: ${fullHostname} -> ${serviceUrl}`);
+                        log.debug(`[Background] Attempting to create Portainer domain: ${fullHostname} -> ${serviceUrl}`);
 
                         // Add to Cloudflare
                         await cloudflareService.addTunnelIngress(fullHostname, serviceUrl);
@@ -313,12 +307,12 @@ const createInstance = async (req, res) => {
                                 instanceId: instance.id
                             }
                         });
-                        debugLog(`[Background] Portainer domain successfully created in DB: ${subdomain}`);
+                        log.debug(`[Background] Portainer domain successfully created in DB: ${subdomain}`);
                     } else {
-                        console.warn(`[Background] Skipping Portainer domain creation: No IP available for ${vmid}`);
+                        log.warn(`[Background] Skipping Portainer domain creation: No IP available for ${vmid}`);
                     }
                 } catch (domainError) {
-                    console.error(`[Background] Portainer domain creation FAILED for ${vmid}:`, domainError);
+                    log.error(`[Background] Portainer domain creation FAILED for ${vmid}:`, domainError);
                     // Non-fatal
                 }
 
@@ -327,11 +321,11 @@ const createInstance = async (req, res) => {
                     where: { id: instance.id },
                     data: { status: 'online' }
                 });
-                debugLog(`[Background] Instance ${instance.id} is now ONLINE.`);
+                log.debug(`[Background] Instance ${instance.id} is now ONLINE.`);
 
 
             } catch (bgError) {
-                console.error(`[Background] Creation failed for ${vmid}:`, bgError.message);
+                log.error(`[Background] Creation failed for ${vmid}:`, bgError.message);
                 // Update status to 'error' or 'stopped' so user knows
                 await prisma.instance.update({
                     where: { id: instance.id },
@@ -341,7 +335,7 @@ const createInstance = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Create instance error:", error);
+        log.error("Create instance error:", error);
         res.status(500).json({ error: "Failed to create instance" });
     }
 };
@@ -374,7 +368,7 @@ const getInstances = async (req, res) => {
 
         res.json(instancesWithCosts);
     } catch (error) {
-        console.error("Get instances error:", error);
+        log.error("Get instances error:", error);
         res.status(500).json({ error: "Failed to fetch instances" });
     }
 };
@@ -397,11 +391,11 @@ const toggleInstanceStatus = async (req, res) => {
         let newStatus;
 
         if (currentStatus === "online" || currentStatus === "running") {
-            debugLog(`Stopping instance ${instance.vmid}...`);
+            log.debug(`Stopping instance ${instance.vmid}...`);
             await proxmoxService.stopLXC(instance.vmid);
             newStatus = "stopped";
         } else {
-            debugLog(`Starting instance ${instance.vmid}...`);
+            log.debug(`Starting instance ${instance.vmid}...`);
             await proxmoxService.startLXC(instance.vmid);
             newStatus = "online";
         }
@@ -413,7 +407,7 @@ const toggleInstanceStatus = async (req, res) => {
 
         res.json(updatedInstance);
     } catch (error) {
-        console.error("Toggle status error:", error);
+        log.error("Toggle status error:", error);
         res.status(500).json({ error: "Failed to update status" });
     }
 };
@@ -435,7 +429,7 @@ const restartInstance = async (req, res) => {
         res.json({ message: "Instance restarting" });
 
     } catch (error) {
-        console.error("Restart instance error:", error);
+        log.error("Restart instance error:", error);
         res.status(500).json({ error: "Failed to restart instance" });
     }
 };
@@ -456,19 +450,19 @@ const deleteInstance = async (req, res) => {
         // 1. Stop if running (with wait)
         if (instance.vmid) {
             try {
-                debugLog(`Ensuring VM ${instance.vmid} is stopped before deletion...`);
+                log.debug(`Ensuring VM ${instance.vmid} is stopped before deletion...`);
                 const upid = await proxmoxService.stopLXC(instance.vmid);
                 await proxmoxService.waitForTask(upid);
             } catch (e) {
-                console.warn(`Stop failed (maybe already stopped): ${e.message}`);
+                log.warn(`Stop failed (maybe already stopped): ${e.message}`);
             }
 
             // 2. Delete from Proxmox
             try {
-                debugLog(`Deleting VM ${instance.vmid} from Proxmox...`);
+                log.debug(`Deleting VM ${instance.vmid} from Proxmox...`);
                 await proxmoxService.deleteLXC(instance.vmid);
             } catch (e) {
-                console.warn(`Proxmox delete failed (VM may not exist): ${e.message}`);
+                log.warn(`Proxmox delete failed (VM may not exist): ${e.message}`);
                 // Continue to delete from DB anyway
             }
         }
@@ -476,19 +470,19 @@ const deleteInstance = async (req, res) => {
         // 3a. Clean up VPN (if exists)
         // 3a. Clean up VPN (if exists)
         if (instance.vpnConfig) {
-            debugLog(`Cleaning up VPN for instance ${id}...`);
+            log.debug(`Cleaning up VPN for instance ${id}...`);
             await vpnService.deleteClient(instance.vpnConfig);
         }
 
         // 3b. Clean up Domains
         if (instance.domains && instance.domains.length > 0) {
-            debugLog(`Cleaning up ${instance.domains.length} domains for instance ${id}...`);
+            log.debug(`Cleaning up ${instance.domains.length} domains for instance ${id}...`);
 
             const hostnames = instance.domains.map(d => `${d.subdomain}.smp4.xyz`);
             try {
                 await cloudflareService.removeMultipleTunnelIngress(hostnames);
             } catch (cfError) {
-                console.error("Failed to remove domains from Cloudflare:", cfError.message);
+                log.error("Failed to remove domains from Cloudflare:", cfError.message);
                 // Continue deletion anyway
             }
         }
@@ -500,7 +494,7 @@ const deleteInstance = async (req, res) => {
 
 
     } catch (error) {
-        console.error("Delete instance error:", error);
+        log.error("Delete instance error:", error);
         res.status(500).json({ error: "Failed to delete instance" });
     }
 }
@@ -580,20 +574,20 @@ const getInstanceStats = async (req, res) => {
 
                 // Only update if DIFFERENT and NOT 'provisioning' (to avoid race conditions during creation)
                 if (currentDbStatus !== 'provisioning' && currentDbStatus !== mappedProxmoxStatus) {
-                    debugLog(`[Sync] Mismatch for ${instance.id}. DB: ${currentDbStatus}, Proxmox: ${proxmoxStatus}. Updating DB...`);
+                    log.debug(`[Sync] Mismatch for ${instance.id}. DB: ${currentDbStatus}, Proxmox: ${proxmoxStatus}. Updating DB...`);
                     await prisma.instance.update({
                         where: { id: instance.id },
                         data: { status: mappedProxmoxStatus }
                     });
                 }
             } catch (syncError) {
-                console.warn("Failed to sync status to DB:", syncError);
+                log.warn("Failed to sync status to DB:", syncError);
                 // Non-fatal, stats still returned
             }
 
         } catch (proxmoxError) {
             // If Proxmox call fails (e.g. timeout), return cached database status or zeros
-            console.error(`Proxmox stats error for ${instance.vmid}:`, proxmoxError.message);
+            log.error(`Proxmox stats error for ${instance.vmid}:`, proxmoxError.message);
             return res.json({
                 cpu: 0,
                 ram: 0,
@@ -604,7 +598,7 @@ const getInstanceStats = async (req, res) => {
         }
 
     } catch (error) {
-        console.error("Get stats error:", error);
+        log.error("Get stats error:", error);
         res.status(500).json({ error: "Failed to get stats" });
     }
 };
@@ -696,7 +690,7 @@ const createDomain = async (req, res) => {
 
         res.status(201).json(domain);
     } catch (error) {
-        console.error("Create domain error:", error);
+        log.error("Create domain error:", error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -727,7 +721,7 @@ const deleteDomain = async (req, res) => {
 
         res.json({ message: "Domain deleted successfully" });
     } catch (error) {
-        console.error("Delete domain error:", error);
+        log.error("Delete domain error:", error);
         res.status(500).json({ error: "Failed to delete domain" });
     }
 };
@@ -758,7 +752,7 @@ const getDomains = async (req, res) => {
 
         res.json(instance.domains);
     } catch (error) {
-        console.error("Get domains error:", error);
+        log.error("Get domains error:", error);
         res.status(500).json({ error: "Failed to fetch domains" });
     }
 };
@@ -793,7 +787,7 @@ const getVpnConfig = async (req, res) => {
                 return res.status(400).json({ error: "Instance must be running to generate VPN config" });
             }
 
-            debugLog(`[VPN] Generating missing config for ${instance.id} (${ip})...`);
+            log.debug(`[VPN] Generating missing config for ${instance.id} (${ip})...`);
             const vpnData = await vpnService.createClient(ip);
 
             // Save to DB
@@ -805,12 +799,12 @@ const getVpnConfig = async (req, res) => {
             return res.json({ config: vpnData.config });
 
         } catch (genError) {
-            console.error("Auto-generate VPN error:", genError);
+            log.error("Auto-generate VPN error:", genError);
             return res.status(500).json({ error: "Failed to generate VPN config. Ensure VM is running." });
         }
 
     } catch (error) {
-        console.error("Get VPN config error:", error);
+        log.error("Get VPN config error:", error);
         res.status(500).json({ error: "Failed to fetch VPN config" });
     }
 };

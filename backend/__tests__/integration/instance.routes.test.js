@@ -1,3 +1,23 @@
+// Mock validation middleware to bypass Zod validation in tests
+jest.mock('../../src/middlewares/validation', () => ({
+  validateBody: () => (req, res, next) => next(),
+  validateQuery: () => (req, res, next) => next(),
+  validateParams: () => (req, res, next) => next(),
+  createInstanceSchema: {},
+  createDomainSchema: {},
+  createSnapshotSchema: {},
+}));
+
+// Mock logger to prevent console output during tests
+jest.mock('../../src/services/logger.service', () => ({
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  cron: jest.fn(),
+  instance: jest.fn(),
+}));
+
 jest.mock('../../src/db', () => ({
   prisma: require('jest-mock-extended').mockDeep(),
 }));

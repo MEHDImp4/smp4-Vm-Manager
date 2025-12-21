@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const log = require('./services/logger.service');
 const authRoutes = require('./routes/authRoutes');
 const instanceRoutes = require('./routes/instanceRoutes');
 const templateRoutes = require('./routes/templateRoutes');
@@ -57,8 +58,9 @@ app.get('/', (req, res) => {
 });
 
 const server = app.listen(PORT, () => {
-    console.log(`SMP4cloud Backend running on port ${PORT}`);
+    log.info(`SMP4cloud Backend running on port ${PORT}`);
 });
 
 const sshService = require('./services/ssh.service');
 sshService.init(server);
+

@@ -2,6 +2,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../db');
 const emailService = require('../services/email.service');
+const cloudflareService = require('../services/cloudflare.service');
+const vpnService = require('../services/vpn.service');
 
 const BCRYPT_SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
@@ -306,7 +308,7 @@ const confirmAccountDeletion = async (req, res) => {
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            include: { instances: true }
+            include: { instances: { include: { domains: true } } }
         });
 
         if (!user) {
@@ -325,24 +327,76 @@ const confirmAccountDeletion = async (req, res) => {
 
         console.log('[Delete] Code verified, proceeding with account deletion for user:', userId);
 
-        // Delete all user instances from Proxmox first
+        // 1. Collect all resources to delete
+        const allHostnames = [];
+        const instancesToDelete = user.instances;
+
+        console.log(`[Delete] Found ${instancesToDelete.length} instances to clean up for user ${userId}`);
+
+        for (const instance of instancesToDelete) {
+            // Collect hostnames
+            if (instance.domains && instance.domains.length > 0) {
+                instance.domains.forEach(d => {
+                    allHostnames.push(`${d.subdomain}.smp4.xyz`);
+                });
+            }
+
+            // Portainer domain (construct manually as it might not be in DB as a domain entity but set up in Cloudflare)
+            // Or better: rely on the pattern.
+            // However, we only strictly track what's in DB or reconstruct from naming convention if needed.
+            // Let's rely on cleaning up what we know.
+            // If Portainer was essentially just a CNAME/Tunnel, we need to know its name.
+            // Reconstruct Portainer Name:
+            if (instance.name) {
+                const cleanUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const cleanInstance = instance.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const subdomain = `portainer-${cleanUser}-${cleanInstance}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
+                allHostnames.push(`${subdomain}.smp4.xyz`);
+            }
+        }
+
+        // 2. Bulk Delete from Cloudflare
+        if (allHostnames.length > 0) {
+            console.log(`[Delete] Removing ${allHostnames.length} domains from Cloudflare...`, allHostnames);
+            try {
+                await cloudflareService.removeMultipleTunnelIngress(allHostnames);
+            } catch (cfError) {
+                console.error('[Delete] Cloudflare cleanup error (continuing):', cfError.message);
+            }
+        }
+
+        // 3. Delete Instances (Proxmox + VPN)
         const proxmox = require('../services/proxmox.service');
-        for (const instance of user.instances) {
+        for (const instance of instancesToDelete) {
+            console.log(`[Delete] Processing instance ${instance.id} (VMID: ${instance.vmid})...`);
+
+            // VPN Cleanup
+            if (instance.vpnConfig) {
+                try {
+                    console.log(`[Delete] Removing VPN client...`);
+                    await vpnService.deleteClient(instance.vpnConfig);
+                } catch (vpnError) {
+                    console.warn(`[Delete] VPN cleanup error (continuing):`, vpnError.message);
+                }
+            }
+
+            // Proxmox Cleanup
             if (instance.vmid) {
                 try {
                     console.log(`[Delete] Stopping VM ${instance.vmid}...`);
                     try {
                         await proxmox.stopLXC(instance.vmid);
                     } catch (e) {
-                        console.log(`[Delete] VM ${instance.vmid} already stopped or error:`, e.message);
+                        // Ignore if already stopped
                     }
+
+                    // Small delay to ensure unlock?
+                    await new Promise(r => setTimeout(r, 1000));
 
                     console.log(`[Delete] Deleting VM ${instance.vmid}...`);
                     await proxmox.deleteLXC(instance.vmid);
-                    console.log(`[Delete] VM ${instance.vmid} deleted from Proxmox`);
-                } catch (error) {
-                    console.error(`[Delete] Failed to delete VM ${instance.vmid}:`, error.message);
-                    // Continue anyway - don't block user deletion on Proxmox errors
+                } catch (proxmoxError) {
+                    console.error(`[Delete] Proxmox deletion error for ${instance.vmid} (continuing):`, proxmoxError.message);
                 }
             }
         }

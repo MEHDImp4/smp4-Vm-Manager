@@ -1,3 +1,21 @@
+// Mock rate limiter to bypass rate limiting in tests
+jest.mock('express-rate-limit', () => {
+  return jest.fn(() => (req, res, next) => next());
+});
+
+// Mock validation middleware to bypass Zod validation in tests
+// The actual validation is tested separately; these tests focus on controller logic
+jest.mock('../../src/middlewares/validation', () => ({
+  validateBody: () => (req, res, next) => next(),
+  validateQuery: () => (req, res, next) => next(),
+  validateParams: () => (req, res, next) => next(),
+  registerSchema: {},
+  loginSchema: {},
+  verifyEmailSchema: {},
+  updatePasswordSchema: {},
+  confirmDeletionSchema: {},
+}));
+
 jest.mock('../../src/db', () => ({
   prisma: require('jest-mock-extended').mockDeep(),
 }));
@@ -140,6 +158,7 @@ describe('Auth Routes', () => {
         name: 'Delete Test',
         email: 'delete@test.com',
         points: 100,
+        role: 'user',
       });
 
       const registerRes = await request(app)
@@ -184,6 +203,7 @@ describe('Auth Routes', () => {
         name: 'Delete Confirm Test',
         email: 'deleteconfirm@test.com',
         points: 100,
+        role: 'user',
       });
 
       const registerRes = await request(app)
@@ -213,6 +233,7 @@ describe('Auth Routes', () => {
         name: 'Delete Invalid Test',
         email: 'deleteinvalid@test.com',
         points: 100,
+        role: 'user',
       });
 
       const registerRes = await request(app)

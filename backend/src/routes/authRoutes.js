@@ -7,6 +7,16 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// Import validation middleware and schemas
+const {
+    validateBody,
+    registerSchema,
+    loginSchema,
+    verifyEmailSchema,
+    updatePasswordSchema,
+    confirmDeletionSchema
+} = require('../middlewares/validation');
+
 // Rate limiting for authentication routes to prevent brute force attacks
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -65,22 +75,22 @@ const upload = multer({
 const { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory, verifyEmail, resendVerificationCode, requestAccountDeletion, confirmAccountDeletion } = require('../controllers/authController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
-// Public routes with rate limiting
-router.post('/register', authLimiter, register);
-router.post('/login', authLimiter, login);
-router.post('/verify-email', authLimiter, verifyEmail);
+// Public routes with rate limiting and validation
+router.post('/register', authLimiter, validateBody(registerSchema), register);
+router.post('/login', authLimiter, validateBody(loginSchema), login);
+router.post('/verify-email', authLimiter, validateBody(verifyEmailSchema), verifyEmail);
 router.post('/resend-verification', authLimiter, resendVerificationCode);
 
 // Protected routes
 router.get('/me', verifyToken, getProfile);
-router.put('/password', verifyToken, strictLimiter, updatePassword);
+router.put('/password', verifyToken, strictLimiter, validateBody(updatePasswordSchema), updatePassword);
 router.post('/avatar', verifyToken, upload.single('avatar'), uploadAvatar);
 router.put('/me/avatar', verifyToken, upload.single('avatar'), uploadAvatar);
 router.get('/me/points-history', verifyToken, getPointsHistory);
 
-// Sensitive operations with strict rate limiting
+// Sensitive operations with strict rate limiting and validation
 router.post('/request-deletion', verifyToken, strictLimiter, requestAccountDeletion);
-router.post('/confirm-deletion', verifyToken, strictLimiter, confirmAccountDeletion);
+router.post('/confirm-deletion', verifyToken, strictLimiter, validateBody(confirmDeletionSchema), confirmAccountDeletion);
 
 module.exports = router;
 

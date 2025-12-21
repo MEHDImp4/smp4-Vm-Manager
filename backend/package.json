@@ -32,7 +32,8 @@
     "nodemon": "^3.1.11",
     "p-queue": "6.6.2",
     "ssh2": "^1.17.0",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@prisma/client": "5.22.0",

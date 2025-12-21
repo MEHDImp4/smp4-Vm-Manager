@@ -470,20 +470,23 @@ const Dashboard = () => {
           </div>
 
           {/* Daily Consumption Card */}
-          <div className="glass rounded-2xl p-6 border border-white/10 relative overflow-hidden group hover:border-secondary/30 transition-all duration-300 hover:shadow-lg hover:shadow-secondary/5">
+          <div
+            className="glass rounded-2xl p-6 border border-white/10 relative overflow-hidden group hover:border-secondary/30 transition-all duration-300 hover:shadow-lg hover:shadow-secondary/5 cursor-pointer"
+            onClick={handleCostRateToggle}
+          >
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Activity className="w-24 h-24 rotate-[-15deg]" />
             </div>
             <div className="flex items-center justify-between mb-6 relative z-10">
               <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <div className="w-1 h-4 bg-secondary rounded-full" />
-                Conso. journalière
+                {costRateMode === 'day' ? 'Conso. journalière' : costRateMode === 'hour' ? 'Conso. horaire' : 'Conso. par minute'}
               </h3>
             </div>
             <div className="relative z-10">
               <div className="text-4xl font-bold mb-4 tracking-tight flex items-baseline gap-2">
-                <span className="text-foreground">{dailyConsumption}</span>
-                <span className="text-lg text-muted-foreground font-medium">pts/j</span>
+                <span className="text-foreground">{formatCostRate(dailyConsumption).value}</span>
+                <span className="text-lg text-muted-foreground font-medium">{formatCostRate(dailyConsumption).unit}</span>
               </div>
               <div className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5 w-fit">
                 <div className="flex -space-x-2">

@@ -117,9 +117,12 @@ const createInstance = async (req, res) => {
         const instanceIdShort = String(instance.id).slice(0, 8); // First 8 chars of instance ID
         const technicalHostname = `${userIdShort}-${sanitizedUser}-${template.toLowerCase()}-${instanceIdShort}`;
 
-        // 4. Background Process: Clone, Start, Configure
-        (async () => {
+        // 4. Background Process: Clone, Start, Configure (Queued)
+        const { vmCreationQueue } = require('../services/queue.service');
+
+        vmCreationQueue.add(async () => {
             try {
+                debugLog(`[Queue] Starting processing for ${vmid}...`);
                 debugLog(`[Background] Cloning VM ${vmid} from template ${templateVersion.proxmoxId} as ${technicalHostname}...`);
                 // Use technicalHostname for Proxmox
                 const upid = await proxmoxService.cloneLXC(templateVersion.proxmoxId, vmid, technicalHostname);
@@ -327,7 +330,7 @@ const createInstance = async (req, res) => {
                     data: { status: 'error' } // Or 'stopped'
                 });
             }
-        })();
+        });
 
     } catch (error) {
         console.error("Create instance error:", error);

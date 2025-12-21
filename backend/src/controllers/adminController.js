@@ -2,9 +2,13 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const proxmoxService = require('../services/proxmox.service');
 
+const { paginate } = require('../utils/pagination.utils');
+
 const getAllUsers = async (req, res) => {
     try {
-        const users = await prisma.user.findMany({
+        const { page = 1, limit = 20 } = req.query;
+
+        const result = await paginate(prisma.user, {
             select: {
                 id: true,
                 name: true,
@@ -17,8 +21,9 @@ const getAllUsers = async (req, res) => {
                     select: { instances: true }
                 }
             }
-        });
-        res.json(users);
+        }, { page: parseInt(page), limit: parseInt(limit) });
+
+        res.json(result);
     } catch (error) {
         console.error("Get all users error", error);
         res.status(500).json({ error: "Failed to fetch users" });
@@ -155,20 +160,21 @@ const deleteUser = async (req, res) => {
 
 const getAllInstances = async (req, res) => {
     try {
-        const instances = await prisma.instance.findMany({
+        const { page = 1, limit = 20 } = req.query;
+
+        const result = await paginate(prisma.instance, {
             include: {
                 user: {
                     select: { name: true, email: true }
                 }
             }
-        });
+        }, { page: parseInt(page), limit: parseInt(limit) });
 
         // Fetch IP addresses from Proxmox for online instances
         // We do this in parallel, but handle failures gracefully
-        const enhancedInstances = await Promise.all(instances.map(async (inst) => {
+        // Enhance with IP addresses
+        result.data = await Promise.all(result.data.map(async (inst) => {
             let ip = "-";
-
-            // Only fetch IP if instance is supposedly online and has a VMID
             if (inst.status === 'online' && inst.vmid) {
                 try {
                     const interfaces = await proxmoxService.getLXCInterfaces(inst.vmid);
@@ -178,13 +184,12 @@ const getAllInstances = async (req, res) => {
                     }
                 } catch (e) {
                     console.warn(`Failed to get network interfaces for VM ${inst.vmid}:`, e.message);
-                    // Fail silently for the response, IP remains "-"
                 }
             }
             return { ...inst, ip };
         }));
 
-        res.json(enhancedInstances);
+        res.json(result);
     } catch (error) {
         console.error("Get all instances error", error);
         res.status(500).json({ error: "Failed to fetch instances" });

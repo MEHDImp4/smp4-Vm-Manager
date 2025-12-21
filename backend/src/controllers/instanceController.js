@@ -66,12 +66,15 @@ const createInstance = async (req, res) => {
 };
 
 /**
- * GET /instances - Get all user instances
+ * GET /instances - Get all user instances (paginated)
  */
 const getInstances = async (req, res) => {
     try {
         const userId = req.user.id;
-        const instances = await prisma.instance.findMany({
+        const { page = 1, limit = 20 } = req.query;
+
+        const { paginate } = require('../utils/pagination.utils');
+        const result = await paginate(prisma.instance, {
             where: { userId },
             orderBy: { created_at: 'desc' },
             include: {
@@ -80,16 +83,16 @@ const getInstances = async (req, res) => {
                     select: { id: true, isPaid: true }
                 }
             }
-        });
+        }, { page: parseInt(page), limit: parseInt(limit) });
 
-        // Add paidDomainsCount
-        const instancesWithCosts = instances.map(inst => ({
+        // Add paidDomainsCount to each instance
+        result.data = result.data.map(inst => ({
             ...inst,
             paidDomainsCount: inst.domains?.length || 0,
             domains: undefined
         }));
 
-        res.json(instancesWithCosts);
+        res.json(result);
     } catch (error) {
         log.error("Get instances error:", error);
         res.status(500).json({ error: "Failed to fetch instances" });

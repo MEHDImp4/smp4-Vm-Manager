@@ -25,15 +25,17 @@ const submitMessage = async (req, res) => {
     }
 };
 
+const { paginate } = require('../utils/pagination.utils');
+
 const getMessages = async (req, res) => {
     try {
-        // Ideally pagination here, but for now simple fetch all descending
-        const messages = await prisma.message.findMany({
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
-        res.json(messages);
+        const { page = 1, limit = 20 } = req.query;
+
+        const result = await paginate(prisma.message, {
+            orderBy: { createdAt: 'desc' }
+        }, { page: parseInt(page), limit: parseInt(limit) });
+
+        res.json(result);
     } catch (error) {
         console.error('Error fetching messages:', error);
         res.status(500).json({ message: 'Erreur lors de la récupération des messages' });

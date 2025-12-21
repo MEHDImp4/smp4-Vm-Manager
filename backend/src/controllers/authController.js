@@ -198,12 +198,15 @@ const uploadAvatar = async (req, res) => {
 const getPointsHistory = async (req, res) => {
     try {
         const userId = req.user.id;
-        const transactions = await prisma.pointTransaction.findMany({
+        const { page = 1, limit = 20 } = req.query;
+
+        const { paginate } = require('../utils/pagination.utils');
+        const result = await paginate(prisma.pointTransaction, {
             where: { userId },
-            orderBy: { createdAt: 'desc' },
-            take: 100 // Limit to last 100 transactions
-        });
-        res.json(transactions);
+            orderBy: { createdAt: 'desc' }
+        }, { page: parseInt(page), limit: parseInt(limit) });
+
+        res.json(result);
     } catch (error) {
         console.error("History fetch error", error);
         res.status(500).json({ message: "Failed to fetch points history" });

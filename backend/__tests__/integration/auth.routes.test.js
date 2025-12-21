@@ -159,19 +159,19 @@ describe('Auth Routes', () => {
       });
       prisma.user.update.mockResolvedValueOnce({});
 
-      const res = await request(app)
+      const deletionRequestResponse = await request(app)
         .post('/api/auth/request-deletion')
         .set('Authorization', `Bearer ${token}`);
 
-      expect(res.statusCode).toEqual(200);
-      expect(res.body).toHaveProperty('message');
+      expect(deletionRequestResponse.statusCode).toEqual(200);
+      expect(deletionRequestResponse.body).toHaveProperty('message');
     });
 
     it('should return 401 if not authenticated', async () => {
-      const res = await request(app)
+      const deletionRequestResponse = await request(app)
         .post('/api/auth/request-deletion');
 
-      expect(res.statusCode).toEqual(401);
+      expect(deletionRequestResponse.statusCode).toEqual(401);
     });
   });
 
@@ -196,13 +196,13 @@ describe('Auth Routes', () => {
 
       const token = registerRes.body.user.token;
 
-      const res = await request(app)
+      const confirmDeletionResponse = await request(app)
         .post('/api/auth/confirm-deletion')
         .set('Authorization', `Bearer ${token}`)
         .send({});
 
-      expect(res.statusCode).toEqual(400);
-      expect(res.body.message).toContain('Code requis');
+      expect(confirmDeletionResponse.statusCode).toEqual(400);
+      expect(confirmDeletionResponse.body.message).toContain('Code requis');
     });
 
     it('should return 400 if code is invalid', async () => {
@@ -232,13 +232,13 @@ describe('Auth Routes', () => {
         instances: []
       });
 
-      const res = await request(app)
+      const confirmDeletionResponse = await request(app)
         .post('/api/auth/confirm-deletion')
         .set('Authorization', `Bearer ${token}`)
         .send({ code: '999999' });
 
-      expect(res.statusCode).toEqual(400);
-      expect(res.body.message).toContain('Code invalide');
+      expect(confirmDeletionResponse.statusCode).toEqual(400);
+      expect(confirmDeletionResponse.body.message).toContain('Code invalide');
     });
   });
 });

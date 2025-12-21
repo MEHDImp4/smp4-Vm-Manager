@@ -1,0 +1,66 @@
+
+> web-backend@1.0.0 test
+> jest --coverage __tests__/integration/auth.routes.test.js
+
+PASS __tests__/integration/auth.routes.test.js
+  Auth Routes
+    POST /api/auth/register
+      ΓêÜ should register a new user (59 ms)
+      ΓêÜ should return 400 if user already exists (7 ms)
+      ΓêÜ should return 400 if fields are missing (4 ms)
+    POST /api/auth/login
+      ΓêÜ should login user successfully (6 ms)
+      ΓêÜ should return 401 if user not found (5 ms)
+      ΓêÜ should return 400 if fields are missing (5 ms)
+    POST /api/auth/request-deletion
+      ΓêÜ should send deletion code to authenticated user (12 ms)
+      ΓêÜ should return 401 if not authenticated (4 ms)
+    POST /api/auth/confirm-deletion
+      ΓêÜ should return 400 if code is missing (9 ms)
+      ΓêÜ should return 400 if code is invalid (7 ms)
+
+------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------------
+File                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                 
+------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------------
+All files               |    5.87 |     4.66 |    3.04 |    6.08 |                                                                                                   
+ controllers            |    6.81 |     6.87 |    5.63 |    7.09 |                                                                                                   
+  adminController.js    |       0 |        0 |       0 |       0 | 1-250                                                                                             
+  authController.js     |   35.19 |    39.34 |   36.36 |   36.62 | 46-47,67,71-79,89,107-108,113-133,140-165,170-187,192-202,207-242,247-266,276,293-294,313,326-386 
+  contactController.js  |       0 |        0 |       0 |       0 | 1-150                                                                                             
+  instanceController.js |       0 |        0 |       0 |       0 | 1-806                                                                                             
+  pointsController.js   |       0 |        0 |       0 |       0 | 1-271                                                                                             
+  snapshotController.js |       0 |        0 |       0 |       0 | 1-361                                                                                             
+  templateController.js |       0 |      100 |       0 |       0 | 1-15                                                                                              
+ cron                   |       0 |        0 |       0 |       0 |                                                                                                   
+  backup.cron.js        |       0 |        0 |       0 |       0 | 1-85                                                                                              
+  consumptionCron.js    |       0 |        0 |       0 |       0 | 1-18                                                                                              
+  idleCheck.cron.js     |       0 |        0 |       0 |       0 | 1-95                                                                                              
+  reminder.cron.js      |       0 |        0 |       0 |       0 | 1-76                                                                                              
+  snapshotCron.js       |       0 |        0 |       0 |       0 | 1-54                                                                                              
+ middlewares            |   52.38 |       50 |      50 |   52.38 |                                                                                                   
+  adminMiddleware.js    |       0 |        0 |       0 |       0 | 1-15                                                                                              
+  authMiddleware.js     |   91.66 |    83.33 |     100 |   91.66 | 16                                                                                                
+ routes                 |   21.87 |        0 |       0 |   21.87 |                                                                                                   
+  adminRoutes.js        |       0 |      100 |     100 |       0 | 1-18                                                                                              
+  authRoutes.js         |      60 |        0 |       0 |      60 | 13-25,33-39                                                                                       
+  contactRoutes.js      |       0 |      100 |     100 |       0 | 1-15                                                                                              
+  instanceRoutes.js     |       0 |      100 |     100 |       0 | 1-31                                                                                              
+  pointsRoutes.js       |       0 |      100 |     100 |       0 | 1-16                                                                                              
+  templateRoutes.js     |       0 |      100 |     100 |       0 | 1-11                                                                                              
+ services               |       0 |        0 |       0 |       0 |                                                                                                   
+  cloudflare.service.js |       0 |        0 |       0 |       0 | 1-145                                                                                             
+  email.service.js      |       0 |        0 |       0 |       0 | 1-483                                                                                             
+  pointsService.js      |       0 |        0 |       0 |       0 | 1-112                                                                                             
+  proxmox.service.js    |       0 |        0 |       0 |       0 | 1-397                                                                                             
+  ssh.service.js        |       0 |        0 |       0 |       0 | 1-299                                                                                             
+  vpn.service.js        |       0 |        0 |       0 |       0 | 1-40                                                                                              
+------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------------
+Jest: "global" coverage threshold for statements (50%) not met: 5.87%
+Jest: "global" coverage threshold for branches (50%) not met: 4.66%
+Jest: "global" coverage threshold for lines (50%) not met: 6.08%
+Jest: "global" coverage threshold for functions (50%) not met: 3.04%
+Test Suites: 1 passed, 1 total
+Tests:       10 passed, 10 total
+Snapshots:   0 total
+Time:        2.481 s
+Ran all test suites matching /__tests__\\integration\\auth.routes.test.js/i.

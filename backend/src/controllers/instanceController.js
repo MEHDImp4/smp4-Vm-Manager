@@ -20,6 +20,36 @@ const debugLog = (...args) => {
 };
 
 
+
+const getBackendIp = () => {
+    // 1. Check explicitly configured IP
+    if (process.env.BACKEND_IP) {
+        return process.env.BACKEND_IP;
+    }
+
+    const networks = systemOs.networkInterfaces();
+
+    // 2. Priority: Find 192.168.x.x address first
+    for (const name of Object.keys(networks)) {
+        for (const net of networks[name]) {
+            if (net.family === 'IPv4' && !net.internal && net.address.startsWith('192.168.')) {
+                return net.address;
+            }
+        }
+    }
+
+    // 3. Fallback: take any external IPv4
+    for (const name of Object.keys(networks)) {
+        for (const net of networks[name]) {
+            if (net.family === 'IPv4' && !net.internal) {
+                return net.address;
+            }
+        }
+    }
+
+    return null;
+};
+
 const createInstance = async (req, res) => {
     try {
         let { name, template, cpu, ram, storage, pointsPerDay, os } = req.body;
@@ -167,35 +197,7 @@ const createInstance = async (req, res) => {
                         // 6. Security: Configure Firewall
                         try {
                             // 6a. Whitelist Backend IP for WebSocket/SSH access
-                            const networks = systemOs.networkInterfaces();
-                            let backendIp = process.env.BACKEND_IP; // Use configured IP first
-
-                            if (!backendIp) {
-                                // Priority: Find 192.168.x.x address first as it matches the blocked subnet
-                                // ... (omitted similar logic for brevity, keeping existing structure)
-                                for (const name of Object.keys(networks)) {
-                                    for (const net of networks[name]) {
-                                        if (net.family === 'IPv4' && !net.internal && net.address.startsWith('192.168.')) {
-                                            backendIp = net.address;
-                                            break;
-                                        }
-                                    }
-                                    if (backendIp) break;
-                                }
-
-                                // Fallback: take any external IPv4 if no 192.168.x.x found
-                                if (!backendIp) {
-                                    for (const name of Object.keys(networks)) {
-                                        for (const net of networks[name]) {
-                                            if (net.family === 'IPv4' && !net.internal) {
-                                                backendIp = net.address;
-                                                break;
-                                            }
-                                        }
-                                        if (backendIp) break;
-                                    }
-                                }
-                            }
+                            const backendIp = getBackendIp();
 
                             if (backendIp) {
                                 // SECURITY HARDENING: Block VM from attacking Unraid Admin Interfaces

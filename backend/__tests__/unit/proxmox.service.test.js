@@ -20,8 +20,8 @@ describe('ProxmoxService', () => {
 
       service.client = { get: jest.fn().mockResolvedValueOnce({ data: { data: mockData } }) };
 
-      const result = await service.getLXCList();
-      expect(result).toEqual(mockData);
+      const lxcList = await service.getLXCList();
+      expect(lxcList).toEqual(mockData);
     });
 
     it('should throw error when fetching LXC list fails', async () => {
@@ -39,8 +39,8 @@ describe('ProxmoxService', () => {
   describe('getNextVmid', () => {
     it('should return next available VMID', async () => {
       service.client = { get: jest.fn().mockResolvedValueOnce({ data: { data: 102 } }) };
-      const result = await service.getNextVmid();
-      expect(result).toBe(102);
+      const nextVmid = await service.getNextVmid();
+      expect(nextVmid).toBe(102);
     });
 
     it('should throw error when fetching next VMID fails', async () => {
@@ -53,8 +53,8 @@ describe('ProxmoxService', () => {
     it('should clone LXC container successfully', async () => {
       const mockTaskId = 'UPID:clone';
       service.client = { post: jest.fn().mockResolvedValueOnce({ data: { data: mockTaskId } }) };
-      const result = await service.cloneLXC(100, 102, 'vm-clone');
-      expect(result).toBe(mockTaskId);
+      const cloneTaskId = await service.cloneLXC(100, 102, 'vm-clone');
+      expect(cloneTaskId).toBe(mockTaskId);
       expect(service.client.post).toHaveBeenCalledWith(
         `/api2/json/nodes/${service.node}/lxc/100/clone`,
         expect.objectContaining({ newid: 102 })
@@ -70,8 +70,8 @@ describe('ProxmoxService', () => {
   describe('startLXC', () => {
     it('should start LXC container', async () => {
       service.client = { post: jest.fn().mockResolvedValueOnce({ data: { data: 'UPID:...' } }) };
-      const result = await service.startLXC(102);
-      expect(result).toBeDefined();
+      const taskId = await service.startLXC(102);
+      expect(taskId).toBeDefined();
     });
 
     it('should throw error when start fails', async () => {
@@ -83,8 +83,8 @@ describe('ProxmoxService', () => {
   describe('stopLXC', () => {
     it('should stop LXC container', async () => {
       service.client = { post: jest.fn().mockResolvedValueOnce({ data: { data: 'UPID:...' } }) };
-      const result = await service.stopLXC(102);
-      expect(result).toBeDefined();
+      const taskId = await service.stopLXC(102);
+      expect(taskId).toBeDefined();
     });
 
     it('should throw error when stop fails', async () => {
@@ -96,8 +96,8 @@ describe('ProxmoxService', () => {
   describe('configureLXC', () => {
     it('should configure LXC container', async () => {
       service.client = { put: jest.fn().mockResolvedValueOnce({ data: { data: 'UPID:...' } }) };
-      const result = await service.configureLXC(102, { tags: 'test' });
-      expect(result).toBeDefined();
+      const taskId = await service.configureLXC(102, { tags: 'test' });
+      expect(taskId).toBeDefined();
     });
 
     it('should throw error when configure fails', async () => {
@@ -110,8 +110,8 @@ describe('ProxmoxService', () => {
     it('should get LXC status', async () => {
       const mockStatus = { status: 'running', cpu: 0.1 };
       service.client = { get: jest.fn().mockResolvedValueOnce({ data: { data: mockStatus } }) };
-      const result = await service.getLXCStatus(102);
-      expect(result).toEqual(mockStatus);
+      const status = await service.getLXCStatus(102);
+      expect(status).toEqual(mockStatus);
     });
 
     it('should throw error if get status fails', async () => {
@@ -124,22 +124,22 @@ describe('ProxmoxService', () => {
     it('should get LXC interfaces', async () => {
       const mockInterfaces = [{ name: 'eth0' }];
       service.client = { get: jest.fn().mockResolvedValueOnce({ data: { data: mockInterfaces } }) };
-      const result = await service.getLXCInterfaces(102);
-      expect(result).toEqual(mockInterfaces);
+      const interfaces = await service.getLXCInterfaces(102);
+      expect(interfaces).toEqual(mockInterfaces);
     });
 
     it('should return empty array on error', async () => {
       service.client = { get: jest.fn().mockRejectedValueOnce(new Error('Failed')) };
-      const result = await service.getLXCInterfaces(102);
-      expect(result).toEqual([]);
+      const interfaces = await service.getLXCInterfaces(102);
+      expect(interfaces).toEqual([]);
     });
   });
 
   describe('deleteLXC', () => {
     it('should delete LXC container', async () => {
       service.client = { delete: jest.fn().mockResolvedValueOnce({ data: { data: 'UPID:...' } }) };
-      const result = await service.deleteLXC(102);
-      expect(result).toBeDefined();
+      const taskId = await service.deleteLXC(102);
+      expect(taskId).toBeDefined();
     });
 
     it('should throw error when delete fails', async () => {
@@ -188,9 +188,9 @@ describe('ProxmoxService', () => {
     it('should list snapshots', async () => {
       const mockSnaps = [{ name: 'snap1' }, { name: 'current' }];
       service.client = { get: jest.fn().mockResolvedValue({ data: { data: mockSnaps } }) };
-      const result = await service.listLXCSnapshots(100);
-      expect(result).toHaveLength(1); // 'current' filtered out
-      expect(result[0].name).toBe('snap1');
+      const snapshots = await service.listLXCSnapshots(100);
+      expect(snapshots).toHaveLength(1); // 'current' filtered out
+      expect(snapshots[0].name).toBe('snap1');
     });
 
     it('should throw error when list snapshots fails', async () => {
@@ -244,9 +244,9 @@ describe('ProxmoxService', () => {
     it('should list backups', async () => {
       const mockBackups = [{ vmid: 100, volid: 'backup1' }, { vmid: 101 }];
       service.client = { get: jest.fn().mockResolvedValue({ data: { data: mockBackups } }) };
-      const result = await service.listBackups('local', 100);
-      expect(result).toHaveLength(1);
-      expect(result[0].volid).toBe('backup1');
+      const backups = await service.listBackups('local', 100);
+      expect(backups).toHaveLength(1);
+      expect(backups[0].volid).toBe('backup1');
     });
 
     it('should throw error when list backups fails', async () => {
@@ -267,14 +267,14 @@ describe('ProxmoxService', () => {
 
     it('should get backup download ticket', async () => {
       service.client = { post: jest.fn().mockResolvedValue({ data: { data: { ticket: 'abc' } } }) };
-      const result = await service.getBackupDownloadTicket('vol1');
-      expect(result).toEqual({ ticket: 'abc' });
+      const ticket = await service.getBackupDownloadTicket('vol1');
+      expect(ticket).toEqual({ ticket: 'abc' });
     });
 
     it('should fallback to volid if ticket fails', async () => {
       service.client = { post: jest.fn().mockRejectedValue(new Error('Fail')) };
-      const result = await service.getBackupDownloadTicket('vol1');
-      expect(result).toEqual({ volid: 'vol1' });
+      const ticket = await service.getBackupDownloadTicket('vol1');
+      expect(ticket).toEqual({ volid: 'vol1' });
     });
   });
 
@@ -312,8 +312,8 @@ describe('ProxmoxService', () => {
     it('should reboot LXC container', async () => {
       const upid = 'UPID:node:123:456:task';
       service.client = { post: jest.fn().mockResolvedValue({ data: { data: upid } }) };
-      const result = await service.rebootLXC('100');
-      expect(result).toBe(upid);
+      const rebootTaskId = await service.rebootLXC('100');
+      expect(rebootTaskId).toBe(upid);
     });
 
     it('should throw error when reboot fails', async () => {
@@ -326,8 +326,8 @@ describe('ProxmoxService', () => {
     it('should get LXC config', async () => {
       const config = { net0: 'bridge=vmbr0' };
       service.client = { get: jest.fn().mockResolvedValue({ data: { data: config } }) };
-      const result = await service.getLXCConfig('100');
-      expect(result).toEqual(config);
+      const lxcConfig = await service.getLXCConfig('100');
+      expect(lxcConfig).toEqual(config);
     });
 
     it('should throw error when get config fails', async () => {

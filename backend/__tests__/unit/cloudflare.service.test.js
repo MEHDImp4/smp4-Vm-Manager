@@ -40,7 +40,7 @@ describe('CloudflareService', () => {
       // Mock put config behavior
       mockClient.put.mockResolvedValueOnce({ data: { success: true } });
 
-      const result = await CloudflareService.addTunnelIngress('test.smp4.xyz', 'http://192.168.1.100:3000');
+      const addIngressResponse = await CloudflareService.addTunnelIngress('test.smp4.xyz', 'http://192.168.1.100:3000');
 
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('/configurations'));
       expect(mockClient.put).toHaveBeenCalledWith(
@@ -53,7 +53,7 @@ describe('CloudflareService', () => {
           })
         })
       );
-      expect(result).toBe(true);
+      expect(addIngressResponse).toBe(true);
     });
 
     it('should throw error when adding ingress fails', async () => {
@@ -84,7 +84,7 @@ describe('CloudflareService', () => {
       // Mock put success
       mockClient.put.mockResolvedValueOnce({ data: { success: true } });
 
-      const result = await CloudflareService.removeTunnelIngress('test.smp4.xyz');
+      const removeIngressResponse = await CloudflareService.removeTunnelIngress('test.smp4.xyz');
 
       expect(mockClient.put).toHaveBeenCalledWith(
         expect.stringContaining('/configurations'),
@@ -96,7 +96,7 @@ describe('CloudflareService', () => {
           })
         })
       );
-      expect(result).toBe(true);
+      expect(removeIngressResponse).toBe(true);
     });
 
     it('should throw error when removing ingress fails', async () => {

@@ -121,7 +121,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                 setCanSpin(data.canSpin);
 
                 if (!data.canSpin && data.nextSpinIn) {
-                    updateNextSpinTime(data.nextSpinIn);
+                    await updateNextSpinTime(data.nextSpinIn);
                 }
             }
         } catch (error) {
@@ -140,7 +140,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
         }
     }, [isOpen, checkSpinStatus]);
 
-    const updateNextSpinTime = (milliseconds: number) => {
+    const updateNextSpinTime = async (milliseconds: number) => {
         const hours = Math.floor(milliseconds / (1000 * 60 * 60));
         const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
         setNextSpinTime(`${hours}h ${minutes}m`);

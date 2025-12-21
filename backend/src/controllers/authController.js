@@ -6,7 +6,12 @@ const cloudflareService = require('../services/cloudflare.service');
 const vpnService = require('../services/vpn.service');
 
 const BCRYPT_SALT_ROUNDS = 10;
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+
+// Ensure JWT_SECRET is configured - fail fast if not set
+if (!process.env.JWT_SECRET) {
+    throw new Error('CRITICAL: JWT_SECRET environment variable is required.');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 
 const register = async (req, res) => {

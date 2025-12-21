@@ -30,14 +30,26 @@ const deleteClient = async (vpnConfig) => {
         console.log(`[VPN] Deleting client...`);
         // Use data payload for privateKey
         await axios.delete(`${VPN_API_URL}/client`, { data: { privateKey } });
-        
+
     } catch (error) {
         console.error('[VPN] Failed to delete client:', error.message);
         // Don't throw, we want deletion to proceed
     }
 };
 
+// ============================================================================
+// Circuit Breaker Wrapper
+// ============================================================================
+
+const { wrapWithBreaker } = require('../utils/circuit-breaker.utils');
+
 module.exports = {
-    createClient,
-    deleteClient
+    createClient: wrapWithBreaker(
+        createClient,
+        'createClient', 'vpn'
+    ),
+    deleteClient: wrapWithBreaker(
+        deleteClient,
+        'deleteClient', 'vpn'
+    ),
 };

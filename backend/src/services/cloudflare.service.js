@@ -142,4 +142,23 @@ const CloudflareService = {
     }
 };
 
-module.exports = CloudflareService;
+// ============================================================================
+// Circuit Breaker Wrapper
+// ============================================================================
+
+const { wrapWithBreaker } = require('../utils/circuit-breaker.utils');
+
+module.exports = {
+    addTunnelIngress: wrapWithBreaker(
+        CloudflareService.addTunnelIngress,
+        'addTunnelIngress', 'cloudflare'
+    ),
+    removeTunnelIngress: wrapWithBreaker(
+        CloudflareService.removeTunnelIngress,
+        'removeTunnelIngress', 'cloudflare'
+    ),
+    removeMultipleTunnelIngress: wrapWithBreaker(
+        CloudflareService.removeMultipleTunnelIngress,
+        'removeMultipleTunnelIngress', 'cloudflare'
+    ),
+};

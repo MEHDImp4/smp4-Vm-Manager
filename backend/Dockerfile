@@ -35,8 +35,10 @@ RUN addgroup -g 1001 -S nodejs && \
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install only production dependencies and remove npm/yarn (not needed, reduces vulnerabilities)
+RUN npm ci --only=production && \
+    npm cache clean --force && \
+    rm -rf /usr/local/lib/node_modules/npm /opt/yarn*
 
 # Copy prisma schema and generated client from builder
 COPY --from=builder /app/prisma ./prisma/

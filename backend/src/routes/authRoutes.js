@@ -1,11 +1,33 @@
 const express = require('express');
-
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+
+// Rate limiting for authentication routes to prevent brute force attacks
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Limit each IP to 5 requests per windowMs
+    message: {
+        message: 'Too many authentication attempts, please try again after 15 minutes'
+    },
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Stricter rate limiting for sensitive operations (password reset, account deletion)
+const strictLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3, // Limit each IP to 3 requests per hour
+    message: {
+        message: 'Too many attempts, please try again after 1 hour'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // Configure Multer Storage
 const storage = multer.diskStorage({
@@ -43,16 +65,22 @@ const upload = multer({
 const { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory, verifyEmail, resendVerificationCode, requestAccountDeletion, confirmAccountDeletion } = require('../controllers/authController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
-router.post('/register', register);
-router.post('/login', login);
-router.post('/verify-email', verifyEmail);
-router.post('/resend-verification', resendVerificationCode);
+// Public routes with rate limiting
+router.post('/register', authLimiter, register);
+router.post('/login', authLimiter, login);
+router.post('/verify-email', authLimiter, verifyEmail);
+router.post('/resend-verification', authLimiter, resendVerificationCode);
+
+// Protected routes
 router.get('/me', verifyToken, getProfile);
-router.put('/password', verifyToken, updatePassword);
+router.put('/password', verifyToken, strictLimiter, updatePassword);
 router.post('/avatar', verifyToken, upload.single('avatar'), uploadAvatar);
-router.put('/me/avatar', verifyToken, upload.single('avatar'), uploadAvatar); // Alternative route
+router.put('/me/avatar', verifyToken, upload.single('avatar'), uploadAvatar);
 router.get('/me/points-history', verifyToken, getPointsHistory);
-router.post('/request-deletion', verifyToken, requestAccountDeletion);
-router.post('/confirm-deletion', verifyToken, confirmAccountDeletion);
+
+// Sensitive operations with strict rate limiting
+router.post('/request-deletion', verifyToken, strictLimiter, requestAccountDeletion);
+router.post('/confirm-deletion', verifyToken, strictLimiter, confirmAccountDeletion);
 
 module.exports = router;
+

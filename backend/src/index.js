@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const authRoutes = require('./routes/authRoutes');
 const instanceRoutes = require('./routes/instanceRoutes');
 const templateRoutes = require('./routes/templateRoutes');
@@ -28,6 +29,9 @@ initIdleCheckCron();
 // Seed templates on startup
 const { seedTemplates } = require('./scripts/seedTemplates');
 seedTemplates();
+
+// Security middleware - helmet adds various HTTP headers for protection
+app.use(helmet());
 
 // Middleware
 const corsOptions = {

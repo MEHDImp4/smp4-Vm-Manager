@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { exec } = require('child_process');
+const { execFile, spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -18,10 +18,26 @@ if (!fs.existsSync(WG_DIR)) {
     fs.mkdirSync(WG_DIR, { recursive: true });
 }
 
-// Helper to execute shell commands
-const run = (cmd) => new Promise((resolve, reject) => {
-    console.log(`[CMD] ${cmd}`);
-    exec(cmd, (error, stdout, stderr) => {
+// Input validation helpers
+const isValidIP = (ip) => {
+    if (!ip || typeof ip !== 'string') return false;
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!ipRegex.test(ip)) return false;
+    const parts = ip.split('.').map(Number);
+    return parts.every(p => p >= 0 && p <= 255);
+};
+
+const isValidWgKey = (key) => {
+    if (!key || typeof key !== 'string') return false;
+    // WireGuard keys are base64 encoded, 44 characters
+    const keyRegex = /^[A-Za-z0-9+/]{43}=$/;
+    return keyRegex.test(key.trim());
+};
+
+// Safe command execution helper using execFile (no shell interpolation)
+const runExecFile = (cmd, args = []) => new Promise((resolve, reject) => {
+    console.log(`[CMD] ${cmd} ${args.join(' ')}`);
+    execFile(cmd, args, (error, stdout, stderr) => {
         if (error) {
             console.error(`[CMD ERROR] ${cmd}:`, stderr);
             reject(error);
@@ -30,6 +46,37 @@ const run = (cmd) => new Promise((resolve, reject) => {
         }
     });
 });
+
+// For piped commands, we use spawn with proper escaping
+const runPipedCommand = (input, cmd, args = []) => new Promise((resolve, reject) => {
+    console.log(`[CMD] echo "<input>" | ${cmd} ${args.join(' ')}`);
+    const child = spawn(cmd, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => { stdout += data; });
+    child.stderr.on('data', (data) => { stderr += data; });
+
+    child.on('close', (code) => {
+        if (code !== 0) {
+            console.error(`[CMD ERROR] ${cmd}:`, stderr);
+            reject(new Error(stderr || `Command failed with code ${code}`));
+        } else {
+            resolve(stdout.trim());
+        }
+    });
+
+    child.stdin.write(input);
+    child.stdin.end();
+});
+
+// For shell redirections, write to file manually instead
+const runAndSaveOutput = async (cmd, args, outputFile) => {
+    const output = await runExecFile(cmd, args);
+    fs.writeFileSync(outputFile, output);
+    return output;
+};
 
 let serverPrivateKey = '';
 let serverPublicKey = '';
@@ -43,8 +90,8 @@ const init = async () => {
 
         if (!fs.existsSync(privKeyPath)) {
             console.log('Generating server keys...');
-            serverPrivateKey = await run('wg genkey');
-            serverPublicKey = await run(`echo "${serverPrivateKey}" | wg pubkey`);
+            serverPrivateKey = await runExecFile('wg', ['genkey']);
+            serverPublicKey = await runPipedCommand(serverPrivateKey, 'wg', ['pubkey']);
             fs.writeFileSync(privKeyPath, serverPrivateKey);
             fs.writeFileSync(pubKeyPath, serverPublicKey);
         } else {
@@ -55,7 +102,6 @@ const init = async () => {
         console.log(`Server Public Key: ${serverPublicKey}`);
 
         // Create Config File if not exists
-        // Create or Update Config File
         if (!fs.existsSync(WG_CONF)) {
             const config = `[Interface]
 Address = ${BASE_SUBNET}.1/24
@@ -68,7 +114,6 @@ PrivateKey = ${serverPrivateKey}
             fs.writeFileSync(WG_CONF, config);
         } else {
             console.log('Ensuring config matches environment...');
-            // Need to update ListenPort and Address if changed
             let configC = fs.readFileSync(WG_CONF, 'utf8');
 
             // Check/Update Port
@@ -78,7 +123,6 @@ PrivateKey = ${serverPrivateKey}
             }
 
             // Check/Update Address
-            // Regex to find Address = x.y.z.1/24 and replace
             const addressRegex = /Address = [\d\.]+\/24/;
             if (!configC.includes(`Address = ${BASE_SUBNET}.1/24`)) {
                 console.log(`Updating Address to ${BASE_SUBNET}.1/24`);
@@ -90,20 +134,14 @@ PrivateKey = ${serverPrivateKey}
 
         // Start Interface
         try {
-            await run(`wg-quick up ${WG_INTERFACE}`);
+            await runExecFile('wg-quick', ['up', WG_INTERFACE]);
         } catch (e) {
-            console.log('Interface might be already up, attempting reload/restart...');
+            console.log('Interface might be already up, attempting restart...');
             try {
-                // First try syncconf
-                await run(`wg syncconf ${WG_INTERFACE} <(wg-quick strip ${WG_INTERFACE})`);
+                await runExecFile('wg-quick', ['down', WG_INTERFACE]);
+                await runExecFile('wg-quick', ['up', WG_INTERFACE]);
             } catch (e2) {
-                console.log('Syncconf failed (likely port change), restarting interface...');
-                try {
-                    await run(`wg-quick down ${WG_INTERFACE}`);
-                    await run(`wg-quick up ${WG_INTERFACE}`);
-                } catch (e3) {
-                    console.error('Failed to restart interface:', e3.message);
-                }
+                console.error('Failed to restart interface:', e2.message);
             }
         }
 
@@ -118,24 +156,28 @@ PrivateKey = ${serverPrivateKey}
 // API: Create Client
 app.post('/client', async (req, res) => {
     try {
-        const { targetIp } = req.body; // The VM IP this client is allowed to access
+        const { targetIp } = req.body;
 
-        if (!targetIp) {
-            return res.status(400).json({ error: 'targetIp is required' });
+        // Validate targetIp to prevent injection
+        if (!targetIp || !isValidIP(targetIp)) {
+            return res.status(400).json({ error: 'Valid targetIp is required (e.g., 192.168.1.100)' });
         }
 
-        // Generate Client Keys & PSK
-        const clientPrivateKey = await run('wg genkey');
-        const clientPublicKey = await run(`echo "${clientPrivateKey}" | wg pubkey`);
-        const clientPresharedKey = await run('wg genpsk');
+        // Generate Client Keys & PSK using secure execFile
+        const clientPrivateKey = await runExecFile('wg', ['genkey']);
+        const clientPublicKey = await runPipedCommand(clientPrivateKey, 'wg', ['pubkey']);
+        const clientPresharedKey = await runExecFile('wg', ['genpsk']);
 
-        // Allocate IP
-        // Find next available IP. This is naive for now: just random or sequential.
-        // Better: Scan current peers.
-        const currentConf = await run(`wg show ${WG_INTERFACE} allowed-ips`);
+        // Validate generated keys
+        if (!isValidWgKey(clientPublicKey)) {
+            throw new Error('Failed to generate valid client public key');
+        }
+
+        // Allocate IP - get current peers
+        const currentConf = await runExecFile('wg', ['show', WG_INTERFACE, 'allowed-ips']);
         const usedIps = currentConf.split('\n').map(line => {
             const parts = line.split('\t');
-            if (parts.length > 1) return parts[1].split('/')[0]; // 10.8.0.x
+            if (parts.length > 1) return parts[1].split('/')[0];
             return null;
         }).filter(ip => ip && ip.startsWith(BASE_SUBNET));
 
@@ -152,39 +194,40 @@ app.post('/client', async (req, res) => {
 
         console.log(` Creating client ${clientPublicKey.slice(0, 8)}... IP: ${clientIp} -> Target: ${targetIp}`);
 
-        // Add Peer to WireGuard
-        // Note: 'wg set' needs PresharedKey passed as a file or safe method?
-        // Actually `wg set wg0 peer <key> preshared-key <file>`
-        // Let's write PSK to temp file
-        const pskFile = path.join('/tmp', `psk-${clientPublicKey.slice(0, 8)}`);
-        fs.writeFileSync(pskFile, clientPresharedKey);
+        // Write PSK to temp file (wg set requires file for preshared-key)
+        const pskFile = path.join('/tmp', `psk-${Date.now()}`);
+        fs.writeFileSync(pskFile, clientPresharedKey, { mode: 0o600 });
 
-        await run(`wg set ${WG_INTERFACE} peer ${clientPublicKey} allowed-ips ${clientIp}/32 preshared-key ${pskFile}`);
-        fs.unlinkSync(pskFile);
+        try {
+            // Add Peer to WireGuard using execFile with proper arguments
+            await runExecFile('wg', [
+                'set', WG_INTERFACE,
+                'peer', clientPublicKey,
+                'allowed-ips', `${clientIp}/32`,
+                'preshared-key', pskFile
+            ]);
+        } finally {
+            // Always clean up PSK file
+            if (fs.existsSync(pskFile)) {
+                fs.unlinkSync(pskFile);
+            }
+        }
 
-        // PERSISTENCE FIX: Force save config immediately
+        // Persist configuration (write output to file instead of shell redirect)
         console.log('Persisting configuration...');
-        await run(`wg showconf ${WG_INTERFACE} > ${WG_CONF}`);
+        await runAndSaveOutput('wg', ['showconf', WG_INTERFACE], WG_CONF);
 
-        // Add Firewall Rule: Allow this client IP to access ONLY the target VM IP
-        // We rely on the generic FORWARD ACCEPT, but we want to restrict.
-        // Actually, the default config has `PostUp = iptables -A FORWARD -i ${WG_INTERFACE} -j ACCEPT` which allows ALL.
-        // We should probably remove that generic rule and manage per-client rules if we want strict isolation.
-        // For now, let's implement strict rules via IPTables for this client.
-
-        // 1. Allow VPN Client -> Target VM
-        await run(`iptables -I FORWARD 1 -i ${WG_INTERFACE} -s ${clientIp} -d ${targetIp} -j ACCEPT`);
-        // 2. Drop everything else for this client (handled by default policy or generic drop if we change things)
-        // With current generic ACCEPT, this specific rule is redundant unless we change the default.
-        // Let's keep it simple: We rely on the fact that the client CONFIG only has AllowedIPs = 10.8.0.1 (VPN Gateway) + TargetIP.
-        // So the client simply won't route other traffic here. That's "User-side" security.
-        // "Server-side" security would require blocking other flows. 
-        // Let's stick to generating a correct config for now.
+        // Add Firewall Rule using execFile
+        await runExecFile('iptables', [
+            '-I', 'FORWARD', '1',
+            '-i', WG_INTERFACE,
+            '-s', clientIp,
+            '-d', targetIp,
+            '-j', 'ACCEPT'
+        ]);
 
         // Generate Client Config
-        // We need the server's public IP or hostname. We'll read it from ENV or auto-detect?
-        // For localhost dev, it's localhost. For prod, it's the domain.
-        const endpoint = process.env.VPN_ENDPOINT || 'azeur-ptero-node.smp4.xyz:51821'; // Default placeholder
+        const endpoint = process.env.VPN_ENDPOINT || 'azeur-ptero-node.smp4.xyz:51821';
 
         const clientConfig = `[Interface]
 PrivateKey = ${clientPrivateKey}
@@ -198,8 +241,6 @@ AllowedIPs = ${BASE_SUBNET}.0/24, ${targetIp}/32
 Endpoint = ${endpoint}
 PersistentKeepalive = 25
 `;
-
-        // Save peer info locally just in case (optional, we rely on 'wg show')
 
         res.json({
             clientIp,
@@ -222,24 +263,38 @@ app.delete('/client', async (req, res) => {
         if (req.body.publicKey || req.query.publicKey) {
             publicKey = req.body.publicKey || req.query.publicKey;
         }
-        // Option 2: Derive from Private Key (preferred for backend integration)
+        // Option 2: Derive from Private Key
         else if (req.body.privateKey) {
             console.log('Deriving Public Key from provided Private Key...');
-            publicKey = await run(`echo "${req.body.privateKey}" | wg pubkey`);
+            const privateKey = req.body.privateKey.trim();
+
+            // Validate private key format before processing
+            if (!isValidWgKey(privateKey)) {
+                return res.status(400).json({ error: 'Invalid privateKey format' });
+            }
+
+            publicKey = await runPipedCommand(privateKey, 'wg', ['pubkey']);
         }
 
         if (!publicKey) {
             return res.status(400).json({ error: 'publicKey or privateKey is required' });
         }
 
-        const decodedKey = decodeURIComponent(publicKey);
+        const decodedKey = decodeURIComponent(publicKey).trim();
 
-        console.log(`Removing peer ${decodedKey}...`);
-        await run(`wg set ${WG_INTERFACE} peer "${decodedKey}" remove`);
+        // Validate public key format to prevent injection
+        if (!isValidWgKey(decodedKey)) {
+            return res.status(400).json({ error: 'Invalid publicKey format' });
+        }
 
-        // PERSISTENCE FIX: Force save config immediately
+        console.log(`Removing peer ${decodedKey.slice(0, 8)}...`);
+
+        // Use execFile with proper arguments (no shell interpolation)
+        await runExecFile('wg', ['set', WG_INTERFACE, 'peer', decodedKey, 'remove']);
+
+        // Persist configuration
         console.log('Persisting configuration...');
-        await run(`wg showconf ${WG_INTERFACE} > ${WG_CONF}`);
+        await runAndSaveOutput('wg', ['showconf', WG_INTERFACE], WG_CONF);
 
         res.json({ message: 'Peer removed' });
     } catch (error) {
@@ -252,3 +307,4 @@ app.listen(3001, async () => {
     console.log('VPN Management API listening on port 3001');
     await init();
 });
+

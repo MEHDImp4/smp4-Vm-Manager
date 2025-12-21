@@ -110,18 +110,18 @@ const deleteUser = async (req, res) => {
         for (const inst of instances) {
             try {
                 if (inst.vmid) {
-                    await proxmoxService.stopLXC(inst.vmid).catch(() => { });
-                    await proxmoxService.deleteLXC(inst.vmid).catch(() => { });
+                    await proxmoxService.stopLXC(inst.vmid).catch((e) => console.warn(`Failed to stop LXC ${inst.vmid}:`, e.message));
+                    await proxmoxService.deleteLXC(inst.vmid).catch((e) => console.warn(`Failed to delete LXC ${inst.vmid}:`, e.message));
                 }
                 if (inst.vpnConfig) {
                     const vpnService = require('../services/vpn.service');
-                    await vpnService.deleteClient(inst.vpnConfig).catch(() => { });
+                    await vpnService.deleteClient(inst.vpnConfig).catch((e) => console.warn(`Failed to delete VPN client:`, e.message));
                 }
                 const domains = await prisma.domain.findMany({ where: { instanceId: inst.id } });
                 if (domains.length > 0) {
                     const cloudflareService = require('../services/cloudflare.service');
                     const hostnames = domains.map(d => `${d.subdomain}.smp4.xyz`);
-                    await cloudflareService.removeMultipleTunnelIngress(hostnames).catch(() => { });
+                    await cloudflareService.removeMultipleTunnelIngress(hostnames).catch((e) => console.warn(`Failed to remove Cloudflare ingress:`, e.message));
                 }
                 // Check if related records need manual cleanup or if onDelete Cascade handles it.
                 // Instance deletion from DB:
@@ -177,7 +177,8 @@ const getAllInstances = async (req, res) => {
                         ip = eth0.inet.split('/')[0];
                     }
                 } catch (e) {
-                    // Fail silently, IP remains "-"
+                    console.warn(`Failed to get network interfaces for VM ${inst.vmid}:`, e.message);
+                    // Fail silently for the response, IP remains "-"
                 }
             }
             return { ...inst, ip };

@@ -199,7 +199,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                 const error = await response.json();
                 toast.error(error.error);
                 setIsSpinning(false);
-                checkSpinStatus();
+                await checkSpinStatus();
             }
         } catch (error) {
             toast.error("Erreur de connexion");

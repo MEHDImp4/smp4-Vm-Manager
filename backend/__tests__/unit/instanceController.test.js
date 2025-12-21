@@ -1,9 +1,7 @@
 const instanceController = require('../../src/controllers/instanceController');
 const { prisma } = require('../../src/db');
-const proxmoxService = require('../../src/services/proxmox.service');
-
-const cloudflareService = require('../../src/services/cloudflare.service');
-const vpnService = require('../../src/services/vpn.service');
+const instanceService = require('../../src/services/instance.service');
+const domainService = require('../../src/services/domain.service');
 
 // Mock dependencies
 jest.mock('../../src/db', () => ({
@@ -30,17 +28,13 @@ jest.mock('../../src/db', () => ({
     },
 }));
 
-jest.mock('../../src/services/proxmox.service');
-jest.mock('../../src/services/ssh.service');
-jest.mock('../../src/services/cloudflare.service');
-jest.mock('../../src/services/vpn.service');
-jest.mock('../../src/services/queue.service', () => ({
-    vmCreationQueue: {
-        add: jest.fn((fn) => fn()),
-    },
-    vmAllocationQueue: {
-        add: jest.fn((fn) => fn()),
-    },
+jest.mock('../../src/services/instance.service');
+jest.mock('../../src/services/domain.service');
+jest.mock('../../src/services/logger.service', () => ({
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
 }));
 
 
@@ -49,7 +43,6 @@ describe('Instance Controller Unit Tests', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        console.log = jest.fn(); // Silence logs
         req = {
             params: {},
             body: {},
@@ -64,46 +57,43 @@ describe('Instance Controller Unit Tests', () => {
     describe('toggleInstanceStatus', () => {
         it('should stop a running instance', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
+            const mockInstance = {
                 id: 'inst1',
                 vmid: 100,
                 userId: 'user1',
                 status: 'online',
-            });
-            prisma.instance.update.mockResolvedValue({ status: 'stopped' });
+            };
+
+            instanceService.getInstanceWithOwner.mockResolvedValue(mockInstance);
+            instanceService.toggleStatus.mockResolvedValue({ ...mockInstance, status: 'stopped' });
 
             await instanceController.toggleInstanceStatus(req, res);
 
-            expect(proxmoxService.stopLXC).toHaveBeenCalledWith(100);
-            expect(prisma.instance.update).toHaveBeenCalledWith({
-                where: { id: 'inst1' },
-                data: { status: 'stopped' },
-            });
+            expect(instanceService.getInstanceWithOwner).toHaveBeenCalledWith('inst1', 'user1');
+            expect(instanceService.toggleStatus).toHaveBeenCalledWith(mockInstance);
             expect(res.json).toHaveBeenCalled();
         });
 
         it('should start a stopped instance', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
+            const mockInstance = {
                 id: 'inst1',
                 vmid: 100,
                 userId: 'user1',
                 status: 'stopped',
-            });
-            prisma.instance.update.mockResolvedValue({ status: 'online' });
+            };
+
+            instanceService.getInstanceWithOwner.mockResolvedValue(mockInstance);
+            instanceService.toggleStatus.mockResolvedValue({ ...mockInstance, status: 'online' });
 
             await instanceController.toggleInstanceStatus(req, res);
 
-            expect(proxmoxService.startLXC).toHaveBeenCalledWith(100);
-            expect(prisma.instance.update).toHaveBeenCalledWith({
-                where: { id: 'inst1' },
-                data: { status: 'online' },
-            });
+            expect(instanceService.toggleStatus).toHaveBeenCalledWith(mockInstance);
         });
 
         it('should return 404 if instance not found', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue(null);
+            instanceService.getInstanceWithOwner.mockResolvedValue(null);
 
             await instanceController.toggleInstanceStatus(req, res);
 
@@ -115,15 +105,18 @@ describe('Instance Controller Unit Tests', () => {
     describe('restartInstance', () => {
         it('should reboot instance', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
+            const mockInstance = {
                 id: 'inst1',
                 vmid: 100,
                 userId: 'user1',
-            });
+            };
+
+            instanceService.getInstanceWithOwner.mockResolvedValue(mockInstance);
+            instanceService.restartInstance.mockResolvedValue();
 
             await instanceController.restartInstance(req, res);
 
-            expect(proxmoxService.rebootLXC).toHaveBeenCalledWith(100);
+            expect(instanceService.restartInstance).toHaveBeenCalledWith(mockInstance);
             expect(res.json).toHaveBeenCalledWith({ message: "Instance restarting" });
         });
     });
@@ -131,61 +124,30 @@ describe('Instance Controller Unit Tests', () => {
     describe('deleteInstance', () => {
         it('should delete instance and cleanup resources', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
+            const mockInstance = {
                 id: 'inst1',
                 vmid: 100,
                 userId: 'user1',
                 vpnConfig: 'vpn-conf',
                 domains: [{ subdomain: 'sub1', isPaid: false }],
-            });
+            };
 
-            proxmoxService.stopLXC.mockResolvedValue();
-            proxmoxService.deleteLXC.mockResolvedValue();
-            vpnService.deleteClient.mockResolvedValue();
-            cloudflareService.removeMultipleTunnelIngress.mockResolvedValue();
-            prisma.instance.delete.mockResolvedValue({});
+            prisma.instance.findUnique.mockResolvedValue(mockInstance);
+            instanceService.deleteInstance.mockResolvedValue();
 
             await instanceController.deleteInstance(req, res);
 
-            expect(proxmoxService.stopLXC).toHaveBeenCalledWith(100);
-            expect(proxmoxService.deleteLXC).toHaveBeenCalledWith(100);
-            expect(vpnService.deleteClient).toHaveBeenCalledWith('vpn-conf');
-            expect(cloudflareService.removeMultipleTunnelIngress).toHaveBeenCalledWith(['sub1.smp4.xyz']);
-            expect(prisma.instance.delete).toHaveBeenCalledWith({ where: { id: 'inst1' } });
+            expect(instanceService.deleteInstance).toHaveBeenCalledWith(mockInstance);
             expect(res.json).toHaveBeenCalledWith({ message: "Instance deleted" });
         });
 
-        it('should handle errors during stop gracefully', async () => {
+        it('should return 404 if instance not found', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
-                id: 'inst1',
-                vmid: 100,
-                userId: 'user1',
-            });
-            // Mock stop failure
-            proxmoxService.stopLXC.mockRejectedValue(new Error('Already stopped'));
+            prisma.instance.findUnique.mockResolvedValue(null);
 
             await instanceController.deleteInstance(req, res);
 
-            // Should continue to delete
-            expect(proxmoxService.deleteLXC).toHaveBeenCalledWith(100);
-            expect(prisma.instance.delete).toHaveBeenCalled();
-        });
-
-        it('should handle errors during proxmox delete gracefully', async () => {
-            req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
-                id: 'inst1',
-                vmid: 100,
-                userId: 'user1',
-            });
-            proxmoxService.stopLXC.mockResolvedValue();
-            proxmoxService.deleteLXC.mockRejectedValue(new Error('VM not found'));
-
-            await instanceController.deleteInstance(req, res);
-
-            // Should continue to delete from DB
-            expect(prisma.instance.delete).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(404);
         });
     });
 
@@ -194,38 +156,32 @@ describe('Instance Controller Unit Tests', () => {
     const TEST_CPU_PERCENT = 50.0;
     const TEST_RAM_PERCENT = 50.0;
     const TEST_STORAGE_PERCENT = 50.0;
-    const TEST_MEM = 512 * 1024 * 1024;
-    const TEST_MAX_MEM = 1024 * 1024 * 1024;
-    const TEST_DISK = 5 * 1024 * 1024 * 1024;
-    const TEST_MAX_DISK = 10 * 1024 * 1024 * 1024;
 
     describe('getInstanceStats', () => {
         it('should return stats for running instance', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
+            const mockInstance = {
                 id: 'inst1',
                 vmid: 100,
                 userId: 'user1',
                 storage: TEST_STORAGE_GB,
                 rootPassword: TEST_ROOT_PASSWORD,
-            });
+            };
 
-            proxmoxService.getLXCStatus.mockResolvedValue({
-                cpu: 0.5,
-                mem: TEST_MEM,
-                maxmem: TEST_MAX_MEM,
-                disk: TEST_DISK,
-                maxdisk: TEST_MAX_DISK,
+            prisma.instance.findUnique.mockResolvedValue(mockInstance);
+            instanceService.getInstanceStats.mockResolvedValue({
+                cpu: TEST_CPU_PERCENT,
+                ram: TEST_RAM_PERCENT,
+                storage: TEST_STORAGE_PERCENT,
+                ip: '192.168.1.50',
                 status: 'running',
                 uptime: 1000,
+                rootPassword: TEST_ROOT_PASSWORD,
             });
-
-            proxmoxService.getLXCInterfaces.mockResolvedValue([
-                { name: 'eth0', inet: '192.168.1.50/24' }
-            ]);
 
             await instanceController.getInstanceStats(req, res);
 
+            expect(instanceService.getInstanceStats).toHaveBeenCalledWith(mockInstance);
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
                 cpu: TEST_CPU_PERCENT,
                 ram: TEST_RAM_PERCENT,
@@ -237,11 +193,16 @@ describe('Instance Controller Unit Tests', () => {
 
         it('should return zero stats for stopped instance', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
+            const mockInstance = {
                 id: 'inst1',
                 vmid: 100,
                 userId: 'user1',
                 status: 'stopped',
+            };
+
+            prisma.instance.findUnique.mockResolvedValue(mockInstance);
+            instanceService.getInstanceStats.mockResolvedValue({
+                cpu: 0, ram: 0, storage: 0, ip: null, status: 'stopped'
             });
 
             await instanceController.getInstanceStats(req, res);
@@ -260,7 +221,7 @@ describe('Instance Controller Unit Tests', () => {
                 status: 'online'
             });
 
-            proxmoxService.getLXCStatus.mockRejectedValue(new Error('Connection failed'));
+            instanceService.getInstanceStats.mockRejectedValue(new Error('Connection failed'));
 
             await instanceController.getInstanceStats(req, res);
 
@@ -283,61 +244,48 @@ describe('Instance Controller Unit Tests', () => {
                 domains: [],
             });
             prisma.user.findUnique.mockResolvedValue({ id: 'user1', name: 'user1' });
-            prisma.domain.findUnique.mockResolvedValue(null); // Not taken
 
-            proxmoxService.getLXCInterfaces.mockResolvedValue([
-                { name: 'eth0', inet: '192.168.1.50/24' }
-            ]);
-
-            prisma.domain.create.mockResolvedValue({
+            domainService.createDomain.mockResolvedValue({
                 id: 'dom1',
-                subdomain: 'user1-inst1-app',
+                subdomain: 'app-user1-inst1',
             });
 
             await instanceController.createDomain(req, res);
 
-            expect(cloudflareService.addTunnelIngress).toHaveBeenCalledWith(
-                'app-user1-inst1.smp4.xyz',
-                'http://192.168.1.50:8080'
-            );
+            expect(domainService.createDomain).toHaveBeenCalled();
             expect(res.status).toHaveBeenCalledWith(201);
         });
 
-        it('should validate inputs', async () => {
+        it('should validate port is required', async () => {
             req.params.id = 'inst1';
-            req.body = { port: 8080 }; // Missing suffix
-            await instanceController.createDomain(req, res);
-            expect(res.status).toHaveBeenCalledWith(400);
+            req.body = { customSuffix: 'app' }; // Missing port
 
-            req.body = { port: 8080, customSuffix: 'a' }; // Too short
             await instanceController.createDomain(req, res);
             expect(res.status).toHaveBeenCalledWith(400);
         });
     });
 
-    // --- NEW DOMAIN TESTS ---
     describe('deleteDomain', () => {
         it('should delete domain successfully', async () => {
             req.params = { id: 'inst1', domainId: 'dom1' };
-            prisma.domain.findUnique.mockResolvedValue({
+            const mockDomain = {
                 id: 'dom1',
                 subdomain: 'sub1',
                 instance: { id: 'inst1', userId: 'user1' }
-            });
+            };
 
-            cloudflareService.removeTunnelIngress.mockResolvedValue();
-            prisma.domain.delete.mockResolvedValue();
+            domainService.getDomainWithOwner.mockResolvedValue(mockDomain);
+            domainService.deleteDomain.mockResolvedValue();
 
             await instanceController.deleteDomain(req, res);
 
-            expect(cloudflareService.removeTunnelIngress).toHaveBeenCalledWith('sub1.smp4.xyz');
-            expect(prisma.domain.delete).toHaveBeenCalledWith({ where: { id: 'dom1' } });
+            expect(domainService.deleteDomain).toHaveBeenCalledWith(mockDomain);
             expect(res.json).toHaveBeenCalled();
         });
 
         it('should return 404 if domain not found', async () => {
             req.params = { id: 'inst1', domainId: 'dom1' };
-            prisma.domain.findUnique.mockResolvedValue(null);
+            domainService.getDomainWithOwner.mockResolvedValue(null);
 
             await instanceController.deleteDomain(req, res);
 
@@ -348,11 +296,7 @@ describe('Instance Controller Unit Tests', () => {
     describe('getDomains', () => {
         it('should return domains', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
-                id: 'inst1',
-                userId: 'user1',
-                domains: [{ id: 'd1' }]
-            });
+            domainService.getInstanceDomains.mockResolvedValue([{ id: 'd1' }]);
 
             await instanceController.getDomains(req, res);
 
@@ -361,8 +305,10 @@ describe('Instance Controller Unit Tests', () => {
 
         it('should return 404 if instance not found', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue(null);
+            domainService.getInstanceDomains.mockResolvedValue(null);
+
             await instanceController.getDomains(req, res);
+
             expect(res.status).toHaveBeenCalledWith(404);
         });
     });
@@ -370,11 +316,14 @@ describe('Instance Controller Unit Tests', () => {
     describe('getVpnConfig', () => {
         it('should return existing config', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
+            const mockInstance = {
                 id: 'inst1',
                 userId: 'user1',
                 vpnConfig: 'existing-conf'
-            });
+            };
+
+            instanceService.getInstanceWithOwner.mockResolvedValue(mockInstance);
+            instanceService.getOrCreateVpnConfig.mockResolvedValue('existing-conf');
 
             await instanceController.getVpnConfig(req, res);
 
@@ -383,22 +332,19 @@ describe('Instance Controller Unit Tests', () => {
 
         it('should generate config if missing and instance has IP', async () => {
             req.params.id = 'inst1';
-            prisma.instance.findUnique.mockResolvedValue({
+            const mockInstance = {
                 id: 'inst1',
                 userId: 'user1',
                 vmid: 100,
                 vpnConfig: null
-            });
+            };
 
-            proxmoxService.getLXCInterfaces.mockResolvedValue([
-                { name: 'eth0', inet: '192.168.1.50/24' }
-            ]);
-
-            vpnService.createClient.mockResolvedValue({ config: 'new-conf' });
+            instanceService.getInstanceWithOwner.mockResolvedValue(mockInstance);
+            instanceService.getOrCreateVpnConfig.mockResolvedValue('new-conf');
 
             await instanceController.getVpnConfig(req, res);
 
-            expect(vpnService.createClient).toHaveBeenCalledWith('192.168.1.50');
+            expect(instanceService.getOrCreateVpnConfig).toHaveBeenCalledWith(mockInstance);
             expect(res.json).toHaveBeenCalledWith({ config: 'new-conf' });
         });
     });
@@ -423,17 +369,21 @@ describe('Instance Controller Unit Tests', () => {
                 templateId: 'ubuntu'
             });
 
-            proxmoxService.getNextVmid.mockResolvedValue(105);
-
-            prisma.instance.create.mockResolvedValue({
-                id: 'inst-new',
-                name: 'new-vm',
+            const mockAllocation = {
+                instance: {
+                    id: 'inst-new',
+                    name: 'new-vm',
+                    vmid: 105,
+                    status: 'provisioning',
+                    userId: 'user1'
+                },
                 vmid: 105,
-                status: 'provisioning',
-                userId: 'user1'
-            });
+                rootPassword: 'randompass'
+            };
 
-            // We don't await the background process in the controller, so we just check the initial response
+            instanceService.allocateInstance.mockResolvedValue(mockAllocation);
+            instanceService.provisionInBackground.mockImplementation(() => { });
+
             await instanceController.createInstance(req, res);
 
             expect(res.status).toHaveBeenCalledWith(201);
@@ -442,19 +392,19 @@ describe('Instance Controller Unit Tests', () => {
                 status: 'provisioning'
             }));
 
-            expect(proxmoxService.getNextVmid).toHaveBeenCalled();
-            expect(prisma.instance.create).toHaveBeenCalled();
+            expect(instanceService.allocateInstance).toHaveBeenCalled();
+            expect(instanceService.provisionInBackground).toHaveBeenCalled();
         });
 
         it('should return 400 for invalid template', async () => {
             req.body = {
                 name: 'new-vm',
-                template: 'invalid', // Invalid
+                template: 'invalid',
                 cpu: 1, ram: 1024, storage: 10, pointsPerDay: 1, os: 'default'
             };
 
             prisma.user.findUnique.mockResolvedValue({ id: 'user1', name: 'user1' });
-            prisma.templateVersion.findUnique.mockResolvedValue(null); // Not found
+            prisma.templateVersion.findUnique.mockResolvedValue(null);
 
             await instanceController.createInstance(req, res);
 

@@ -1,50 +1,16 @@
-const emailService = require('../services/email.service');
+/**
+ * Instance Controller
+ * HTTP request handling - delegates business logic to services
+ */
+
 const { prisma } = require('../db');
-const proxmoxService = require('../services/proxmox.service');
-const sshService = require('../services/ssh.service');
-const crypto = require('crypto');
-const systemOs = require('os');
-const cloudflareService = require('../services/cloudflare.service');
-const vpnService = require('../services/vpn.service');
-const { vmCreationQueue, vmAllocationQueue } = require('../services/queue.service');
+const instanceService = require('../services/instance.service');
+const domainService = require('../services/domain.service');
 const log = require('../services/logger.service');
-const ROOT_PASSWORD_BYTES = 8; // yields 16 hex chars
-const IP_MAX_ATTEMPTS = 30; // poll limit for VM IP
-const IP_POLL_DELAY_MS = 2000;
-const SSH_READY_DELAY_MS = 10000;
-const SSH_RESTART_DELAY_MS = 2000;
 
-
-
-const getBackendIp = () => {
-    // 1. Check explicitly configured IP
-    if (process.env.BACKEND_IP) {
-        return process.env.BACKEND_IP;
-    }
-
-    const networks = systemOs.networkInterfaces();
-
-    // 2. Priority: Find 192.168.x.x address first
-    for (const name of Object.keys(networks)) {
-        for (const net of networks[name]) {
-            if (net.family === 'IPv4' && !net.internal && net.address.startsWith('192.168.')) {
-                return net.address;
-            }
-        }
-    }
-
-    // 3. Fallback: take any external IPv4
-    for (const name of Object.keys(networks)) {
-        for (const net of networks[name]) {
-            if (net.family === 'IPv4' && !net.internal) {
-                return net.address;
-            }
-        }
-    }
-
-    return null;
-};
-
+/**
+ * POST /instances - Create a new instance
+ */
 const createInstance = async (req, res) => {
     try {
         let { name, template, cpu, ram, storage, pointsPerDay, os } = req.body;
@@ -56,16 +22,18 @@ const createInstance = async (req, res) => {
             pointsPerDay = 0;
         }
 
-        // Fetch User for Hostname Generation
+        // Fetch User
         const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (!user) return res.status(404).json({ error: "User not found" });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
 
-        // 1. Get Proxmox Template ID (Default OS)
+        // Get Template
         const templateVersion = await prisma.templateVersion.findUnique({
             where: {
                 templateId_os: {
                     templateId: template.toLowerCase(),
-                    os: 'default' // Hardcoded default as per user request
+                    os: 'default'
                 }
             }
         });
@@ -74,264 +42,21 @@ const createInstance = async (req, res) => {
             return res.status(400).json({ error: "Invalid template or OS combination. Please contact admin." });
         }
 
-        // 2. ALLOCATION PHASE (Serialized)
-        // Check availability and create DB record atomically-ish
-        const allocation = await vmAllocationQueue.add(async () => {
-            // Get Next VMID from Proxmox (start point)
-            let vmid = parseInt(await proxmoxService.getNextVmid());
-
-            // Loop until we find a VMID that is NOT in our database (active or provisioning)
-            // This handles the race condition where Proxmox hasn't seen the new VM yet
-            while (await prisma.instance.findFirst({ where: { vmid: vmid } })) {
-                vmid++;
-            }
-            log.debug(`Allocated VMID ${vmid} for instance ${name}`);
-
-            // Generate Root Password
-            const rootPassword = crypto.randomBytes(ROOT_PASSWORD_BYTES).toString('hex');
-
-            // 3. Create Database Record
-            const instance = await prisma.instance.create({
-                data: {
-                    name,
-                    template,
-                    cpu,
-                    ram,
-                    storage,
-                    pointsPerDay,
-                    status: "provisioning",
-                    userId,
-                    vmid: vmid,
-                    rootPassword: rootPassword
-                },
-            });
-
-            return { instance, vmid, rootPassword };
+        // Allocate VMID and create DB record
+        const { instance, vmid, rootPassword } = await instanceService.allocateInstance({
+            name, template, cpu, ram, storage, pointsPerDay, userId
         });
 
-        const { instance, vmid, rootPassword } = allocation;
-
-        // Respond immediately to UI
+        // Respond immediately
         res.status(201).json(instance);
 
-        // Generate Technical Hostname NOW that we have instance.id
-        // Format: [UserID short]-[UserName]-[Template]-[InstanceID short]
-        const sanitizedUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const userIdShort = String(user.id).slice(0, 6); // First 6 chars of user ID
-        const instanceIdShort = String(instance.id).slice(0, 8); // First 8 chars of instance ID
-        const technicalHostname = `${userIdShort}-${sanitizedUser}-${template.toLowerCase()}-${instanceIdShort}`;
-
-        // 4. Background Process: Clone, Start, Configure (Queued)
-        vmCreationQueue.add(async () => {
-            try {
-                log.debug(`[Queue] Starting processing for ${vmid}...`);
-                log.debug(`[Background] Cloning VM ${vmid} from template ${templateVersion.proxmoxId} as ${technicalHostname}...`);
-                // Use technicalHostname for Proxmox
-                const upid = await proxmoxService.cloneLXC(templateVersion.proxmoxId, vmid, technicalHostname);
-
-                await proxmoxService.waitForTask(upid);
-                log.debug(`[Background] Clone complete for ${vmid}. Starting...`);
-
-                // Set User & Date Tag
-                try {
-                    const dateTag = new Date().toISOString().split('T')[0];
-                    log.debug(`[Background] Setting tags '${sanitizedUser},${template},${dateTag}' for ${vmid}...`);
-                    await proxmoxService.configureLXC(vmid, { tags: `${sanitizedUser},${template},${dateTag}` });
-                } catch (tagError) {
-                    log.warn(`[Background] Failed to set tag for ${vmid}:`, tagError.message);
-                    // Continue creation even if tagging fails
-                }
-
-                // Password setting via Proxmox API is not supported for LXC config in this version.
-                // We will set it via SSH after boot.
-
-                await proxmoxService.startLXC(vmid);
-                // Note: We do NOT set status to 'online' here anymore. We wait for SSH config.
-
-                log.debug(`[Background] LXC ${vmid} started.`);
-
-                // Wait for IP and Configure 'smp4' user
-                let ip = null;
-                let attempts = 0;
-                // Sequential polling is intentional: Proxmox needs time to report a non-loopback IP
-                while (!ip && attempts < IP_MAX_ATTEMPTS) { // Wait up to 60s
-                    await new Promise(r => setTimeout(r, IP_POLL_DELAY_MS));
-                    const interfaces = await proxmoxService.getLXCInterfaces(vmid);
-                    const eth0 = interfaces.find(i => i.name === 'eth0');
-                    if (eth0 && eth0.inet) {
-                        const candidateIp = eth0.inet.split('/')[0];
-                        // Ignore loopback addresses that Proxmox may temporarily report
-                        ip = candidateIp && !candidateIp.startsWith('127.') ? candidateIp : null;
-                    }
-                    attempts++;
-                }
-
-                if (ip) {
-                    log.debug(`[Background] VM ${vmid} is up at ${ip}. Configuring 'smp4' user...`);
-
-                    // Allow SSH to come up fully (sometimes IP is ready before SSHd)
-                    await new Promise(r => setTimeout(r, SSH_READY_DELAY_MS));
-
-                    try {
-                        // 1. Enable Password Authentication & Root Login
-                        await sshService.execCommand(ip, `sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config && sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config && service ssh restart`);
-
-                        // Wait for SSH to restart
-                        await new Promise(r => setTimeout(r, SSH_RESTART_DELAY_MS));
-
-                        // 2. Create smp4 user if not exists
-                        await sshService.execCommand(ip, 'id -u smp4 &>/dev/null || useradd -m -s /bin/bash smp4');
-
-                        // 3. Add to sudo (MUST be before password change!)
-                        await sshService.execCommand(ip, 'usermod -aG sudo smp4');
-
-                        // 4. Set Password for smp4 AND force password change on first login (combined)
-                        await sshService.execCommand(ip, `echo "smp4:${rootPassword}" | chpasswd && chage -d 0 smp4`);
-
-                        // 5. Set Password for root (LAST - changes root password, locks us out)
-                        await sshService.execCommand(ip, `echo "root:${rootPassword}" | chpasswd`);
-
-                        log.debug(`[Background] User 'smp4' configured successfully for ${vmid}`);
-
-                        // Send Email Notification
-                        if (user && user.email) {
-                            log.debug(`[Background] Sending credential email to ${user.email}...`);
-                            await emailService.sendInstanceCredentials(user.email, user.name, instance.name, ip, rootPassword);
-                        }
-
-                        // 6. Security: Configure Firewall
-                        try {
-                            // 6a. Whitelist Backend IP for WebSocket/SSH access
-                            const backendIp = getBackendIp();
-
-                            if (backendIp) {
-                                // SECURITY HARDENING: Block VM from attacking Unraid Admin Interfaces
-                                const sensitivePorts = [22, 80, 85, 443, 8006];
-                                await Promise.all(
-                                    sensitivePorts.map((port) =>
-                                        proxmoxService.addFirewallRule(vmid, {
-                                            type: 'out',
-                                            action: 'DROP',
-                                            dest: backendIp,
-                                            dport: port,
-                                            proto: 'tcp',
-                                            enable: 1,
-                                            comment: `Block access to Host Port ${port}`
-                                        })
-                                    )
-                                );
-                            }
-
-                            // 6b. Allow ALL Inbound Traffic
-                            log.debug(`[Background] Adding firewall rule: ACCEPT ALL INBOUND for ${vmid}...`);
-                            await proxmoxService.addFirewallRule(vmid, {
-                                type: 'in',
-                                action: 'ACCEPT',
-                                enable: 1,
-                                comment: 'Allow all inbound traffic (Web, Portainer, etc.)'
-                            });
-
-                            // 6c. Allow LAN Access but Protect Gateway
-                            log.debug(`[Background] Adding firewall DROP rule for Gateway 192.168.1.254 to ${vmid}...`);
-                            await proxmoxService.addFirewallRule(vmid, {
-                                type: 'out',
-                                action: 'DROP',
-                                dest: '192.168.1.254',
-                                enable: 1,
-                                comment: 'Block access to Gateway Admin Interface'
-                            });
-
-                            log.debug(`[Background] Firewall rules added for ${vmid}`);
-
-                            // 7. Security: Enable Firewall
-                            log.debug(`[Background] Enabling firewall for ${vmid}...`);
-                            await proxmoxService.setFirewallOptions(vmid, { enable: 1 });
-                        } catch (fwError) {
-                            log.warn(`[Background] Failed to add firewall rule via API:`, fwError.message);
-                        }
-                    } catch (sshError) {
-                        log.error(`[Background] Failed to configure 'smp4' user via SSH:`, sshError.message);
-                    }
-                } else {
-                    log.error(`[Background] Timed out waiting for IP for ${vmid}`);
-                }
-
-                // Create VPN Client
-                try {
-                    if (ip) {
-                        log.debug(`[Background] Creating WireGuard VPN access for ${ip}...`);
-                        const vpnData = await vpnService.createClient(ip);
-
-                        // Parse VPN Config to get PublicKey (simple helper)
-                        // Actually the service returns public key separately now
-
-                        await prisma.instance.update({
-                            where: { id: instance.id },
-                            data: {
-                                vpnConfig: vpnData.config
-                            }
-                        });
-                        log.debug(`[Background] VPN configured for ${vmid}`);
-                    }
-                } catch (vpnError) {
-                    log.error(`[Background] VPN creation failed for ${vmid}:`, vpnError.message);
-                    // Non-fatal, continue
-                }
-
-                // Auto-create Portainer Domain (Port 9000)
-                try {
-                    if (ip) {
-                        log.debug(`[Background] Creating Portainer domain for ${instance.name}...`);
-
-                        // Generate Subdomain: portainer-[user]-[vm]
-                        // Ensure strict sanitization matching the createDomain logic
-                        const cleanUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        const cleanInstance = instance.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                        // Format: [suffix]-[user]-[vm] => portainer-${cleanUser}-${cleanInstance}
-                        const subdomain = `portainer-${cleanUser}-${cleanInstance}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
-
-                        const fullHostname = `${subdomain}.smp4.xyz`;
-                        const serviceUrl = `http://${ip}:9000`;
-
-                        log.debug(`[Background] Attempting to create Portainer domain: ${fullHostname} -> ${serviceUrl}`);
-
-                        // Add to Cloudflare
-                        await cloudflareService.addTunnelIngress(fullHostname, serviceUrl);
-
-                        // Save to DB (First domain is free)
-                        await prisma.domain.create({
-                            data: {
-                                subdomain,
-                                port: 9000,
-                                isPaid: false, // First domain is always free
-                                instanceId: instance.id
-                            }
-                        });
-                        log.debug(`[Background] Portainer domain successfully created in DB: ${subdomain}`);
-                    } else {
-                        log.warn(`[Background] Skipping Portainer domain creation: No IP available for ${vmid}`);
-                    }
-                } catch (domainError) {
-                    log.error(`[Background] Portainer domain creation FAILED for ${vmid}:`, domainError);
-                    // Non-fatal
-                }
-
-                // ALL DONE - SET ONLINE
-                await prisma.instance.update({
-                    where: { id: instance.id },
-                    data: { status: 'online' }
-                });
-                log.debug(`[Background] Instance ${instance.id} is now ONLINE.`);
-
-
-            } catch (bgError) {
-                log.error(`[Background] Creation failed for ${vmid}:`, bgError.message);
-                // Update status to 'error' or 'stopped' so user knows
-                await prisma.instance.update({
-                    where: { id: instance.id },
-                    data: { status: 'error' } // Or 'stopped'
-                });
-            }
+        // Start background provisioning
+        instanceService.provisionInBackground({
+            instance,
+            vmid,
+            rootPassword,
+            templateVersion,
+            user
         });
 
     } catch (error) {
@@ -340,6 +65,9 @@ const createInstance = async (req, res) => {
     }
 };
 
+/**
+ * GET /instances - Get all user instances
+ */
 const getInstances = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -348,22 +76,17 @@ const getInstances = async (req, res) => {
             orderBy: { created_at: 'desc' },
             include: {
                 domains: {
-                    where: {
-                        isPaid: true
-                    },
-                    select: {
-                        id: true,
-                        isPaid: true
-                    }
+                    where: { isPaid: true },
+                    select: { id: true, isPaid: true }
                 }
             }
         });
 
-        // Add paidDomainsCount to each instance
+        // Add paidDomainsCount
         const instancesWithCosts = instances.map(inst => ({
             ...inst,
             paidDomainsCount: inst.domains?.length || 0,
-            domains: undefined // Don't send full domain list to dashboard
+            domains: undefined
         }));
 
         res.json(instancesWithCosts);
@@ -373,38 +96,20 @@ const getInstances = async (req, res) => {
     }
 };
 
-// Toggle status (start/stop)
+/**
+ * PUT /instances/:id/toggle - Toggle instance status (start/stop)
+ */
 const toggleInstanceStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.id;
 
-        const instance = await prisma.instance.findUnique({
-            where: { id: id }
-        });
-
-        if (!instance || instance.userId !== userId) {
+        const instance = await instanceService.getInstanceWithOwner(id, userId);
+        if (!instance) {
             return res.status(404).json({ error: "Instance not found" });
         }
 
-        const currentStatus = instance.status;
-        let newStatus;
-
-        if (currentStatus === "online" || currentStatus === "running") {
-            log.debug(`Stopping instance ${instance.vmid}...`);
-            await proxmoxService.stopLXC(instance.vmid);
-            newStatus = "stopped";
-        } else {
-            log.debug(`Starting instance ${instance.vmid}...`);
-            await proxmoxService.startLXC(instance.vmid);
-            newStatus = "online";
-        }
-
-        const updatedInstance = await prisma.instance.update({
-            where: { id: id },
-            data: { status: newStatus }
-        });
-
+        const updatedInstance = await instanceService.toggleStatus(instance);
         res.json(updatedInstance);
     } catch (error) {
         log.error("Toggle status error:", error);
@@ -412,28 +117,30 @@ const toggleInstanceStatus = async (req, res) => {
     }
 };
 
+/**
+ * POST /instances/:id/restart - Restart instance
+ */
 const restartInstance = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.id;
 
-        const instance = await prisma.instance.findUnique({
-            where: { id: id }
-        });
-
-        if (!instance || instance.userId !== userId) {
+        const instance = await instanceService.getInstanceWithOwner(id, userId);
+        if (!instance) {
             return res.status(404).json({ error: "Instance not found" });
         }
 
-        await proxmoxService.rebootLXC(instance.vmid);
+        await instanceService.restartInstance(instance);
         res.json({ message: "Instance restarting" });
-
     } catch (error) {
         log.error("Restart instance error:", error);
         res.status(500).json({ error: "Failed to restart instance" });
     }
 };
 
+/**
+ * DELETE /instances/:id - Delete instance
+ */
 const deleteInstance = async (req, res) => {
     try {
         const { id } = req.params;
@@ -443,63 +150,22 @@ const deleteInstance = async (req, res) => {
             where: { id },
             include: { domains: true }
         });
+
         if (!instance || instance.userId !== userId) {
             return res.status(404).json({ error: "Instance not found" });
         }
 
-        // 1. Stop if running (with wait)
-        if (instance.vmid) {
-            try {
-                log.debug(`Ensuring VM ${instance.vmid} is stopped before deletion...`);
-                const upid = await proxmoxService.stopLXC(instance.vmid);
-                await proxmoxService.waitForTask(upid);
-            } catch (e) {
-                log.warn(`Stop failed (maybe already stopped): ${e.message}`);
-            }
-
-            // 2. Delete from Proxmox
-            try {
-                log.debug(`Deleting VM ${instance.vmid} from Proxmox...`);
-                await proxmoxService.deleteLXC(instance.vmid);
-            } catch (e) {
-                log.warn(`Proxmox delete failed (VM may not exist): ${e.message}`);
-                // Continue to delete from DB anyway
-            }
-        }
-
-        // 3a. Clean up VPN (if exists)
-        // 3a. Clean up VPN (if exists)
-        if (instance.vpnConfig) {
-            log.debug(`Cleaning up VPN for instance ${id}...`);
-            await vpnService.deleteClient(instance.vpnConfig);
-        }
-
-        // 3b. Clean up Domains
-        if (instance.domains && instance.domains.length > 0) {
-            log.debug(`Cleaning up ${instance.domains.length} domains for instance ${id}...`);
-
-            const hostnames = instance.domains.map(d => `${d.subdomain}.smp4.xyz`);
-            try {
-                await cloudflareService.removeMultipleTunnelIngress(hostnames);
-            } catch (cfError) {
-                log.error("Failed to remove domains from Cloudflare:", cfError.message);
-                // Continue deletion anyway
-            }
-        }
-
-        // 3. Delete from DB
-        // Note: Domains are deleted via CASCADE; configured in Prisma schema.
-        await prisma.instance.delete({ where: { id } });
+        await instanceService.deleteInstance(instance);
         res.json({ message: "Instance deleted" });
-
-
     } catch (error) {
         log.error("Delete instance error:", error);
         res.status(500).json({ error: "Failed to delete instance" });
     }
-}
+};
 
-
+/**
+ * GET /instances/:id/stats - Get instance statistics
+ */
 const getInstanceStats = async (req, res) => {
     try {
         const { id } = req.params;
@@ -510,83 +176,17 @@ const getInstanceStats = async (req, res) => {
             return res.status(404).json({ error: "Instance not found" });
         }
 
-        if (!instance.vmid || instance.status === 'stopped') {
-            return res.json({
-                cpu: 0,
-                ram: 0,
-                storage: 0,
-                ip: null,
-                status: instance.status
-            });
-        }
-
-        // Fetch stats from Proxmox
         try {
-            const status = await proxmoxService.getLXCStatus(instance.vmid);
-            const interfaces = await proxmoxService.getLXCInterfaces(instance.vmid);
+            const stats = await instanceService.getInstanceStats(instance);
+            res.json(stats);
 
-            // Calculate metrics with explicit guards for readability
-            let cpuPercent = 0;
-            if (typeof status.cpu === 'number') {
-                cpuPercent = status.cpu * 100;
+            // Sync DB status in background
+            if (stats.status && stats.status !== 'unknown') {
+                instanceService.syncDbStatus(instance, stats.status).catch(err => {
+                    log.warn("Failed to sync status:", err);
+                });
             }
-
-            let ramPercent = 0;
-            if (status.maxmem) {
-                ramPercent = (status.mem / status.maxmem) * 100;
-            }
-
-            // Use instance.storage (GB) from DB as the source of truth for total size
-            const storageGB = instance.storage ? parseInt(instance.storage, 10) : 0;
-            let maxDiskBytes = status.maxdisk;
-            if (storageGB > 0) {
-                maxDiskBytes = storageGB * 1024 * 1024 * 1024;
-            }
-
-            const storagePercent = maxDiskBytes ? (status.disk / maxDiskBytes) * 100 : 0;
-
-            // interfaces is array. Find eth0.
-            let ip = null;
-            const eth0 = interfaces.find(i => i.name === 'eth0');
-            if (eth0?.inet) {
-                ip = eth0.inet.split('/')[0];
-            }
-
-            res.json({
-                cpu: parseFloat(cpuPercent.toFixed(1)),
-                ram: parseFloat(ramPercent.toFixed(1)),
-                storage: parseFloat(storagePercent.toFixed(1)),
-                diskBytes: status.disk,
-                maxDiskBytes: parseInt(maxDiskBytes),
-                ip: ip,
-                status: status.status,
-                uptime: status.uptime,
-                rootPassword: instance.rootPassword
-            });
-
-            // SYNC DB STATUS: PROXMOX -> DB
-            try {
-                const currentDbStatus = instance.status;
-                const proxmoxStatus = status.status; // 'running' or 'stopped'
-
-                // Map Proxmox 'running' to DB 'online'
-                const mappedProxmoxStatus = proxmoxStatus === 'running' ? 'online' : 'stopped';
-
-                // Only update if DIFFERENT and NOT 'provisioning' (to avoid race conditions during creation)
-                if (currentDbStatus !== 'provisioning' && currentDbStatus !== mappedProxmoxStatus) {
-                    log.debug(`[Sync] Mismatch for ${instance.id}. DB: ${currentDbStatus}, Proxmox: ${proxmoxStatus}. Updating DB...`);
-                    await prisma.instance.update({
-                        where: { id: instance.id },
-                        data: { status: mappedProxmoxStatus }
-                    });
-                }
-            } catch (syncError) {
-                log.warn("Failed to sync status to DB:", syncError);
-                // Non-fatal, stats still returned
-            }
-
         } catch (proxmoxError) {
-            // If Proxmox call fails (e.g. timeout), return cached database status or zeros
             log.error(`Proxmox stats error for ${instance.vmid}:`, proxmoxError.message);
             return res.json({
                 cpu: 0,
@@ -596,129 +196,75 @@ const getInstanceStats = async (req, res) => {
                 status: 'unknown'
             });
         }
-
     } catch (error) {
         log.error("Get stats error:", error);
         res.status(500).json({ error: "Failed to get stats" });
     }
 };
 
+/**
+ * POST /instances/:id/domains - Create domain
+ */
 const createDomain = async (req, res) => {
     try {
         const { id } = req.params;
-        const { port, customSuffix } = req.body;
+        const { port, customSuffix, isPaid } = req.body;
         const userId = req.user.id;
 
-        // Validation
         if (!port) {
             return res.status(400).json({ error: "Port is required" });
         }
-        if (!customSuffix) {
-            return res.status(400).json({ error: "Custom suffix is required" });
-        }
 
-        // Sanitize suffix: alphanumeric only, lowercase
-        const cleanSuffix = customSuffix.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (cleanSuffix.length < 3) {
-            return res.status(400).json({ error: "Suffix must be at least 3 alphanumeric characters" });
-        }
-
-        // Fetch Instance AND User
+        // Fetch instance with domains
         const instance = await prisma.instance.findUnique({
             where: { id },
             include: { domains: true }
         });
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId }
-        });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
 
         if (!instance || instance.userId !== userId || !user) {
             return res.status(404).json({ error: "Instance or User not found" });
         }
 
-        // Check limits: 3 free, unlimited paid (with isPaid flag)
-        const freeDomains = instance.domains.filter(d => !d.isPaid);
-        const isPaidDomain = freeDomains.length >= 3;
-
-        if (isPaidDomain && req.body.isPaid !== true) {
-            return res.status(400).json({
-                error: "Maximum of 3 free domains reached",
-                requiresPurchase: true,
-                message: "You can purchase additional domains for 2 points/day"
-            });
-        }
-
-        // Generate Subdomain: [username]-[instancename]-[suffix]
-        const cleanUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cleanInstance = instance.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-
-        const subdomain = `${cleanSuffix}-${cleanUser}-${cleanInstance}`.replace(/-+/g, '-').replace(/^-|-$/g, '');
-
-        // Check if subdomain is taken (global check)
-        const existingDomain = await prisma.domain.findUnique({
-            where: { subdomain }
-        });
-        if (existingDomain) {
-            return res.status(400).json({ error: `Domain ${subdomain} is already active` });
-        }
-
-        // Get Instance IP
-        const interfaces = await proxmoxService.getLXCInterfaces(instance.vmid);
-        const eth0 = interfaces.find(i => i.name === 'eth0');
-        const ip = eth0 && eth0.inet ? eth0.inet.split('/')[0] : null;
-
-        if (!ip) {
-            return res.status(400).json({ error: "Instance must have an IP address to bind a domain" });
-        }
-
-        const fullHostname = `${subdomain}.smp4.xyz`;
-        const serviceUrl = `http://${ip}:${port}`;
-
-        // Add to Cloudflare
-        await cloudflareService.addTunnelIngress(fullHostname, serviceUrl);
-
-        // Save to DB
-        const domain = await prisma.domain.create({
-            data: {
-                subdomain,
-                port: parseInt(port),
-                isPaid: isPaidDomain,
-                instanceId: id
-            }
+        const domain = await domainService.createDomain({
+            instance,
+            user,
+            port,
+            customSuffix,
+            isPaidRequest: isPaid
         });
 
         res.status(201).json(domain);
     } catch (error) {
         log.error("Create domain error:", error);
-        res.status(500).json({ error: error.message });
+
+        if (error.requiresPurchase) {
+            return res.status(400).json({
+                error: error.message,
+                requiresPurchase: true,
+                message: "You can purchase additional domains for 2 points/day"
+            });
+        }
+
+        res.status(error.statusCode || 500).json({ error: error.message });
     }
 };
 
+/**
+ * DELETE /instances/:id/domains/:domainId - Delete domain
+ */
 const deleteDomain = async (req, res) => {
     try {
         const { id, domainId } = req.params;
         const userId = req.user.id;
 
-        const domain = await prisma.domain.findUnique({
-            where: { id: domainId },
-            include: { instance: true }
-        });
-
-        if (!domain || domain.instance.id !== id || domain.instance.userId !== userId) {
+        const domain = await domainService.getDomainWithOwner(domainId, id, userId);
+        if (!domain) {
             return res.status(404).json({ error: "Domain not found" });
         }
 
-        const fullHostname = `${domain.subdomain}.smp4.xyz`;
-
-        // Remove from Cloudflare
-        await cloudflareService.removeTunnelIngress(fullHostname);
-
-        // Remove from DB
-        await prisma.domain.delete({
-            where: { id: domainId }
-        });
-
+        await domainService.deleteDomain(domain);
         res.json({ message: "Domain deleted successfully" });
     } catch (error) {
         log.error("Delete domain error:", error);
@@ -726,83 +272,47 @@ const deleteDomain = async (req, res) => {
     }
 };
 
+/**
+ * GET /instances/:id/domains - Get instance domains
+ */
 const getDomains = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.id;
 
-        const instance = await prisma.instance.findUnique({
-            where: { id },
-            include: {
-                domains: {
-                    select: {
-                        id: true,
-                        subdomain: true,
-                        port: true,
-                        isPaid: true,
-                        createdAt: true
-                    }
-                }
-            }
-        });
-
-        if (!instance || instance.userId !== userId) {
+        const domains = await domainService.getInstanceDomains(id, userId);
+        if (domains === null) {
             return res.status(404).json({ error: "Instance not found" });
         }
 
-        res.json(instance.domains);
+        res.json(domains);
     } catch (error) {
         log.error("Get domains error:", error);
         res.status(500).json({ error: "Failed to fetch domains" });
     }
 };
 
-
+/**
+ * GET /instances/:id/vpn - Get VPN config
+ */
 const getVpnConfig = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.id;
 
-        const instance = await prisma.instance.findUnique({ where: { id } });
-        if (!instance || instance.userId !== userId) {
+        const instance = await instanceService.getInstanceWithOwner(id, userId);
+        if (!instance) {
             return res.status(404).json({ error: "Instance not found" });
         }
 
-        // If config exists, return it
-        if (instance.vpnConfig) {
-            return res.json({ config: instance.vpnConfig });
-        }
-
-        // If missing, try to generate it (only if VM is running/has IP)
-        if (!instance.vmid) {
-            return res.status(400).json({ error: "Instance has no VMID" });
-        }
-
         try {
-            const interfaces = await proxmoxService.getLXCInterfaces(instance.vmid);
-            const eth0 = interfaces.find(i => i.name === 'eth0');
-            const ip = eth0 && eth0.inet ? eth0.inet.split('/')[0] : null;
-
-            if (!ip || ip.startsWith('127.')) {
-                return res.status(400).json({ error: "Instance must be running to generate VPN config" });
-            }
-
-            log.debug(`[VPN] Generating missing config for ${instance.id} (${ip})...`);
-            const vpnData = await vpnService.createClient(ip);
-
-            // Save to DB
-            await prisma.instance.update({
-                where: { id: instance.id },
-                data: { vpnConfig: vpnData.config }
-            });
-
-            return res.json({ config: vpnData.config });
-
+            const config = await instanceService.getOrCreateVpnConfig(instance);
+            res.json({ config });
         } catch (genError) {
             log.error("Auto-generate VPN error:", genError);
-            return res.status(500).json({ error: "Failed to generate VPN config. Ensure VM is running." });
+            return res.status(genError.message.includes("VMID") ? 400 : 500)
+                .json({ error: genError.message });
         }
-
     } catch (error) {
         log.error("Get VPN config error:", error);
         res.status(500).json({ error: "Failed to fetch VPN config" });
@@ -820,5 +330,4 @@ module.exports = {
     deleteDomain,
     getDomains,
     getVpnConfig
-
 };

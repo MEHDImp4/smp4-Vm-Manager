@@ -10,6 +10,7 @@ jest.mock('../../src/db', () => ({
     prisma: {
         instance: {
             findUnique: jest.fn(),
+            findFirst: jest.fn(),
             findMany: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
@@ -33,6 +34,15 @@ jest.mock('../../src/services/proxmox.service');
 jest.mock('../../src/services/ssh.service');
 jest.mock('../../src/services/cloudflare.service');
 jest.mock('../../src/services/vpn.service');
+jest.mock('../../src/services/queue.service', () => ({
+    vmCreationQueue: {
+        add: jest.fn((fn) => fn()),
+    },
+    vmAllocationQueue: {
+        add: jest.fn((fn) => fn()),
+    },
+}));
+
 
 describe('Instance Controller Unit Tests', () => {
     let req, res;

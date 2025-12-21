@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const systemOs = require('os');
 const cloudflareService = require('../services/cloudflare.service');
 const vpnService = require('../services/vpn.service');
+const { vmCreationQueue, vmAllocationQueue } = require('../services/queue.service');
 
 const ROOT_PASSWORD_BYTES = 8; // yields 16 hex chars
 const IP_MAX_ATTEMPTS = 30; // poll limit for VM IP
@@ -79,47 +80,54 @@ const createInstance = async (req, res) => {
             return res.status(400).json({ error: "Invalid template or OS combination. Please contact admin." });
         }
 
-        // 2. Get Next VMID from Proxmox
-        const vmid = await proxmoxService.getNextVmid();
-        debugLog(`Allocated VMID ${vmid} for instance ${name}`);
+        // 2. ALLOCATION PHASE (Serialized)
+        // Check availability and create DB record atomically-ish
+        const allocation = await vmAllocationQueue.add(async () => {
+            // Get Next VMID from Proxmox (start point)
+            let vmid = parseInt(await proxmoxService.getNextVmid());
 
-        // Generate Technical Hostname: [UserID]-[UserName]-[Template]-[InstanceID]
-        // Sanitize user name (remove spaces, special chars)
-        const sanitizedUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        // We'll use the instance ID later, so generate a temp hostname first
-        // The final hostname will be set after instance creation
+            // Loop until we find a VMID that is NOT in our database (active or provisioning)
+            // This handles the race condition where Proxmox hasn't seen the new VM yet
+            while (await prisma.instance.findFirst({ where: { vmid: vmid } })) {
+                vmid++;
+            }
+            debugLog(`Allocated VMID ${vmid} for instance ${name}`);
 
-        // Generate Root Password
-        const rootPassword = crypto.randomBytes(ROOT_PASSWORD_BYTES).toString('hex'); // 16 chars hex
+            // Generate Root Password
+            const rootPassword = crypto.randomBytes(ROOT_PASSWORD_BYTES).toString('hex');
 
-        // 3. Create Database Record
-        const instance = await prisma.instance.create({
-            data: {
-                name, // Start using user-provided friendly name
-                template,
-                cpu,
-                ram,
-                storage,
-                pointsPerDay,
-                status: "provisioning", // Initial status
-                userId,
-                vmid: parseInt(vmid),
-                rootPassword: rootPassword
-            },
+            // 3. Create Database Record
+            const instance = await prisma.instance.create({
+                data: {
+                    name,
+                    template,
+                    cpu,
+                    ram,
+                    storage,
+                    pointsPerDay,
+                    status: "provisioning",
+                    userId,
+                    vmid: vmid,
+                    rootPassword: rootPassword
+                },
+            });
+
+            return { instance, vmid, rootPassword };
         });
+
+        const { instance, vmid, rootPassword } = allocation;
 
         // Respond immediately to UI
         res.status(201).json(instance);
 
         // Generate Technical Hostname NOW that we have instance.id
         // Format: [UserID short]-[UserName]-[Template]-[InstanceID short]
+        const sanitizedUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
         const userIdShort = String(user.id).slice(0, 6); // First 6 chars of user ID
         const instanceIdShort = String(instance.id).slice(0, 8); // First 8 chars of instance ID
         const technicalHostname = `${userIdShort}-${sanitizedUser}-${template.toLowerCase()}-${instanceIdShort}`;
 
         // 4. Background Process: Clone, Start, Configure (Queued)
-        const { vmCreationQueue } = require('../services/queue.service');
-
         vmCreationQueue.add(async () => {
             try {
                 debugLog(`[Queue] Starting processing for ${vmid}...`);

@@ -1,0 +1,152 @@
+
+> web-backend@1.0.0 test
+> jest --coverage __tests__/unit/consumptionCron.test.js __tests__/unit/instanceController.test.js __tests__/unit/contactController.test.js __tests__/unit/pointsController.test.js
+
+PASS __tests__/unit/consumptionCron.test.js
+  Consumption Cron
+    ΓêÜ should initialize cron job (9 ms)
+    ΓêÜ should process consumption on schedule (1 ms)
+
+PASS __tests__/unit/contactController.test.js
+  Contact Controller Unit Tests
+    submitMessage
+      ΓêÜ should submit a message successfully (12 ms)
+      ΓêÜ should return 400 if fields are missing (1 ms)
+      ΓêÜ should return 500 on db error (1 ms)
+    getMessages
+      ΓêÜ should get all messages (1 ms)
+      ΓêÜ should return 500 on db error (1 ms)
+    deleteMessage
+      ΓêÜ should delete a message (1 ms)
+      ΓêÜ should return 500 on db error (1 ms)
+    markAsRead
+      ΓêÜ should mark a message as read (1 ms)
+      ΓêÜ should return 500 on db error
+    replyMessage
+      ΓêÜ should send a reply successfully (31 ms)
+      ΓêÜ should return 404 if message not found
+      ΓêÜ should return 500 on error (1 ms)
+
+FAIL __tests__/unit/pointsController.test.js
+  Points Controller Unit Tests
+    spinWheel
+      ΓêÜ should allow user to spin if they have not spun today (32 ms)
+      ΓêÜ should return 400 if user already spun today (1 ms)
+      ├ù should handle errors gracefully (5 ms)
+    canSpinToday
+      ΓêÜ should return true if no spin today (1 ms)
+      ΓêÜ should return false if already spun (1 ms)
+      ΓêÜ should handle errors (1 ms)
+    purchasePoints
+      ΓêÜ should return placeholder response for valid amount (1 ms)
+      ΓêÜ should return 400 for invalid amount
+      ΓêÜ should handle errors (1 ms)
+    claimSocialBonus
+      ΓêÜ should claim bonus if platform is valid and not yet claimed (1 ms)
+      ΓêÜ should return 400 if platform is invalid
+      ΓêÜ should return 400 if bonus already claimed (1 ms)
+      ΓêÜ should handle errors
+
+  ΓùÅ Points Controller Unit Tests ΓÇ║ spinWheel ΓÇ║ should handle errors gracefully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    - Expected
+    + Received
+
+      Object {
+    -   "message": "Erreur lors de l'envoi de la r├⌐ponse",
+    +   "error": "Erreur lors du tirage",
+      },
+
+    Number of calls: 1
+
+      90 |
+      91 |             expect(res.status).toHaveBeenCalledWith(500);
+    > 92 |             expect(res.json).toHaveBeenCalledWith({ message: 'Erreur lors de l\'envoi de la r├⌐ponse' });
+         |                              ^
+      93 |         });
+      94 |     });
+      95 |
+
+      at Object.toHaveBeenCalledWith (__tests__/unit/pointsController.test.js:92:30)
+
+PASS __tests__/unit/instanceController.test.js (7.051 s)
+  Instance Controller Unit Tests
+    toggleInstanceStatus
+      ΓêÜ should stop a running instance (10 ms)
+      ΓêÜ should start a stopped instance (1 ms)
+      ΓêÜ should return 404 if instance not found (2 ms)
+    restartInstance
+      ΓêÜ should reboot instance
+    deleteInstance
+      ΓêÜ should delete instance and cleanup resources (3004 ms)
+      ΓêÜ should handle errors during stop gracefully (1 ms)
+      ΓêÜ should handle errors during proxmox delete gracefully (3007 ms)
+    getInstanceStats
+      ΓêÜ should return stats for running instance (1 ms)
+      ΓêÜ should return zero stats for stopped instance (1 ms)
+      ΓêÜ should handle proxmox errors by returning zeros/unknown
+    createDomain
+      ΓêÜ should create a domain successfully (1 ms)
+      ΓêÜ should validate inputs (1 ms)
+    deleteDomain
+      ΓêÜ should delete domain successfully (1 ms)
+      ΓêÜ should return 404 if domain not found
+    getDomains
+      ΓêÜ should return domains (1 ms)
+      ΓêÜ should return 404 if instance not found
+    getVpnConfig
+      ΓêÜ should return existing config (1 ms)
+      ΓêÜ should generate config if missing and instance has IP (1 ms)
+    createInstance
+      ΓêÜ should create instance successfully (2 ms)
+      ΓêÜ should return 400 for invalid template (1 ms)
+      ΓêÜ should return 500 on db error
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+------------------------|---------|----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------------------------
+File                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                                                          
+------------------------|---------|----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------------------------
+All files               |   24.47 |    20.28 |   19.51 |   24.82 |                                                                                                                                            
+ controllers            |   37.78 |    33.23 |   38.02 |   38.47 |                                                                                                                                            
+  adminController.js    |       0 |        0 |       0 |       0 | 1-251                                                                                                                                      
+  authController.js     |       0 |        0 |       0 |       0 | 1-393                                                                                                                                      
+  contactController.js  |     100 |      100 |     100 |     100 |                                                                                                                                            
+  instanceController.js |   63.63 |    55.78 |   70.83 |   64.52 | 31,106,124-323,337-365,403-404,418,425-426,440,479,491-492,504,578,595-596,608,631,639,657,666,687-688,718-719,749-750,762,772,781,796-802 
+  pointsController.js   |   92.63 |    71.05 |     100 |    93.4 | 15,95,151,191,207,265                                                                                                                      
+  snapshotController.js |       0 |        0 |       0 |       0 | 1-361                                                                                                                                      
+  templateController.js |       0 |      100 |       0 |       0 | 1-15                                                                                                                                       
+ cron                   |     7.2 |     3.84 |   14.28 |    7.43 |                                                                                                                                            
+  backup.cron.js        |       0 |        0 |       0 |       0 | 1-85                                                                                                                                       
+  consumptionCron.js    |      90 |       50 |   66.66 |      90 | 13                                                                                                                                         
+  idleCheck.cron.js     |       0 |        0 |       0 |       0 | 1-95                                                                                                                                       
+  reminder.cron.js      |       0 |        0 |       0 |       0 | 1-76                                                                                                                                       
+  snapshotCron.js       |       0 |        0 |       0 |       0 | 1-54                                                                                                                                       
+ middlewares            |       0 |        0 |       0 |       0 |                                                                                                                                            
+  adminMiddleware.js    |       0 |        0 |       0 |       0 | 1-15                                                                                                                                       
+  authMiddleware.js     |       0 |        0 |       0 |       0 | 1-20                                                                                                                                       
+ routes                 |       0 |        0 |       0 |       0 |                                                                                                                                            
+  adminRoutes.js        |       0 |      100 |     100 |       0 | 1-18                                                                                                                                       
+  authRoutes.js         |       0 |        0 |       0 |       0 | 1-58                                                                                                                                       
+  contactRoutes.js      |       0 |      100 |     100 |       0 | 1-15                                                                                                                                       
+  instanceRoutes.js     |       0 |      100 |     100 |       0 | 1-31                                                                                                                                       
+  pointsRoutes.js       |       0 |      100 |     100 |       0 | 1-16                                                                                                                                       
+  templateRoutes.js     |       0 |      100 |     100 |       0 | 1-11                                                                                                                                       
+ services               |     8.2 |     3.91 |     4.1 |    8.48 |                                                                                                                                            
+  cloudflare.service.js |   13.79 |     7.31 |       0 |   14.81 | 26-140                                                                                                                                     
+  email.service.js      |   23.68 |    11.11 |   14.28 |   23.68 | 22-92,110-121,129-483                                                                                                                      
+  pointsService.js      |    12.9 |        0 |       0 |   13.33 | 5-108                                                                                                                                      
+  proxmox.service.js    |    4.89 |     6.25 |    3.44 |       5 | 10,26-391                                                                                                                                  
+  ssh.service.js        |    2.51 |        0 |    3.57 |    2.61 | 14-293                                                                                                                                     
+  vpn.service.js        |   22.72 |        0 |       0 |    23.8 | 6-12,17-35                                                                                                                                 
+------------------------|---------|----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------------------------
+Jest: "global" coverage threshold for statements (50%) not met: 24.47%
+Jest: "global" coverage threshold for branches (50%) not met: 20.28%
+Jest: "global" coverage threshold for lines (50%) not met: 24.82%
+Jest: "global" coverage threshold for functions (50%) not met: 19.51%
+Test Suites: 1 failed, 3 passed, 4 total
+Tests:       1 failed, 47 passed, 48 total
+Snapshots:   0 total
+Time:        9.357 s
+Ran all test suites matching /__tests__\\unit\\consumptionCron.test.js|__tests__\\unit\\instanceController.test.js|__tests__\\unit\\contactController.test.js|__tests__\\unit\\pointsController.test.js/i.

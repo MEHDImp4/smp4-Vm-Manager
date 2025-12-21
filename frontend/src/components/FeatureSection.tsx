@@ -43,7 +43,11 @@ const FeatureSection = () => {
         }, { threshold: 0.1 });
 
         const elements = document.querySelectorAll(".feature-card");
-        elements.forEach((el) => observerRef.current?.observe(el));
+        elements.forEach((el) => {
+            if (observerRef.current) {
+                observerRef.current.observe(el);
+            }
+        });
 
         return () => observerRef.current?.disconnect();
     }, []);

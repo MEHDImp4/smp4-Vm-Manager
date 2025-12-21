@@ -77,19 +77,19 @@ describe('Points Controller Unit Tests', () => {
 
             expect(res.status).toHaveBeenCalledWith(400);
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-                error: expect.stringContaining("Vous devez attendre 24h entre chaque tour !")
+                error: expect.stringContaining('Vous devez attendre 24h entre chaque tour !')
             }));
             expect(prisma.$transaction).not.toHaveBeenCalled();
         });
 
         it('should handle errors gracefully', async () => {
             prisma.user.findUnique.mockResolvedValue({ isVerified: true });
-            prisma.dailySpin.findFirst.mockRejectedValue(new Error("DB Error"));
+            prisma.dailySpin.findFirst.mockRejectedValue(new Error('DB Error'));
 
             await pointsController.spinWheel(req, res);
 
             expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ error: "Erreur lors du tirage" });
+            expect(res.json).toHaveBeenCalledWith({ error: 'Erreur lors du tirage' });
         });
     });
 
@@ -122,12 +122,12 @@ describe('Points Controller Unit Tests', () => {
         });
 
         it('should handle errors', async () => {
-            prisma.dailySpin.findFirst.mockRejectedValue(new Error("DB Error"));
+            prisma.dailySpin.findFirst.mockRejectedValue(new Error('DB Error'));
 
             await pointsController.canSpinToday(req, res);
 
             expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ error: "Erreur" });
+            expect(res.json).toHaveBeenCalledWith({ error: 'Erreur' });
         });
     });
 
@@ -152,7 +152,7 @@ describe('Points Controller Unit Tests', () => {
             await pointsController.purchasePoints(req, res);
 
             expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({ error: "Montant invalide" });
+            expect(res.json).toHaveBeenCalledWith({ error: 'Montant invalide' });
         });
 
         it('should handle errors', async () => {
@@ -208,7 +208,7 @@ describe('Points Controller Unit Tests', () => {
             await pointsController.claimSocialBonus(req, res);
 
             expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({ error: "Plateforme invalide" });
+            expect(res.json).toHaveBeenCalledWith({ error: 'Plateforme invalide' });
             expect(prisma.pointTransaction.findFirst).not.toHaveBeenCalled();
         });
 
@@ -222,7 +222,7 @@ describe('Points Controller Unit Tests', () => {
             await pointsController.claimSocialBonus(req, res);
 
             expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({ error: "Bonus déjà réclamé pour cette plateforme" });
+            expect(res.json).toHaveBeenCalledWith({ error: 'Bonus déjà réclamé pour cette plateforme' });
             expect(prisma.$transaction).not.toHaveBeenCalled();
         });
 
@@ -230,7 +230,7 @@ describe('Points Controller Unit Tests', () => {
             prisma.user.findUnique.mockResolvedValue({ isVerified: true });
             req.body.platform = 'linkedin';
             req.body.username = 'testuser';
-            prisma.socialClaim.findUnique.mockRejectedValue(new Error("DB Error"));
+            prisma.socialClaim.findUnique.mockRejectedValue(new Error('DB Error'));
 
             await pointsController.claimSocialBonus(req, res);
 

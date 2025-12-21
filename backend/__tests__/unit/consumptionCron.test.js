@@ -22,6 +22,8 @@ describe('Consumption Cron', () => {
   });
 
   it('should process consumption on schedule', async () => {
+    const POINTS_PER_DAY = 10;
+
     const mockUsers = [
       {
         id: 'user1',
@@ -29,7 +31,7 @@ describe('Consumption Cron', () => {
         instances: [
           {
             id: 'instance1',
-            pointsPerDay: 10,
+            pointsPerDay: POINTS_PER_DAY,
             status: 'online',
             domains: [],
           },

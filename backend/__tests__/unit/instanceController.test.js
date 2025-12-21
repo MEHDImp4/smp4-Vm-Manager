@@ -1,7 +1,7 @@
 const instanceController = require('../../src/controllers/instanceController');
 const { prisma } = require('../../src/db');
 const proxmoxService = require('../../src/services/proxmox.service');
-const sshService = require('../../src/services/ssh.service');
+
 const cloudflareService = require('../../src/services/cloudflare.service');
 const vpnService = require('../../src/services/vpn.service');
 
@@ -179,6 +179,16 @@ describe('Instance Controller Unit Tests', () => {
         });
     });
 
+    const TEST_STORAGE_GB = 10;
+    const TEST_ROOT_PASSWORD = 'pass';
+    const TEST_CPU_PERCENT = 50.0;
+    const TEST_RAM_PERCENT = 50.0;
+    const TEST_STORAGE_PERCENT = 50.0;
+    const TEST_MEM = 512 * 1024 * 1024;
+    const TEST_MAX_MEM = 1024 * 1024 * 1024;
+    const TEST_DISK = 5 * 1024 * 1024 * 1024;
+    const TEST_MAX_DISK = 10 * 1024 * 1024 * 1024;
+
     describe('getInstanceStats', () => {
         it('should return stats for running instance', async () => {
             req.params.id = 'inst1';
@@ -186,16 +196,16 @@ describe('Instance Controller Unit Tests', () => {
                 id: 'inst1',
                 vmid: 100,
                 userId: 'user1',
-                storage: 10, // 10GB
-                rootPassword: 'pass',
+                storage: TEST_STORAGE_GB,
+                rootPassword: TEST_ROOT_PASSWORD,
             });
 
             proxmoxService.getLXCStatus.mockResolvedValue({
-                cpu: 0.5, // 50%
-                mem: 512 * 1024 * 1024,
-                maxmem: 1024 * 1024 * 1024,
-                disk: 5 * 1024 * 1024 * 1024,
-                maxdisk: 10 * 1024 * 1024 * 1024,
+                cpu: 0.5,
+                mem: TEST_MEM,
+                maxmem: TEST_MAX_MEM,
+                disk: TEST_DISK,
+                maxdisk: TEST_MAX_DISK,
                 status: 'running',
                 uptime: 1000,
             });
@@ -207,11 +217,11 @@ describe('Instance Controller Unit Tests', () => {
             await instanceController.getInstanceStats(req, res);
 
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-                cpu: 50.0,
-                ram: 50.0,
-                storage: 50.0,
+                cpu: TEST_CPU_PERCENT,
+                ram: TEST_RAM_PERCENT,
+                storage: TEST_STORAGE_PERCENT,
                 ip: '192.168.1.50',
-                rootPassword: 'pass',
+                rootPassword: TEST_ROOT_PASSWORD,
             }));
         });
 

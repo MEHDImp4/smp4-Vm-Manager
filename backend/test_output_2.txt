@@ -1,0 +1,50 @@
+FAIL __tests__/integration/adminRoutes.test.js
+  Admin Routes
+    GET /api/admin/users
+      ΓêÜ should return all users (32 ms)
+    PUT /api/admin/users/:id
+      ├ù should update user (56 ms)
+    DELETE /api/admin/users/:id
+      ├ù should delete user (9 ms)
+    GET /api/admin/instances
+      ΓêÜ should return instances (5 ms)
+
+  ΓùÅ Admin Routes ΓÇ║ PUT /api/admin/users/:id ΓÇ║ should update user
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      67 |                 console.error(res.body);
+      68 |             }
+    > 69 |             expect(res.status).toBe(200);
+         |                                ^
+      70 |             expect(prisma.user.update).toHaveBeenCalled();
+      71 |         });
+      72 |     });
+
+      at Object.toBe (__tests__/integration/adminRoutes.test.js:69:32)
+
+  ΓùÅ Admin Routes ΓÇ║ DELETE /api/admin/users/:id ΓÇ║ should delete user
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      86 |
+      87 |             const res = await request(app).delete('/api/admin/users/2').send({ reason: 'Bye' });
+    > 88 |             expect(res.status).toBe(200);
+         |                                ^
+      89 |         });
+      90 |     });
+      91 |
+
+      at Object.toBe (__tests__/integration/adminRoutes.test.js:88:32)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 2 passed, 4 total
+Snapshots:   0 total
+Time:        1.464 s, estimated 3 s
+Ran all test suites matching /__tests__\\integration\\adminRoutes.test.js/i.

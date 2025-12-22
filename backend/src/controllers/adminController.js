@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../db');
 const proxmoxService = require('../services/proxmox.service');
 
 const { paginate } = require('../utils/pagination.utils');

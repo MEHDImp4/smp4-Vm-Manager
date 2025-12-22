@@ -179,6 +179,20 @@ const uploadAvatar = async (req, res) => {
     }
 
     const userId = req.user.id;
+
+    // Security Check: Validate file content (Magic Numbers)
+    const { validateImageSignature } = require('../utils/fileValidation');
+    const isValidSignature = await validateImageSignature(req.file.path);
+
+    if (!isValidSignature) {
+        // Delete the malicious/invalid file immediately
+        const fs = require('fs');
+        fs.unlink(req.file.path, (err) => {
+            if (err) console.error('Error deleting invalid file:', err);
+        });
+        return res.status(400).json({ message: 'Invalid file content. Only real images are allowed.' });
+    }
+
     // Normalized path for frontend access (assuming /uploads is served statically)
     const avatarUrl = `/uploads/${req.file.filename}`;
 

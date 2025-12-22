@@ -1,5 +1,6 @@
 const { Client } = require('ssh2');
 const WebSocket = require('ws');
+const jwt = require('jsonwebtoken');
 
 class SSHService {
     constructor() {
@@ -11,9 +12,32 @@ class SSHService {
      * @param {http.Server} server - HTTP server to attach to
      */
     init(server) {
+        // Ensure JWT_SECRET is available
+        if (!process.env.JWT_SECRET) {
+            console.error('[SSH] CRITICAL: JWT_SECRET not defined. SSH service may not be secure.');
+        }
+
         this.wss = new WebSocket.Server({
             server,
-            path: '/ws/ssh'
+            path: '/ws/ssh',
+            verifyClient: (info, cb) => {
+                const url = new URL(info.req.url, 'http://localhost');
+                const token = url.searchParams.get('token');
+
+                if (!token) {
+                    console.warn('[SSH] Access denied: No token provided');
+                    return cb(false, 401, 'Unauthorized: No token provided');
+                }
+
+                try {
+                    jwt.verify(token, process.env.JWT_SECRET);
+                    // Token is valid
+                    return cb(true);
+                } catch (err) {
+                    console.warn('[SSH] Access denied: Invalid token', err.message);
+                    return cb(false, 403, 'Forbidden: Invalid token');
+                }
+            }
         });
 
         this.wss.on('connection', (ws, req) => {
@@ -39,7 +63,7 @@ class SSHService {
             this.createSSHSession(ws, vmid, host);
         });
 
-        console.log('[SSH] WebSocket server initialized on /ws/ssh');
+        console.log('[SSH] WebSocket server initialized on /ws/ssh with JWT protection');
     }
 
     /**

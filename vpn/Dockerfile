@@ -8,7 +8,8 @@ WORKDIR /usr/src/app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm install --omit=dev && \
+RUN npm install -g npm@latest && \
+    npm install --omit=dev && \
     npm cache clean --force && \
     rm -rf /usr/local/lib/node_modules/npm /opt/yarn* /usr/local/lib/node_modules/corepack
 

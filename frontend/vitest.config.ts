@@ -18,6 +18,7 @@ export default defineConfig({
         '**/types/**',
       ],
     },
+    exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**', '**/.{idea,git,cache,output,temp}/**'],
   },
   resolve: {
     alias: {

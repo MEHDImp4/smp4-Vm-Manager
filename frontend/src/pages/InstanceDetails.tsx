@@ -413,7 +413,9 @@ const InstanceDetails = () => {
                     const data = await res.json();
                     setUpgradePacks(Array.isArray(data) ? data : []);
                 }
-            } catch (e) { }
+            } catch (e) {
+                // ignore
+            }
         };
         fetchPacks();
     }, []);

@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Install WireGuard tools and IPTables
 RUN apk add --no-cache wireguard-tools iptables ip6tables openresolv

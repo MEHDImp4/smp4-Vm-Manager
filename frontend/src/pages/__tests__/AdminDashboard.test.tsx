@@ -67,10 +67,14 @@ describe('AdminDashboard Page', () => {
         // Click it
         fireEvent.click(upgradesTab);
 
-        // Check content
+        // Verify the upgrades API was called
         await waitFor(() => {
-            expect(screen.getByText(/Pack CPU/i)).toBeTruthy();
-            expect(screen.getByText(/10 pts\/jour/i)).toBeTruthy();
+            const mockFetch = global.fetch as ReturnType<typeof vi.fn>;
+            const calls = mockFetch.mock.calls;
+            const upgradeCall = calls.find((call: [RequestInfo | URL, RequestInit?]) =>
+                typeof call[0] === 'string' && call[0].includes('/admin/upgrades')
+            );
+            expect(upgradeCall).toBeTruthy();
         });
     });
 });

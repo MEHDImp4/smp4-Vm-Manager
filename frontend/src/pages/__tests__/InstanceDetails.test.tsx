@@ -164,7 +164,14 @@ describe('InstanceDetails Page', () => {
 
     fireEvent.click(upgradeBtn);
 
-    expect(global.fetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/upgrades/));
+    // Check that the upgrades API was called
+    await waitFor(() => {
+      const calls = (global.fetch as any).mock.calls;
+      const upgradeCall = calls.find((call: any[]) =>
+        typeof call[0] === 'string' && call[0].includes('/api/upgrades')
+      );
+      expect(upgradeCall).toBeTruthy();
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/Améliorer mon instance/i)).toBeTruthy();

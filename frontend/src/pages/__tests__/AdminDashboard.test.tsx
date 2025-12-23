@@ -70,7 +70,7 @@ describe('AdminDashboard Page', () => {
         // Check content
         await waitFor(() => {
             expect(screen.getByText(/Pack CPU/i)).toBeTruthy();
-            expect(screen.getByText(/10 pts/i)).toBeTruthy();
+            expect(screen.getByText(/10 pts\/jour/i)).toBeTruthy();
         });
     });
 });

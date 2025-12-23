@@ -31,7 +31,7 @@ const CreateInstance = () => {
                 const response = await fetch("/api/templates");
                 if (response.ok) {
                     const result = await response.json();
-                    const data = result.data || [];
+                    const data = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
                     setTemplates(data);
                     // Pre-select 'Small' if available
                     const small = data.find((t: Template) => t.name === 'Small');

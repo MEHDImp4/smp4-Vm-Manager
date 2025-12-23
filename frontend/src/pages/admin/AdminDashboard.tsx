@@ -127,10 +127,19 @@ const AdminDashboard = () => {
                 fetch('/api/admin/templates', { headers })
             ]);
 
-            if (usersRes.ok) setUsers(await usersRes.json());
-            if (instancesRes.ok) setAllInstances(await instancesRes.json());
+            if (usersRes.ok) {
+                const usersData = await usersRes.json();
+                setUsers(Array.isArray(usersData) ? usersData : []);
+            }
+            if (instancesRes.ok) {
+                const instancesData = await instancesRes.json();
+                setAllInstances(Array.isArray(instancesData) ? instancesData : []);
+            }
             if (nodeRes.ok) setNodeStats(await nodeRes.json());
-            if (templatesRes.ok) setTemplates(await templatesRes.json());
+            if (templatesRes.ok) {
+                const templatesData = await templatesRes.json();
+                setTemplates(Array.isArray(templatesData) ? templatesData : []);
+            }
 
         } catch (error) {
             console.error("Failed to fetch admin data", error);
@@ -913,7 +922,7 @@ const MessagesTable = () => {
 
             if (res.ok) {
                 const data = await res.json();
-                setMessages(data);
+                setMessages(Array.isArray(data) ? data : []);
             }
         } catch (e) {
             console.error(e);

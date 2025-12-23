@@ -32,7 +32,8 @@ const TemplatesSection = () => {
         const res = await fetch('/api/templates');
         if (res.ok) {
           const data = await res.json();
-          setTemplates(data);
+          const templatesData = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+          setTemplates(templatesData);
         } else {
           console.error("Fetch failed with status:", res.status);
           const text = await res.text();

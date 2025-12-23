@@ -30,7 +30,8 @@ const CreateInstance = () => {
             try {
                 const response = await fetch("/api/templates");
                 if (response.ok) {
-                    const data = await response.json();
+                    const result = await response.json();
+                    const data = result.data || [];
                     setTemplates(data);
                     // Pre-select 'Small' if available
                     const small = data.find((t: Template) => t.name === 'Small');

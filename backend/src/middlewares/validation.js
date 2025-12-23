@@ -141,12 +141,12 @@ const validateBody = (schema) => (req, res, next) => {
         next();
     } catch (error) {
         if (error instanceof z.ZodError) {
-            const messages = error.errors.map(e => e.message).join(', ');
+            const errorList = error.errors || [];
             return res.status(400).json({
                 message: 'Validation error',
-                errors: error.errors.map(e => ({
-                    field: e.path.join('.'),
-                    message: e.message
+                errors: errorList.map(e => ({
+                    field: e.path?.join('.') || 'unknown',
+                    message: e.message || 'Unknown error'
                 }))
             });
         }
@@ -165,11 +165,12 @@ const validateQuery = (schema) => (req, res, next) => {
         next();
     } catch (error) {
         if (error instanceof z.ZodError) {
+            const errorList = error.errors || [];
             return res.status(400).json({
                 message: 'Validation error',
-                errors: error.errors.map(e => ({
-                    field: e.path.join('.'),
-                    message: e.message
+                errors: errorList.map(e => ({
+                    field: e.path?.join('.') || 'unknown',
+                    message: e.message || 'Unknown error'
                 }))
             });
         }
@@ -188,11 +189,12 @@ const validateParams = (schema) => (req, res, next) => {
         next();
     } catch (error) {
         if (error instanceof z.ZodError) {
+            const errorList = error.errors || [];
             return res.status(400).json({
                 message: 'Validation error',
-                errors: error.errors.map(e => ({
-                    field: e.path.join('.'),
-                    message: e.message
+                errors: errorList.map(e => ({
+                    field: e.path?.join('.') || 'unknown',
+                    message: e.message || 'Unknown error'
                 }))
             });
         }

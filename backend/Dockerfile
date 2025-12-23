@@ -26,7 +26,7 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 # Install only runtime dependencies
-RUN apk add --no-cache openssl dumb-init
+RUN apk add --no-cache openssl dumb-init su-exec
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -54,8 +54,12 @@ RUN chown -R nodejs:nodejs /app
 # Create logs directory
 RUN mkdir -p /data/logs && chown -R nodejs:nodejs /data
 
-# Switch to non-root user
-USER nodejs
+# Copy entrypoint script
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Switch to non-root user is handled in entrypoint
+# USER nodejs
 
 # Expose port
 EXPOSE 3000
@@ -65,7 +69,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 200 ? 0 : 1))" || exit 1
 
 # Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
+ENTRYPOINT ["dumb-init", "--", "docker-entrypoint.sh"]
 
 # Start the application
 CMD ["node", "src/index.js"]

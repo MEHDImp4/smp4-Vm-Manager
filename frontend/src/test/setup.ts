@@ -39,9 +39,56 @@ global.fetch = vi.fn();
 
 // Polyfill ResizeObserver for components using responsive charts (e.g., recharts)
 class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 }
-// @ts-expect-error - assign to window for jsdom
 global.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
+
+// Mock HTMLCanvasElement.getContext for xterm support
+HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation((contextType: string) => {
+  if (contextType === '2d') {
+    return {
+      fillStyle: '',
+      fillRect: vi.fn(),
+      clearRect: vi.fn(),
+      getImageData: vi.fn(() => ({ data: [] })),
+      putImageData: vi.fn(),
+      createImageData: vi.fn(() => ({ data: [] })),
+      setTransform: vi.fn(),
+      drawImage: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      beginPath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      closePath: vi.fn(),
+      stroke: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      rotate: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      measureText: vi.fn(() => ({ width: 0 })),
+      transform: vi.fn(),
+      rect: vi.fn(),
+      clip: vi.fn(),
+    };
+  }
+  return null;
+});
+
+// Suppress Recharts console warnings about chart dimensions in tests
+const originalConsoleError = console.error;
+console.error = (...args: unknown[]) => {
+  const message = args[0];
+  if (
+    typeof message === 'string' &&
+    (message.includes('width(0) and height(0)') ||
+      message.includes('chart should be greater than 0') ||
+      message.includes('Warning: An update to') && message.includes('inside a test was not wrapped in act'))
+  ) {
+    return; // Suppress expected test warnings
+  }
+  originalConsoleError.apply(console, args);
+};

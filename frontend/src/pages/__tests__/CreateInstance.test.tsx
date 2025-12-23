@@ -77,6 +77,10 @@ describe('CreateInstance Page', () => {
   it('clicking create without name should not crash', async () => {
     const user = userEvent.setup();
     render(<CreateInstance />);
+    // Wait for templates to load first
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalled();
+    });
     const submitButton = screen.getByRole('button', { name: /lancer l'instance/i });
     await user.click(submitButton);
     expect(submitButton).toBeTruthy();

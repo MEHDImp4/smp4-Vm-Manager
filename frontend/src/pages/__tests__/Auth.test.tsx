@@ -23,15 +23,21 @@ describe('Auth Page', () => {
     vi.clearAllMocks();
   });
 
-  it('should render login form by default', () => {
+  it('should render login form by default', async () => {
     render(<Auth />);
     expect(screen.getByText(/connexion/i)).toBeTruthy();
+    // Wait for any async effects to complete
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/vous@exemple.com/i)).toBeTruthy();
+    });
   });
 
-  it('should show email and password inputs', () => {
+  it('should show email and password inputs', async () => {
     render(<Auth />);
-    expect(screen.getByPlaceholderText(/vous@exemple.com/i)).toBeTruthy();
-    expect(screen.getByPlaceholderText(/••••••••/i)).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/vous@exemple.com/i)).toBeTruthy();
+      expect(screen.getByPlaceholderText(/••••••••/i)).toBeTruthy();
+    });
   });
 
   // Skip toggle accessibility by name; verify simple validation paths instead

@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '../../test/test-utils';
+import { render, screen, waitFor, fireEvent } from '../../test/test-utils';
 import userEvent from '@testing-library/user-event';
 import InstanceDetails from '../InstanceDetails';
 
@@ -66,6 +66,15 @@ describe('InstanceDetails Page', () => {
       if (url && url.includes('/domains')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response);
       }
+      if (url && url.endsWith('/api/upgrades')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            { id: 1, name: '+1 vCPU', type: 'cpu', amount: 1, pointsCost: 5, isActive: true },
+            { id: 2, name: '+4 GB RAM', type: 'ram', amount: 4, pointsCost: 8, isActive: true },
+          ])
+        } as Response);
+      }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) } as Response);
     });
   });
@@ -118,6 +127,9 @@ describe('InstanceDetails Page', () => {
       if (url && url.includes('/domains')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response);
       }
+      if (url && url.endsWith('/api/upgrades')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response);
+      }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) } as Response);
     });
 
@@ -136,13 +148,28 @@ describe('InstanceDetails Page', () => {
     });
   });
 
-  // Instance deletion controls are handled on Dashboard; skip deletion test here
-
   it('should display instance stats', async () => {
     render(<InstanceDetails />);
 
     await waitFor(() => {
       expect(screen.getByText(/cpu usage/i)).toBeTruthy();
+    });
+  });
+
+  it('should show upgrade dialog when Améliorer is clicked', async () => {
+    render(<InstanceDetails />);
+
+    const upgradeBtn = await screen.findByRole('button', { name: /améliorer/i });
+    expect(upgradeBtn).toBeTruthy();
+
+    fireEvent.click(upgradeBtn);
+
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/upgrades/));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Améliorer mon instance/i)).toBeTruthy();
+      expect(screen.getByText(/\+1 vCPU/i)).toBeTruthy();
+      expect(screen.getByText(/\+4 GB RAM/i)).toBeTruthy();
     });
   });
 });

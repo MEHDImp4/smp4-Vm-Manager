@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../db');
 
 // ADMIN: Create a new upgrade pack
 exports.createPack = async (req, res) => {
@@ -99,7 +98,8 @@ exports.applyUpgrade = async (req, res) => {
         // 3. Update detailed specs based on type
         let newCpu = instance.cpu;
         let newRam = instance.ram;
-        let newStorage = instance.storage.replace('GB', '');
+        // Don't modify storage string yet if not changing storage
+        let newStorage = instance.storage;
 
         if (pack.type === 'cpu') {
             // Logic: "2 vCPU" -> 2 + amount
@@ -107,15 +107,11 @@ exports.applyUpgrade = async (req, res) => {
             newCpu = `${currentCpu + pack.amount} vCPU`;
         } else if (pack.type === 'ram') {
             // Logic: "4 GB" -> 4 + amount (if amount is in GB) or convert
-            // Assuming amount for RAM is in GB for simplicity or MB?
-            // Let's assume user inputs in GB.
             const currentRam = parseInt(instance.ram.split(' ')[0]) || 2;
             newRam = `${currentRam + pack.amount} GB`;
         } else if (pack.type === 'storage') {
             const currentStorage = parseInt(instance.storage.split(' ')[0]) || 20;
             newStorage = `${currentStorage + pack.amount} GB`;
-        } else {
-            newStorage = `${newStorage} GB`; // fallback
         }
 
         // 4. Update Instance: add cost, update specs, record upgrade

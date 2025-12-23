@@ -32,24 +32,26 @@ describe('CreateInstance Page', () => {
         return Promise.resolve({
           ok: true,
           json: () =>
-            Promise.resolve([
-              {
-                id: 'small',
-                name: 'Small',
-                cpu: '1 vCPU',
-                ram: '2GB',
-                storage: '20GB',
-                points: 1,
-              },
-              {
-                id: 'medium',
-                name: 'Medium',
-                cpu: '2 vCPU',
-                ram: '4GB',
-                storage: '40GB',
-                points: 2,
-              },
-            ]),
+            Promise.resolve({
+              data: [
+                {
+                  id: 'small',
+                  name: 'Small',
+                  cpu: '1 vCPU',
+                  ram: '2GB',
+                  storage: '20GB',
+                  points: 1,
+                },
+                {
+                  id: 'medium',
+                  name: 'Medium',
+                  cpu: '2 vCPU',
+                  ram: '4GB',
+                  storage: '40GB',
+                  points: 2,
+                },
+              ]
+            }),
         } as Response);
       }
       // Fallback ok
@@ -89,16 +91,18 @@ describe('CreateInstance Page', () => {
         return Promise.resolve({
           ok: true,
           json: () =>
-            Promise.resolve([
-              {
-                id: 'small',
-                name: 'Small',
-                cpu: '1 vCPU',
-                ram: '2GB',
-                storage: '20GB',
-                points: 1,
-              },
-            ]),
+            Promise.resolve({
+              data: [
+                {
+                  id: 'small',
+                  name: 'Small',
+                  cpu: '1 vCPU',
+                  ram: '2GB',
+                  storage: '20GB',
+                  points: 1,
+                },
+              ]
+            }),
         } as Response);
       }
       if (url && url.includes('/api/instances') && init?.method === 'POST') {
@@ -110,6 +114,9 @@ describe('CreateInstance Page', () => {
     render(<CreateInstance />);
 
     // Fill form fields (instance name)
+    // Wait for templates to load
+    await screen.findByText('Small');
+
     const nameInput = await screen.findByPlaceholderText(/mon-projet-ou-app/i) as HTMLInputElement;
     await user.type(nameInput, 'test-vm');
 

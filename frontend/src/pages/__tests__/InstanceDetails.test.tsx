@@ -166,8 +166,9 @@ describe('InstanceDetails Page', () => {
 
     // Check that the upgrades API was called
     await waitFor(() => {
-      const calls = (global.fetch as any).mock.calls;
-      const upgradeCall = calls.find((call: any[]) =>
+      const mockFetch = global.fetch as ReturnType<typeof vi.fn>;
+      const calls = mockFetch.mock.calls;
+      const upgradeCall = calls.find((call: [RequestInfo | URL, RequestInit?]) =>
         typeof call[0] === 'string' && call[0].includes('/api/upgrades')
       );
       expect(upgradeCall).toBeTruthy();

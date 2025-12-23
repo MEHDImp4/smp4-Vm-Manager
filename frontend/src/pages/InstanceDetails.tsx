@@ -197,7 +197,7 @@ const InstanceDetails = () => {
             });
             if (response.ok) {
                 const data = await response.json();
-                setSnapshots(data.snapshots);
+                setSnapshots(Array.isArray(data.snapshots) ? data.snapshots : []);
                 setMaxSnapshots(data.maxSnapshots);
                 // Store backups in instance state or separate state. 
                 // Since instance is an object, update it or add new state.
@@ -377,7 +377,7 @@ const InstanceDetails = () => {
             });
             if (response.ok) {
                 const data = await response.json();
-                setDomains(data);
+                setDomains(Array.isArray(data) ? data : []);
             }
         } catch (error) {
             console.error("Failed to fetch domains", error);

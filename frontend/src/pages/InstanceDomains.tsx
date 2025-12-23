@@ -55,7 +55,7 @@ const InstanceDomains = () => {
                 });
                 if (domRes.ok) {
                     const data = await domRes.json();
-                    setDomains(data);
+                    setDomains(Array.isArray(data) ? data : []);
                 }
             } catch (error) {
                 console.error("Failed to fetch data", error);

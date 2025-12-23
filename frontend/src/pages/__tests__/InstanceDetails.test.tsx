@@ -28,17 +28,19 @@ describe('InstanceDetails Page', () => {
         return Promise.resolve({
           ok: true,
           json: () =>
-            Promise.resolve([
-              {
-                id: 'instance1',
-                name: 'test-vm',
-                status: 'online',
-                vmid: 100,
-                cpu: '2 vCPU',
-                ram: '4GB',
-                storage: '40GB',
-              },
-            ]),
+            Promise.resolve({
+              data: [
+                {
+                  id: 'instance1',
+                  name: 'test-vm',
+                  status: 'online',
+                  vmid: 100,
+                  cpu: '2 vCPU',
+                  ram: '4GB',
+                  storage: '40GB',
+                },
+              ]
+            }),
         } as Response);
       }
       if (url && url.includes('/stats')) {
@@ -92,17 +94,19 @@ describe('InstanceDetails Page', () => {
         return Promise.resolve({
           ok: true,
           json: () =>
-            Promise.resolve([
-              {
-                id: 'instance1',
-                name: 'test-vm',
-                status: 'stopped',
-                vmid: 100,
-                cpu: '2 vCPU',
-                ram: '4GB',
-                storage: '40GB',
-              },
-            ]),
+            Promise.resolve({
+              data: [
+                {
+                  id: 'instance1',
+                  name: 'test-vm',
+                  status: 'stopped',
+                  vmid: 100,
+                  cpu: '2 vCPU',
+                  ram: '4GB',
+                  storage: '40GB',
+                },
+              ]
+            }),
         } as Response);
       }
       if (url && url.includes('/stats')) {

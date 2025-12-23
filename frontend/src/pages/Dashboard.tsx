@@ -87,8 +87,8 @@ const Dashboard = () => {
           }
         });
         if (response.ok) {
-          const data = await response.json();
-          setInstances(data);
+          const result = await response.json();
+          setInstances(result.data || []);
         }
       } catch (error) {
         console.error("Failed to fetch instances", error);

@@ -162,7 +162,8 @@ const InstanceDetails = () => {
                 });
 
                 if (response.ok) {
-                    const instances = await response.json();
+                    const result = await response.json();
+                    const instances = result.data || [];
                     const found = instances.find((i: any) => i.id === id);
                     if (found) {
                         if (found.status === 'provisioning') {

@@ -43,7 +43,8 @@ const InstanceDomains = () => {
                     headers: { "Authorization": `Bearer ${user.token}` }
                 });
                 if (instRes.ok) {
-                    const instances = await instRes.json();
+                    const result = await instRes.json();
+                    const instances = result.data || [];
                     const found = instances.find((i: any) => i.id === id);
                     if (found) setInstanceName(found.name.toLowerCase().replace(/[^a-z0-9]/g, '-'));
                 }

@@ -73,6 +73,9 @@ HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation((contextType
       transform: vi.fn(),
       rect: vi.fn(),
       clip: vi.fn(),
+      createLinearGradient: vi.fn(() => ({
+        addColorStop: vi.fn(),
+      })),
     };
   }
   return null;

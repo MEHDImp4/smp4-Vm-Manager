@@ -24,7 +24,19 @@ describe('AdminDashboard Page', () => {
             // Default empty responses for other endpoints
             if (url.includes('/admin/users')) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response);
             if (url.includes('/admin/instances')) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response);
-            if (url.includes('/admin/node/stats')) return Promise.resolve({ ok: true, json: () => Promise.resolve({}) } as Response);
+            if (url.includes('/admin/node/stats')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        cpu: 0.1,
+                        memory: { used: 1024, total: 4096 },
+                        uptime: 3600,
+                        pveversion: 'pve-manager/8.0.4/d4972c21',
+                        kversion: '6.2.16-5-pve',
+                        cpuinfo: { model: 'Intel Xeon', cpus: 4 }
+                    })
+                } as Response);
+            }
             if (url.includes('/admin/templates')) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response);
 
             // Upgrades endpoint

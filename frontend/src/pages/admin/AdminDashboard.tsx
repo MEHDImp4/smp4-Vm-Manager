@@ -428,20 +428,22 @@ const AdminDashboard = () => {
                                         <p className="text-xs text-muted-foreground mt-3 font-mono">{nodeStats.cpuinfo?.model}</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="glass border-purple-500/20 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                                        <CardTitle className="text-sm font-medium text-muted-foreground">RAM Node</CardTitle>
-                                        <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
-                                            <Activity className="h-4 w-4" />
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="relative z-10">
-                                        <div className="text-3xl font-bold mb-2">{((nodeStats.memory.used / nodeStats.memory.total) * 100).toFixed(1)}%</div>
-                                        <Progress value={(nodeStats.memory.used / nodeStats.memory.total) * 100} className="h-1.5 bg-purple-900/20" indicatorClassName="bg-purple-500" />
-                                        <p className="text-xs text-muted-foreground mt-3 font-mono">{formatBytes(nodeStats.memory.used)} / {formatBytes(nodeStats.memory.total)}</p>
-                                    </CardContent>
-                                </Card>
+                                {nodeStats.memory && (
+                                    <Card className="glass border-purple-500/20 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                                            <CardTitle className="text-sm font-medium text-muted-foreground">RAM Node</CardTitle>
+                                            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+                                                <Activity className="h-4 w-4" />
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="relative z-10">
+                                            <div className="text-3xl font-bold mb-2">{((nodeStats.memory.used / nodeStats.memory.total) * 100).toFixed(1)}%</div>
+                                            <Progress value={(nodeStats.memory.used / nodeStats.memory.total) * 100} className="h-1.5 bg-purple-900/20" indicatorClassName="bg-purple-500" />
+                                            <p className="text-xs text-muted-foreground mt-3 font-mono">{formatBytes(nodeStats.memory.used)} / {formatBytes(nodeStats.memory.total)}</p>
+                                        </CardContent>
+                                    </Card>
+                                )}
                                 <Card className="glass border-emerald-500/20 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
                                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">

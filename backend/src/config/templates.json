@@ -4,7 +4,7 @@
         "name": "Nano",
         "cpu": "1 vCPU",
         "ram": "512 Mo",
-        "storage": "16 Go",
+        "storage": "26 Go",
         "points": 4,
         "versions": [
             {
@@ -18,7 +18,7 @@
         "name": "Micro",
         "cpu": "1 vCPU",
         "ram": "1 Go",
-        "storage": "24 Go",
+        "storage": "34 Go",
         "points": 8,
         "versions": [
             {
@@ -32,7 +32,7 @@
         "name": "Small",
         "cpu": "2 vCPU",
         "ram": "2 Go",
-        "storage": "32 Go",
+        "storage": "42 Go",
         "points": 12,
         "versions": [
             {
@@ -46,7 +46,7 @@
         "name": "Medium",
         "cpu": "3 vCPU",
         "ram": "4 Go",
-        "storage": "40 Go",
+        "storage": "50 Go",
         "points": 18,
         "versions": [
             {
@@ -60,7 +60,7 @@
         "name": "Pro",
         "cpu": "4 vCPU",
         "ram": "8 Go",
-        "storage": "48 Go",
+        "storage": "58 Go",
         "points": 28,
         "versions": [
             {

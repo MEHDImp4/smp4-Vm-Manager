@@ -151,6 +151,31 @@ model DeletedUser {
   @@map("deleted_users")
 }
 
+model UpgradePack {
+  id         Int      @id @default(autoincrement())
+  name       String
+  type       String   // "cpu", "ram", or "storage"
+  amount     Int      // Amount to add (e.g., +1 CPU, +2 GB RAM, +10 GB storage)
+  pointsCost Float    // Points cost per day for this upgrade
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  upgrades InstanceUpgrade[]
+
+  @@map("upgrade_packs")
+}
+
+model InstanceUpgrade {
+  id            String   @id @default(uuid())
+  instanceId    String
+  instance      Instance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  upgradePackId Int
+  upgradePack   UpgradePack @relation(fields: [upgradePackId], references: [id])
+  appliedAt     DateTime @default(now())
+
+  @@map("instance_upgrades")
+}
+
 model Message {
   id        String   @id @default(uuid())
   name      String

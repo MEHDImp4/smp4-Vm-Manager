@@ -15,4 +15,11 @@ router.get('/node/stats', adminController.getNodeStats);
 router.get('/templates', adminController.getTemplates);
 router.put('/templates/:id', adminController.updateTemplatePrice);
 
+// Upgrades
+const upgradeController = require('../controllers/upgradeController');
+router.post('/upgrades', upgradeController.createPack);
+router.put('/upgrades/:id', upgradeController.updatePack);
+router.delete('/upgrades/:id', upgradeController.deletePack);
+router.get('/upgrades', upgradeController.getPacks); // Admin can list packs here too if needed, or reuse public one
+
 module.exports = router;

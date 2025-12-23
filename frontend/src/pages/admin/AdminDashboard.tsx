@@ -80,6 +80,15 @@ interface Template {
     oldPrice?: number;
 }
 
+interface UpgradePack {
+    id: number;
+    name: string;
+    type: 'cpu' | 'ram' | 'storage';
+    amount: number;
+    pointsCost: number;
+    isActive: boolean;
+}
+
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
@@ -96,6 +105,11 @@ const AdminDashboard = () => {
     const [newTemplatePrice, setNewTemplatePrice] = useState("");
     const [isPromo, setIsPromo] = useState(false);
     const [promoPrice, setPromoPrice] = useState("");
+
+    // Upgrade Packs State
+    const [upgradePacks, setUpgradePacks] = useState<UpgradePack[]>([]);
+    const [newPack, setNewPack] = useState({ name: "", type: "cpu", amount: 1, pointsCost: 0 });
+    const [createPackOpen, setCreatePackOpen] = useState(false);
 
     // Ban State
     const [banDialog, setBanDialog] = useState<{ isOpen: boolean; user: User | null }>({ isOpen: false, user: null });
@@ -139,6 +153,12 @@ const AdminDashboard = () => {
             if (templatesRes.ok) {
                 const templatesData = await templatesRes.json();
                 setTemplates(Array.isArray(templatesData) ? templatesData : []);
+            }
+
+            const upgradesRes = await fetch('/api/admin/upgrades', { headers });
+            if (upgradesRes.ok) {
+                const upgradesData = await upgradesRes.json();
+                setUpgradePacks(Array.isArray(upgradesData) ? upgradesData : []);
             }
 
         } catch (error) {
@@ -382,6 +402,12 @@ const AdminDashboard = () => {
                         >
                             <Mail className="w-4 h-4" /> Messages
                         </TabsTrigger>
+                        <TabsTrigger
+                            value="upgrades"
+                            className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
+                        >
+                            <Zap className="w-4 h-4" /> Upgrades
+                        </TabsTrigger>
                     </TabsList>
 
                     {/* Overview Content */}
@@ -466,249 +492,381 @@ const AdminDashboard = () => {
                                 </CardContent>
                             </Card>
                         </div>
-                    </TabsContent>
-
-                    {/* Users Content */}
-                    <TabsContent value="users" className="space-y-6 animate-fade-in">
-                        <div className="flex items-center gap-4">
-                            <div className="relative flex-1 max-w-sm">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Rechercher un utilisateur..."
-                                    className="pl-9"
-                                    value={searchUser}
-                                    onChange={(e) => setSearchUser(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="rounded-xl border border-white/10 overflow-hidden bg-black/20 backdrop-blur-sm">
-                            <Table>
-                                <TableHeader className="bg-white/5">
-                                    <TableRow className="hover:bg-transparent border-white/10">
-                                        <TableHead>Nom</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Rôle</TableHead>
-                                        <TableHead>Points</TableHead>
-                                        <TableHead>Instances</TableHead>
-                                        <TableHead>Statut</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredUsers.map((user) => (
-                                        <TableRow key={user.id} className="border-white/10 hover:bg-white/5">
-                                            <TableCell className="font-medium">{user.name}</TableCell>
-                                            <TableCell>{user.email}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={user.role === 'admin' ? "default" : "secondary"}>
-                                                    {user.role}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="font-mono">{user.points.toFixed(2)}</TableCell>
-                                            <TableCell>{user._count?.instances || 0}</TableCell>
-                                            <TableCell>
-                                                {user.isBanned ? (
-                                                    <Badge variant="destructive">Banni</Badge>
-                                                ) : (
-                                                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20">Actif</Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Button
-                                                                variant="outline" size="sm"
-                                                                onClick={() => {
-                                                                    setEditUser(user);
-                                                                    setEditPoints(user.points.toString());
-                                                                }}
-                                                            >
-                                                                <Edit className="w-3 h-3" />
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>Modifier les points</DialogTitle>
-                                                                <DialogDescription>
-                                                                    Mettre à jour le solde de {user.name}
-                                                                </DialogDescription>
-                                                            </DialogHeader>
-                                                            <div className="space-y-4 py-4">
-                                                                <div className="space-y-2">
-                                                                    <Label>Points</Label>
-                                                                    <Input
-                                                                        type="number"
-                                                                        value={editPoints}
-                                                                        onChange={(e) => setEditPoints(e.target.value)}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <DialogFooter>
-                                                                <Button onClick={handleUpdatePoints}>Sauvegarder</Button>
-                                                            </DialogFooter>
-                                                        </DialogContent>
-                                                    </Dialog>
-
-                                                    <Button
-                                                        variant={user.isBanned ? "default" : "destructive"}
-                                                        size="sm"
-                                                        onClick={() => handleBanClick(user)}
-                                                    >
-                                                        {user.isBanned ? <UserCheck className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                                                    </Button>
-
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                        onClick={() => handleDeleteClick(user)}
-                                                    >
-                                                        <Trash2 className="w-3 h-3" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </TabsContent>
-
-                    {/* Global Instances Content */}
-                    <TabsContent value="instances" className="space-y-6 animate-fade-in">
-                        <div className="rounded-xl border border-white/10 overflow-hidden bg-black/20 backdrop-blur-sm">
-                            <Table>
-                                <TableHeader className="bg-white/5">
-                                    <TableRow className="hover:bg-transparent border-white/10">
-                                        <TableHead>Nom</TableHead>
-                                        <TableHead>Propriétaire</TableHead>
-                                        <TableHead>Template</TableHead>
-                                        <TableHead>PVE ID</TableHead>
-                                        <TableHead>IP</TableHead>
-                                        <TableHead>Ressources</TableHead>
-                                        <TableHead>Coût/Jour</TableHead>
-                                        <TableHead>Créée le</TableHead>
-                                        <TableHead>Statut</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {allInstances.map((inst) => (
-                                        <TableRow key={inst.id} className="border-white/10 hover:bg-white/5">
-                                            <TableCell className="font-medium">{inst.name}</TableCell>
-                                            <TableCell className="text-muted-foreground">{inst.user?.email}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="font-mono text-xs">{inst.template}</Badge>
-                                            </TableCell>
-                                            <TableCell className="font-mono text-xs">{inst.vmid}</TableCell>
-                                            <TableCell className="font-mono text-xs text-blue-400">{inst.ip || '-'}</TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">
-                                                {inst.cpu} vCPU / {inst.ram} GB / {inst.storage} GB
-                                            </TableCell>
-                                            <TableCell className="font-mono text-xs">
-                                                {inst.pointsPerDay} pts
-                                            </TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">
-                                                {new Date(inst.created_at).toLocaleDateString()}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge className={
-                                                    inst.status === 'online' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
-                                                        inst.status === 'stopped' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                                                            "bg-white/5 text-muted-foreground"
-                                                }>
-                                                    {inst.status}
-                                                </Badge>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="templates" className="space-y-6 animate-fade-in">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {templates.map((tpl) => {
-                                const isPromo = tpl.oldPrice && tpl.points < tpl.oldPrice;
-                                return (
-                                    <div key={tpl.id} className="glass rounded-xl p-6 border-white/10 relative overflow-hidden group hover:border-primary/50 transition-colors">
-                                        {isPromo && (
-                                            <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-l from-red-500 to-pink-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-xl shadow-lg z-10">
-                                                Promotion
-                                            </div>
-                                        )}
-
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className="p-3 rounded-xl bg-white/5 border border-white/5 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                                                <Cpu className="w-6 h-6" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold">{tpl.name}</h3>
-                                                <p className="text-xs text-muted-foreground font-mono">{tpl.id}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-3 mb-6">
-                                            <div className="flex justify-between text-sm py-1 border-b border-white/5">
-                                                <span className="text-muted-foreground">CPU</span>
-                                                <span className="font-mono">{tpl.cpu}</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm py-1 border-b border-white/5">
-                                                <span className="text-muted-foreground">RAM</span>
-                                                <span className="font-mono">{tpl.ram}</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm py-1 border-b border-white/5">
-                                                <span className="text-muted-foreground">Storage</span>
-                                                <span className="font-mono">{tpl.storage}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-end justify-between mb-6">
-                                            <div>
-                                                <div className="text-xs text-muted-foreground mb-1">Prix par jour</div>
-                                                <div className="flex items-baseline gap-2">
-                                                    <span className="text-2xl font-bold gradient-text">{tpl.points} pts</span>
-                                                    {isPromo && (
-                                                        <span className="text-sm text-muted-foreground line-through decoration-red-500/50 decoration-2">
-                                                            {tpl.oldPrice} pts
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <Button
-                                            variant="outline"
-                                            className="w-full border-white/10 hover:bg-white/5"
-                                            onClick={() => {
-                                                setEditTemplate(tpl);
-                                                setNewTemplatePrice(tpl.points.toString());
-                                                setIsPromo(!!tpl.oldPrice);
-                                                setPromoPrice(tpl.oldPrice ? tpl.oldPrice.toString() : tpl.points.toString());
-                                            }}
-                                        >
-                                            <Edit className="w-4 h-4 mr-2" />
-                                            Modifier le prix
+                        {/* Upgrades Content */}
+                        <TabsContent value="upgrades" className="space-y-6 animate-fade-in">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-2xl font-bold">Packs d'Amélioration</h2>
+                                <Dialog open={createPackOpen} onOpenChange={setCreatePackOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button className="bg-primary hover:bg-primary/90">
+                                            <Plus className="w-4 h-4 mr-2" /> Nouveau Pack
                                         </Button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </TabsContent>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Créer un pack d'amélioration</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="space-y-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label>Nom</Label>
+                                                <Input
+                                                    placeholder="Ex: +1 vCPU, +4GB RAM"
+                                                    value={newPack.name}
+                                                    onChange={e => setNewPack({ ...newPack, name: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label>Type</Label>
+                                                    <select
+                                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        value={newPack.type}
+                                                        onChange={e => setNewPack({ ...newPack, type: e.target.value })}
+                                                    >
+                                                        <option value="cpu">CPU (vCore)</option>
+                                                        <option value="ram">RAM (GB)</option>
+                                                        <option value="storage">Stockage (GB)</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Quantité</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={newPack.amount}
+                                                        onChange={e => setNewPack({ ...newPack, amount: parseInt(e.target.value) })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Coût en Points (par jour)</Label>
+                                                <Input
+                                                    type="number"
+                                                    step="0.1"
+                                                    value={newPack.pointsCost}
+                                                    onChange={e => setNewPack({ ...newPack, pointsCost: parseFloat(e.target.value) })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button onClick={async () => {
+                                                try {
+                                                    const userStr = localStorage.getItem("user");
+                                                    if (!userStr) return;
+                                                    const user = JSON.parse(userStr);
+                                                    const res = await fetch('/api/admin/upgrades', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            "Authorization": `Bearer ${user.token}`,
+                                                            "Content-Type": "application/json"
+                                                        },
+                                                        body: JSON.stringify(newPack)
+                                                    });
+                                                    if (res.ok) {
+                                                        toast.success("Pack créé !");
+                                                        setCreatePackOpen(false);
+                                                        fetchData();
+                                                    }
+                                                } catch (e) { toast.error("Erreur"); }
+                                            }}>Créer</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
 
-                    <TabsContent value="messages" className="space-y-4 animate-fade-in">
-                        <Card className="glass border-white/10">
-                            <CardHeader>
-                                <CardTitle>Messages reçus</CardTitle>
-                                <CardDescription>Gérez les messages envoyés depuis le formulaire de contact.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <MessagesTable />
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {upgradePacks.map(pack => (
+                                    <Card key={pack.id} className="glass border-white/10 relative overflow-hidden group">
+                                        <div className={`absolute top-0 right-0 p-2 opacity-50`}>
+                                            {pack.type === 'cpu' && <Cpu className="w-12 h-12" />}
+                                            {pack.type === 'ram' && <MemoryStick className="w-12 h-12" />}
+                                            {pack.type === 'storage' && <HardDrive className="w-12 h-12" />}
+                                        </div>
+                                        <CardHeader>
+                                            <CardTitle className="flex justify-between items-center">
+                                                {pack.name}
+                                                <Badge variant={pack.isActive ? "default" : "secondary"}>
+                                                    {pack.isActive ? "Actif" : "Inactif"}
+                                                </Badge>
+                                            </CardTitle>
+                                            <CardDescription>{pack.type.toUpperCase()} +{pack.amount}</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold mb-4">{pack.pointsCost} pts/jour</div>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" size="sm" onClick={async () => {
+                                                    const userStr = localStorage.getItem("user");
+                                                    if (!userStr) return;
+                                                    const user = JSON.parse(userStr);
+                                                    await fetch(`/api/admin/upgrades/${pack.id}`, {
+                                                        method: 'PUT',
+                                                        headers: { "Authorization": `Bearer ${user.token}`, "Content-Type": "application/json" },
+                                                        body: JSON.stringify({ name: pack.name, isActive: !pack.isActive })
+                                                    });
+                                                    fetchData();
+                                                }}>
+                                                    {pack.isActive ? "Désactiver" : "Activer"}
+                                                </Button>
+                                                <Button variant="destructive" size="sm" onClick={async () => {
+                                                    if (!confirm("Supprimer ce pack ?")) return;
+                                                    const userStr = localStorage.getItem("user");
+                                                    if (!userStr) return;
+                                                    const user = JSON.parse(userStr);
+                                                    await fetch(`/api/admin/upgrades/${pack.id}`, {
+                                                        method: 'DELETE',
+                                                        headers: { "Authorization": `Bearer ${user.token}` }
+                                                    });
+                                                    fetchData();
+                                                }}>
+                                                    Supprimer
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </TabsContent>
+
+                        {/* Users Content */}
+                        <TabsContent value="users" className="space-y-6 animate-fade-in">
+                            <div className="flex items-center gap-4">
+                                <div className="relative flex-1 max-w-sm">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Rechercher un utilisateur..."
+                                        className="pl-9"
+                                        value={searchUser}
+                                        onChange={(e) => setSearchUser(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="rounded-xl border border-white/10 overflow-hidden bg-black/20 backdrop-blur-sm">
+                                <Table>
+                                    <TableHeader className="bg-white/5">
+                                        <TableRow className="hover:bg-transparent border-white/10">
+                                            <TableHead>Nom</TableHead>
+                                            <TableHead>Email</TableHead>
+                                            <TableHead>Rôle</TableHead>
+                                            <TableHead>Points</TableHead>
+                                            <TableHead>Instances</TableHead>
+                                            <TableHead>Statut</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredUsers.map((user) => (
+                                            <TableRow key={user.id} className="border-white/10 hover:bg-white/5">
+                                                <TableCell className="font-medium">{user.name}</TableCell>
+                                                <TableCell>{user.email}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={user.role === 'admin' ? "default" : "secondary"}>
+                                                        {user.role}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-mono">{user.points.toFixed(2)}</TableCell>
+                                                <TableCell>{user._count?.instances || 0}</TableCell>
+                                                <TableCell>
+                                                    {user.isBanned ? (
+                                                        <Badge variant="destructive">Banni</Badge>
+                                                    ) : (
+                                                        <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20">Actif</Badge>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <Button
+                                                                    variant="outline" size="sm"
+                                                                    onClick={() => {
+                                                                        setEditUser(user);
+                                                                        setEditPoints(user.points.toString());
+                                                                    }}
+                                                                >
+                                                                    <Edit className="w-3 h-3" />
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent>
+                                                                <DialogHeader>
+                                                                    <DialogTitle>Modifier les points</DialogTitle>
+                                                                    <DialogDescription>
+                                                                        Mettre à jour le solde de {user.name}
+                                                                    </DialogDescription>
+                                                                </DialogHeader>
+                                                                <div className="space-y-4 py-4">
+                                                                    <div className="space-y-2">
+                                                                        <Label>Points</Label>
+                                                                        <Input
+                                                                            type="number"
+                                                                            value={editPoints}
+                                                                            onChange={(e) => setEditPoints(e.target.value)}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <DialogFooter>
+                                                                    <Button onClick={handleUpdatePoints}>Sauvegarder</Button>
+                                                                </DialogFooter>
+                                                            </DialogContent>
+                                                        </Dialog>
+
+                                                        <Button
+                                                            variant={user.isBanned ? "default" : "destructive"}
+                                                            size="sm"
+                                                            onClick={() => handleBanClick(user)}
+                                                        >
+                                                            {user.isBanned ? <UserCheck className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                                        </Button>
+
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                            onClick={() => handleDeleteClick(user)}
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </TabsContent>
+
+                        {/* Global Instances Content */}
+                        <TabsContent value="instances" className="space-y-6 animate-fade-in">
+                            <div className="rounded-xl border border-white/10 overflow-hidden bg-black/20 backdrop-blur-sm">
+                                <Table>
+                                    <TableHeader className="bg-white/5">
+                                        <TableRow className="hover:bg-transparent border-white/10">
+                                            <TableHead>Nom</TableHead>
+                                            <TableHead>Propriétaire</TableHead>
+                                            <TableHead>Template</TableHead>
+                                            <TableHead>PVE ID</TableHead>
+                                            <TableHead>IP</TableHead>
+                                            <TableHead>Ressources</TableHead>
+                                            <TableHead>Coût/Jour</TableHead>
+                                            <TableHead>Créée le</TableHead>
+                                            <TableHead>Statut</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {allInstances.map((inst) => (
+                                            <TableRow key={inst.id} className="border-white/10 hover:bg-white/5">
+                                                <TableCell className="font-medium">{inst.name}</TableCell>
+                                                <TableCell className="text-muted-foreground">{inst.user?.email}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="font-mono text-xs">{inst.template}</Badge>
+                                                </TableCell>
+                                                <TableCell className="font-mono text-xs">{inst.vmid}</TableCell>
+                                                <TableCell className="font-mono text-xs text-blue-400">{inst.ip || '-'}</TableCell>
+                                                <TableCell className="text-xs text-muted-foreground">
+                                                    {inst.cpu} vCPU / {inst.ram} GB / {inst.storage} GB
+                                                </TableCell>
+                                                <TableCell className="font-mono text-xs">
+                                                    {inst.pointsPerDay} pts
+                                                </TableCell>
+                                                <TableCell className="text-xs text-muted-foreground">
+                                                    {new Date(inst.created_at).toLocaleDateString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge className={
+                                                        inst.status === 'online' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
+                                                            inst.status === 'stopped' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
+                                                                "bg-white/5 text-muted-foreground"
+                                                    }>
+                                                        {inst.status}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="templates" className="space-y-6 animate-fade-in">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {templates.map((tpl) => {
+                                    const isPromo = tpl.oldPrice && tpl.points < tpl.oldPrice;
+                                    return (
+                                        <div key={tpl.id} className="glass rounded-xl p-6 border-white/10 relative overflow-hidden group hover:border-primary/50 transition-colors">
+                                            {isPromo && (
+                                                <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-l from-red-500 to-pink-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-bl-xl shadow-lg z-10">
+                                                    Promotion
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="p-3 rounded-xl bg-white/5 border border-white/5 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                                    <Cpu className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-bold">{tpl.name}</h3>
+                                                    <p className="text-xs text-muted-foreground font-mono">{tpl.id}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3 mb-6">
+                                                <div className="flex justify-between text-sm py-1 border-b border-white/5">
+                                                    <span className="text-muted-foreground">CPU</span>
+                                                    <span className="font-mono">{tpl.cpu}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm py-1 border-b border-white/5">
+                                                    <span className="text-muted-foreground">RAM</span>
+                                                    <span className="font-mono">{tpl.ram}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm py-1 border-b border-white/5">
+                                                    <span className="text-muted-foreground">Storage</span>
+                                                    <span className="font-mono">{tpl.storage}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-end justify-between mb-6">
+                                                <div>
+                                                    <div className="text-xs text-muted-foreground mb-1">Prix par jour</div>
+                                                    <div className="flex items-baseline gap-2">
+                                                        <span className="text-2xl font-bold gradient-text">{tpl.points} pts</span>
+                                                        {isPromo && (
+                                                            <span className="text-sm text-muted-foreground line-through decoration-red-500/50 decoration-2">
+                                                                {tpl.oldPrice} pts
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <Button
+                                                variant="outline"
+                                                className="w-full border-white/10 hover:bg-white/5"
+                                                onClick={() => {
+                                                    setEditTemplate(tpl);
+                                                    setNewTemplatePrice(tpl.points.toString());
+                                                    setIsPromo(!!tpl.oldPrice);
+                                                    setPromoPrice(tpl.oldPrice ? tpl.oldPrice.toString() : tpl.points.toString());
+                                                }}
+                                            >
+                                                <Edit className="w-4 h-4 mr-2" />
+                                                Modifier le prix
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="messages" className="space-y-4 animate-fade-in">
+                            <Card className="glass border-white/10">
+                                <CardHeader>
+                                    <CardTitle>Messages reçus</CardTitle>
+                                    <CardDescription>Gérez les messages envoyés depuis le formulaire de contact.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <MessagesTable />
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
                 </Tabs>
 
                 {/* Edit Points Dialog */}

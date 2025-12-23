@@ -32,6 +32,15 @@ interface Snapshot {
     createdAt: string;
 }
 
+interface UpgradePack {
+    id: number;
+    name: string;
+    type: 'cpu' | 'ram' | 'storage';
+    amount: number;
+    pointsCost: number;
+    isActive: boolean;
+}
+
 const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
     const k = 1024;
@@ -73,6 +82,11 @@ const InstanceDetails = () => {
     const [domains, setDomains] = useState<any[]>([]);
     const [newDomain, setNewDomain] = useState({ subdomain: "", port: "" });
     const [domainLoading, setDomainLoading] = useState(false);
+
+    // Upgrades State
+    const [upgradePacks, setUpgradePacks] = useState<UpgradePack[]>([]);
+    const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+    const [purchaseLoading, setPurchaseLoading] = useState(false);
 
     // Alert/Confirm State
     const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; title: string; description: React.ReactNode; onConfirm: () => void }>({ isOpen: false, title: "", description: "", onConfirm: () => { } });
@@ -387,6 +401,58 @@ const InstanceDetails = () => {
     useEffect(() => {
         if (id) fetchDomains();
     }, [id, fetchDomains]);
+
+    useEffect(() => {
+        const fetchPacks = async () => {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+            try {
+                const res = await fetch('/api/upgrades', { headers: { "Authorization": `Bearer ${user.token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    setUpgradePacks(Array.isArray(data) ? data : []);
+                }
+            } catch (e) { }
+        };
+        fetchPacks();
+    }, []);
+
+    const handlePurchaseUpgrade = async (pack: UpgradePack) => {
+        if (!instance) return;
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        setPurchaseLoading(true);
+        try {
+            const response = await fetch(`/api/instances/${id}/upgrade`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${user.token}`
+                },
+                body: JSON.stringify({ packId: pack.id })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                toast.success("Amélioration appliquée avec succès !");
+                // Update instance state locally
+                // fetchInstance(); triggers full reload, which is fine
+                setUpgradeDialogOpen(false);
+                // Force reload of page or fetch
+                window.location.reload();
+            } else {
+                const err = await response.json();
+                toast.error(err.error || "Erreur lors de l'achat");
+            }
+        } catch (e) {
+            toast.error("Erreur de connexion");
+        } finally {
+            setPurchaseLoading(false);
+        }
+    };
 
     const handleCreateDomain = async () => {
         if (!newDomain.subdomain || !newDomain.port) {
@@ -772,6 +838,14 @@ const InstanceDetails = () => {
                     </div>
 
                     <div className="flex items-center gap-3 glass p-1.5 rounded-xl">
+                        <Button
+                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-lg shadow-amber-500/20"
+                            onClick={() => setUpgradeDialogOpen(true)}
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Améliorer
+                        </Button>
+                        <div className="w-px h-8 bg-white/10 mx-1" />
                         <Button
                             onClick={() => handlePowerAction("start")}
                             disabled={loading || isDisplayOnline}
@@ -1251,6 +1325,53 @@ const InstanceDetails = () => {
                             Créer
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog Upgrade */}
+            <Dialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen}>
+                <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                            <Plus className="w-6 h-6 text-primary" />
+                            Améliorer mon instance
+                        </DialogTitle>
+                        <DialogDescription>
+                            Ajoutez des ressources instantanément à votre VM. Le coût journalier sera mis à jour.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-6">
+                        {upgradePacks.map(pack => (
+                            <div key={pack.id} className="relative group cursor-pointer" onClick={() => handlePurchaseUpgrade(pack)}>
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="relative glass border border-white/10 p-6 rounded-2xl hover:border-primary/50 transition-colors flex flex-col items-center text-center gap-4 bg-black/40">
+                                    <div className="p-3 rounded-full bg-white/5 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+                                        {pack.type === 'cpu' && <Cpu className="w-6 h-6 text-primary" />}
+                                        {pack.type === 'ram' && <MemoryStick className="w-6 h-6 text-purple-400" />}
+                                        {pack.type === 'storage' && <HardDrive className="w-6 h-6 text-emerald-400" />}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg">{pack.name}</h3>
+                                        <p className="text-sm text-muted-foreground">Ajoute +{pack.amount} {pack.type === 'storage' ? 'GB' : (pack.type === 'ram' ? 'GB' : 'vCore')}</p>
+                                    </div>
+                                    <div className="mt-auto pt-4 border-t border-white/5 w-full">
+                                        <div className="font-bold text-xl gradient-text">+{pack.pointsCost} pts/j</div>
+                                    </div>
+                                    {purchaseLoading && (
+                                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        {upgradePacks.length === 0 && (
+                            <div className="col-span-full text-center py-10 text-muted-foreground">
+                                Aucun pack d'amélioration disponible pour le moment.
+                            </div>
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

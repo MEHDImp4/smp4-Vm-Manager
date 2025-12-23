@@ -336,11 +336,11 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
 
                                 {/* Wheel SVG */}
                                 <svg
-                                    className={`w-full h-full drop-shadow-2xl relative z-10 ${shouldAnimate ? 'transition-transform duration-[4000ms]' : 'transition-none'}`}
+                                    className="w-full h-full drop-shadow-2xl relative z-10"
                                     viewBox="0 0 200 200"
                                     style={{
                                         transform: `rotate(${rotation}deg)`,
-                                        transitionTimingFunction: 'cubic-bezier(0.17, 0.67, 0.12, 0.99)'
+                                        transition: shouldAnimate ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
                                     }}
                                 >
                                     {WHEEL_PRIZES.map((prize, index) => {

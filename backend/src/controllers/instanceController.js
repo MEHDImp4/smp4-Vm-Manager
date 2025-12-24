@@ -36,41 +36,45 @@ const createInstance = async (req, res) => {
                     os: 'default'
                 }
             }
-        });
-
-        if (!templateVersion) {
-            return res.status(400).json({ error: "Invalid template or OS combination. Please contact admin." });
+        },
+            include: {
+            template: true
         }
-
-        const { cpu, ram, storage, points } = templateVersion.template;
-
-        // Allocate VMID and create DB record
-        const { instance, vmid, rootPassword } = await instanceService.allocateInstance({
-            name,
-            template: templateId,
-            cpu,
-            ram,
-            storage,
-            pointsPerDay: role === 'admin' ? 0 : points,
-            userId
         });
 
-        // Respond immediately
-        res.status(201).json(instance);
-
-        // Start background provisioning
-        instanceService.provisionInBackground({
-            instance,
-            vmid,
-            rootPassword,
-            templateVersion,
-            user
-        });
-
-    } catch (error) {
-        log.error("Create instance error:", error);
-        res.status(500).json({ error: "Failed to create instance" });
+    if (!templateVersion) {
+        return res.status(400).json({ error: "Invalid template or OS combination. Please contact admin." });
     }
+
+    const { cpu, ram, storage, points } = templateVersion.template;
+
+    // Allocate VMID and create DB record
+    const { instance, vmid, rootPassword } = await instanceService.allocateInstance({
+        name,
+        template: templateId,
+        cpu,
+        ram,
+        storage,
+        pointsPerDay: role === 'admin' ? 0 : points,
+        userId
+    });
+
+    // Respond immediately
+    res.status(201).json(instance);
+
+    // Start background provisioning
+    instanceService.provisionInBackground({
+        instance,
+        vmid,
+        rootPassword,
+        templateVersion,
+        user
+    });
+
+} catch (error) {
+    log.error("Create instance error:", error);
+    res.status(500).json({ error: "Failed to create instance" });
+}
 };
 
 /**

@@ -43,5 +43,9 @@
     "jest-mock-extended": "^4.0.0",
     "prisma": "5.22.0",
     "supertest": "^6.3.3"
+  },
+  "overrides": {
+    "cross-spawn": "7.0.6",
+    "glob": "10.5.0"
   }
 }

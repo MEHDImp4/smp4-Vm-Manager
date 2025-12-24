@@ -130,8 +130,8 @@ describe('Upgrade Controller Unit Tests', () => {
 
             await upgradeController.applyUpgrade(req, res);
 
-            expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ error: "Instance not found" });
+            expect(res.status).toHaveBeenCalledWith(403);
+            expect(res.json).toHaveBeenCalledWith({ error: "Access denied: You do not own this instance" });
         });
 
         it('should fail if pack is inactive', async () => {

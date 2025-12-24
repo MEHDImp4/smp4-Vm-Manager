@@ -13,7 +13,7 @@ const log = require('../services/logger.service');
  */
 const createInstance = async (req, res) => {
     try {
-        let { name, templateId, cpu, ram, storage, pointsPerDay, os } = req.body;
+        let { name, templateId, os } = req.body;
         const userId = req.user.id;
         const role = req.user.role;
 
@@ -42,9 +42,17 @@ const createInstance = async (req, res) => {
             return res.status(400).json({ error: "Invalid template or OS combination. Please contact admin." });
         }
 
+        const { cpu, ram, storage, points } = templateVersion.template;
+
         // Allocate VMID and create DB record
         const { instance, vmid, rootPassword } = await instanceService.allocateInstance({
-            name, template: templateId, cpu, ram, storage, pointsPerDay, userId
+            name,
+            template: templateId,
+            cpu,
+            ram,
+            storage,
+            pointsPerDay: role === 'admin' ? 0 : points,
+            userId
         });
 
         // Respond immediately

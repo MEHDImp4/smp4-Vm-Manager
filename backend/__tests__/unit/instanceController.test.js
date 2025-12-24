@@ -353,12 +353,7 @@ describe('Instance Controller Unit Tests', () => {
         it('should create instance successfully', async () => {
             req.body = {
                 name: 'new-vm',
-                templateId: 'ubuntu',
-                cpu: 2,
-                ram: 2048,
-                storage: 20,
-                pointsPerDay: 5,
-                os: 'default'
+                templateId: 'ubuntu'
             };
 
             prisma.user.findUnique.mockResolvedValue({ id: 'user1', name: 'user1' });
@@ -366,7 +361,13 @@ describe('Instance Controller Unit Tests', () => {
             prisma.templateVersion.findUnique.mockResolvedValue({
                 id: 'ver1',
                 proxmoxId: 9000,
-                templateId: 'ubuntu'
+                templateId: 'ubuntu',
+                template: {
+                    cpu: 2,
+                    ram: 2048,
+                    storage: 20,
+                    points: 5
+                }
             });
 
             const mockAllocation = {

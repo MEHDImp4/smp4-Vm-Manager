@@ -87,6 +87,12 @@ describe('Instance Routes', () => {
       prisma.templateVersion.findUnique.mockResolvedValueOnce({
         id: 'template1',
         proxmoxId: 100,
+        template: {
+          cpu: 1,
+          ram: 1024,
+          storage: 20,
+          points: 10
+        }
       });
       prisma.instance.create.mockResolvedValueOnce({
         id: 'instance1',
@@ -102,10 +108,6 @@ describe('Instance Routes', () => {
         .send({
           templateId: 'ubuntu-22.04',
           name: 'new-vm',
-          cpu: 1,
-          ram: 1024,
-          storage: DEFAULT_STORAGE_GB,
-          pointsPerDay: DEFAULT_POINTS_PER_DAY,
           os: 'default'
         });
 

@@ -616,7 +616,9 @@ const InstanceDetails = () => {
 
         // Connect to WebSocket
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws/ssh?vmid=${instance.vmid}&host=${stats.ip}`;
+        const userStr = localStorage.getItem("user");
+        const token = userStr ? JSON.parse(userStr).token : '';
+        const wsUrl = `${protocol}//${window.location.host}/ws/ssh?vmid=${instance.vmid}&host=${stats.ip}&token=${token}`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 

@@ -34,7 +34,13 @@ exports.getPacks = async (req, res) => {
         });
         res.json(packs);
     } catch (error) {
-        res.status(500).json({ error: "Failed to fetch packs" });
+        console.error("Get packs error:", error);
+        res.status(500).json({
+            error: "Failed to fetch packs",
+            details: error.message,
+            stack: error.stack,
+            isPrismaError: !!error.code
+        });
     }
 };
 
@@ -76,14 +82,22 @@ exports.applyUpgrade = async (req, res) => {
         const { packId } = req.body;
         const userId = req.user.userId;
 
+        console.log(`[Upgrade] Request for instance ${instanceId} by user ${userId} with pack ${packId}`);
+
         // 1. Verify instance ownership
         const instance = await prisma.instance.findUnique({
             where: { id: instanceId },
             include: { upgrades: true }
         });
 
-        if (!instance || instance.userId !== userId) {
-            return res.status(404).json({ error: "Instance not found" });
+        if (!instance) {
+            console.error(`[Upgrade] Instance ${instanceId} not found in DB`);
+            return res.status(404).json({ error: `Instance ${instanceId} not found` });
+        }
+
+        if (instance.userId !== userId) {
+            console.error(`[Upgrade] Instance ${instanceId} belongs to user ${instance.userId}, not ${userId}`);
+            return res.status(403).json({ error: "Access denied: You do not own this instance" });
         }
 
         // 2. Get pack details
@@ -145,6 +159,10 @@ exports.applyUpgrade = async (req, res) => {
 
     } catch (error) {
         console.error("Apply upgrade error:", error);
-        res.status(500).json({ error: "Failed to apply upgrade" });
+        res.status(500).json({
+            error: "Failed to apply upgrade",
+            details: error.message,
+            stack: error.stack
+        });
     }
 };

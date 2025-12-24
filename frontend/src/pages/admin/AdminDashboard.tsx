@@ -371,7 +371,7 @@ const AdminDashboard = () => {
                 </div>
 
                 <Tabs defaultValue="overview" className="space-y-8 animate-fade-up-delay-1">
-                    <TabsList className="bg-black/40 backdrop-blur-xl p-1.5 border border-white/10 rounded-2xl w-full max-w-2xl mx-auto grid grid-cols-5 gap-1">
+                    <TabsList className="bg-black/40 backdrop-blur-xl p-1.5 border border-white/10 rounded-2xl w-full max-w-3xl mx-auto grid grid-cols-6 gap-1">
                         <TabsTrigger
                             value="overview"
                             className="gap-2 rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"

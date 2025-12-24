@@ -20,6 +20,7 @@ router.post('/:id/restart', require('../controllers/instanceController').restart
 router.get('/:id/stats', getInstanceStats);
 router.get('/:id/vpn', require('../controllers/instanceController').getVpnConfig);
 router.delete('/:id', deleteInstance);
+// Upgrade route
 router.post('/:instanceId/upgrade', require('../controllers/upgradeController').applyUpgrade);
 
 // Snapshot routes

@@ -35,10 +35,9 @@ RUN addgroup -g 1001 -S nodejs && \
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies and remove npm/yarn (not needed, reduces vulnerabilities)
-RUN npm ci --only=production && \
-    npm cache clean --force && \
-    rm -rf /usr/local/lib/node_modules/npm /opt/yarn*
+# Install dependencies (including devDependencies for Prisma) and keep npm
+RUN npm ci && \
+    npm cache clean --force
 
 # Copy prisma schema and generated client from builder
 COPY --from=builder /app/prisma ./prisma/
@@ -71,5 +70,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--", "docker-entrypoint.sh"]
 
-# Start the application
-CMD ["node", "src/index.js"]
+# Start the application using npm start to trigger db push
+CMD ["npm", "start"]

@@ -9,6 +9,10 @@ jest.mock('../../src/middlewares/authMiddleware', () => ({
   isAdmin: (req, res, next) => next(),
 }));
 
+jest.mock('../../src/services/email.service', () => ({
+  sendEmail: jest.fn().mockResolvedValue({}),
+}));
+
 const request = require('supertest');
 const express = require('express');
 const { prisma } = require('../../src/db');

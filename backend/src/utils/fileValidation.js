@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 
 /**
  * Validates the magic numbers (file signature) of an image file.
@@ -8,48 +8,49 @@ const fs = require('fs');
  * @returns {Promise<boolean>} - True if valid image signature, false otherwise
  */
 const validateImageSignature = async (filePath) => {
-    const stream = fs.createReadStream(filePath, { start: 0, end: 11 });
+    let fileHandle;
+    try {
+        fileHandle = await fs.open(filePath, 'r');
+        const buffer = Buffer.alloc(12);
+        const { bytesRead } = await fileHandle.read(buffer, 0, 12, 0);
 
-    return new Promise((resolve, reject) => {
-        stream.on('data', (chunk) => {
-            if (chunk.length < 4) {
-                return resolve(false);
-            }
+        if (bytesRead < 4) {
+            return false;
+        }
 
-            // JPEG: FF D8 FF
-            if (chunk[0] === 0xFF && chunk[1] === 0xD8 && chunk[2] === 0xFF) {
-                return resolve(true);
-            }
+        // JPEG: FF D8 FF
+        if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+            return true;
+        }
 
-            // PNG: 89 50 4E 47
-            if (chunk[0] === 0x89 && chunk[1] === 0x50 && chunk[2] === 0x4E && chunk[3] === 0x47) {
-                return resolve(true);
-            }
+        // PNG: 89 50 4E 47
+        if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+            return true;
+        }
 
-            // GIF: 47 49 46 38
-            if (chunk[0] === 0x47 && chunk[1] === 0x49 && chunk[2] === 0x46 && chunk[3] === 0x38) {
-                return resolve(true);
-            }
+        // GIF: 47 49 46 38
+        if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) {
+            return true;
+        }
 
-            // WEBP: RIFF .... WEBP
-            // RIFF at 0, WEBP at 8
-            if (chunk.length >= 12 &&
-                chunk[0] === 0x52 && chunk[1] === 0x49 && chunk[2] === 0x46 && chunk[3] === 0x46 &&
-                chunk[8] === 0x57 && chunk[9] === 0x45 && chunk[10] === 0x42 && chunk[11] === 0x50) {
-                return resolve(true);
-            }
+        // WEBP: RIFF .... WEBP
+        // RIFF at 0, WEBP at 8
+        if (bytesRead >= 12 &&
+            buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+            buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) {
+            return true;
+        }
 
-            resolve(false);
-        });
-
-        stream.on('end', () => {
-            resolve(false);
-        });
-
-        stream.on('error', (err) => {
-            reject(err);
-        });
-    });
+        return false;
+    } catch (error) {
+        // If file doesn't exist or other error, return false
+        console.error(`[FileValidation] Error validating signature for ${filePath}:`, error.message);
+        return false;
+    } finally {
+        if (fileHandle) {
+            await fileHandle.close();
+        }
+    }
 };
 
 module.exports = { validateImageSignature };

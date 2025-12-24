@@ -24,6 +24,10 @@ jest.mock('../../src/db', () => ({
     },
 }));
 
+jest.mock('../../src/services/email.service', () => ({
+    sendEmail: jest.fn().mockResolvedValue({}),
+}));
+
 describe('Points Controller Unit Tests', () => {
     let req, res;
 

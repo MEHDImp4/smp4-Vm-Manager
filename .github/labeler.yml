@@ -1,0 +1,17 @@
+frontend:
+- changed-files:
+  - any-glob-to-any-file: 'frontend/**/*'
+
+backend:
+- changed-files:
+  - any-glob-to-any-file: 'backend/**/*'
+
+tests:
+- changed-files:
+  - any-glob-to-any-file: '**/__tests__/**/*'
+  - any-glob-to-any-file: '**/*.test.js'
+  - any-glob-to-any-file: '**/*.test.tsx'
+
+github_actions:
+- changed-files:
+  - any-glob-to-any-file: '.github/**/*'

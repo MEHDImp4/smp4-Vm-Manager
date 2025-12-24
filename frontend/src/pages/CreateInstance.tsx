@@ -49,7 +49,7 @@ const CreateInstance = () => {
         if (!selectedTemplate || !name) {
             toast({
                 variant: "destructive",
-                title: "Champs manquants",
+                title: "Champs manquants ⚠️",
                 description: "Veuillez sélectionner un template et donner un nom à votre instance.",
             });
             return;
@@ -83,16 +83,16 @@ const CreateInstance = () => {
             }
 
             toast({
-                title: "Instance créée !",
-                description: "Votre nouvelle VM est en cours de déploiement.",
+                title: "Instance créée ! 🚀",
+                description: "Votre nouvelle VM est en cours de déploiement. 📦",
             });
             navigate("/dashboard");
         } catch (error) {
             console.error(error);
             toast({
                 variant: "destructive",
-                title: "Erreur",
-                description: "Impossible de créer l'instance. Vérifiez votre connexion.",
+                title: "Erreur ❌",
+                description: "Impossible de créer l'instance. Vérifiez votre connexion. 🔌",
             });
         } finally {
             setIsLoading(false);

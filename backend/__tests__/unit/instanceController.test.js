@@ -353,7 +353,7 @@ describe('Instance Controller Unit Tests', () => {
         it('should create instance successfully', async () => {
             req.body = {
                 name: 'new-vm',
-                template: 'ubuntu',
+                templateId: 'ubuntu',
                 cpu: 2,
                 ram: 2048,
                 storage: 20,
@@ -399,7 +399,7 @@ describe('Instance Controller Unit Tests', () => {
         it('should return 400 for invalid template', async () => {
             req.body = {
                 name: 'new-vm',
-                template: 'invalid',
+                templateId: 'invalid',
                 cpu: 1, ram: 1024, storage: 10, pointsPerDay: 1, os: 'default'
             };
 

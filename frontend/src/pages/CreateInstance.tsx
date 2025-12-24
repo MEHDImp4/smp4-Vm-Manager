@@ -74,11 +74,7 @@ const CreateInstance = () => {
                 },
                 body: JSON.stringify({
                     name,
-                    template: templateData?.name,
-                    cpu: templateData?.cpu,
-                    ram: templateData?.ram,
-                    storage: templateData?.storage,
-                    pointsPerDay: templateData?.points
+                    templateId: selectedTemplate,
                 })
             });
 

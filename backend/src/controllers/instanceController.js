@@ -13,7 +13,7 @@ const log = require('../services/logger.service');
  */
 const createInstance = async (req, res) => {
     try {
-        let { name, template, cpu, ram, storage, pointsPerDay, os } = req.body;
+        let { name, templateId, cpu, ram, storage, pointsPerDay, os } = req.body;
         const userId = req.user.id;
         const role = req.user.role;
 
@@ -32,7 +32,7 @@ const createInstance = async (req, res) => {
         const templateVersion = await prisma.templateVersion.findUnique({
             where: {
                 templateId_os: {
-                    templateId: template.toLowerCase(),
+                    templateId: templateId.toLowerCase(),
                     os: 'default'
                 }
             }
@@ -44,7 +44,7 @@ const createInstance = async (req, res) => {
 
         // Allocate VMID and create DB record
         const { instance, vmid, rootPassword } = await instanceService.allocateInstance({
-            name, template, cpu, ram, storage, pointsPerDay, userId
+            name, template: templateId, cpu, ram, storage, pointsPerDay, userId
         });
 
         // Respond immediately

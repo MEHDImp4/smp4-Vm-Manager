@@ -100,7 +100,7 @@ describe('Instance Routes', () => {
         .post('/api/instances')
         .set('Authorization', 'Bearer token')
         .send({
-          template: 'ubuntu-22.04',
+          templateId: 'ubuntu-22.04',
           name: 'new-vm',
           cpu: 1,
           ram: 1024,

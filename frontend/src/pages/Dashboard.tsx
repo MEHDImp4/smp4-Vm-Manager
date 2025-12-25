@@ -332,14 +332,14 @@ const Dashboard = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 animate-fade-up backdrop-blur-md border-b border-white/5 bg-black/20">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 select-none">
+          <Link to="/dashboard" className="flex items-center gap-2 select-none hover:opacity-80 transition-opacity">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform duration-300">
               <Cloud className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight">
               Dashboard
             </span>
-          </div>
+          </Link>
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" asChild className="hover:bg-white/5 hidden md:flex">
               <Link to="/guide">

@@ -46,12 +46,6 @@
   },
   "overrides": {
     "cross-spawn": "7.0.6",
-    "glob": "10.5.0",
-    "test-exclude": {
-      "glob": "7.2.3"
-    },
-    "jest-config": {
-      "glob": "7.2.3"
-    }
+    "glob": "^10.4.5"
   }
 }

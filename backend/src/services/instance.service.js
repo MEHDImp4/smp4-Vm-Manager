@@ -13,6 +13,7 @@ const { vmCreationQueue, vmAllocationQueue } = require('./queue.service');
 const log = require('./logger.service');
 const crypto = require('crypto');
 const systemOs = require('os');
+const redisService = require('./redis.service');
 
 // Constants
 const ROOT_PASSWORD_BYTES = 8;
@@ -400,6 +401,12 @@ const getInstanceStats = async (instance) => {
         };
     }
 
+    const cacheKey = `instance:${instance.id}:stats`;
+    const cachedStats = await redisService.get(cacheKey);
+    if (cachedStats) {
+        return cachedStats;
+    }
+
     const status = await proxmoxService.getLXCStatus(instance.vmid);
     const interfaces = await proxmoxService.getLXCInterfaces(instance.vmid);
 
@@ -429,7 +436,7 @@ const getInstanceStats = async (instance) => {
         ip = eth0.inet.split('/')[0];
     }
 
-    return {
+    const stats = {
         cpu: parseFloat(cpuPercent.toFixed(1)),
         ram: parseFloat(ramPercent.toFixed(1)),
         storage: parseFloat(storagePercent.toFixed(1)),
@@ -440,6 +447,9 @@ const getInstanceStats = async (instance) => {
         uptime: status.uptime,
         rootPassword: instance.rootPassword
     };
+
+    await redisService.set(cacheKey, stats, 5); // Cache for 5 seconds
+    return stats;
 };
 
 /**

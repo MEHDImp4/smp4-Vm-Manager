@@ -24,6 +24,26 @@ services:
           cpus: '1'
           memory: 1G
 
+  redis:
+    image: redis:7-alpine
+    container_name: smp4-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    networks:
+      - smp4-net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
   backend:
     image: mehdimp4/smp4-vm-manager-backend:latest
     container_name: smp4-backend
@@ -36,6 +56,7 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-smp4}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-smp4_db}?schema=public
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - JWT_SECRET=${JWT_SECRET}
       - PROXMOX_URL=${PROXMOX_URL}
       - PROXMOX_API_TOKEN=${PROXMOX_API_TOKEN}
@@ -146,6 +167,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  redis-data:
   postgres-data:
   backend-data:
 

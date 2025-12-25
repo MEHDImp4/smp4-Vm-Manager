@@ -27,6 +27,9 @@ initDailyReminder();
 const { initIdleCheckCron } = require('./cron/idleCheck.cron');
 initIdleCheckCron();
 
+const redisService = require('./services/redis.service');
+redisService.init();
+
 // Seed templates on startup
 const { seedTemplates } = require('./scripts/seedTemplates');
 seedTemplates();

@@ -1146,10 +1146,11 @@ const InstanceDetails = () => {
                             <h3 className="font-semibold text-lg text-muted-foreground pl-1">Actions Rapides</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <a
-                                    href={portainerUrl}
+                                    href={(!isDisplayOnline || !stats.ip) ? '#' : portainerUrl}
+                                    onClick={(e) => (!isDisplayOnline || !stats.ip) && e.preventDefault()}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`relative overflow-hidden group p-6 rounded-xl border border-white/10 glass transition-all hover:-translate-y-1 hover:shadow-glow ${!stats.ip && 'opacity-50 cursor-not-allowed'}`}
+                                    className={`relative overflow-hidden group p-6 rounded-xl border border-white/10 glass transition-all hover:-translate-y-1 hover:shadow-glow ${(!isDisplayOnline || !stats.ip) ? 'opacity-50 cursor-not-allowed pointer-events-none grayscale' : ''}`}
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                     <div className="relative z-10 flex flex-col gap-3">
@@ -1193,7 +1194,7 @@ const InstanceDetails = () => {
                                         </div>
                                         <div>
                                             <div className="font-bold text-base text-foreground">Sous-domaines</div>
-                                            <div className="text-sm text-muted-foreground">Configuration DNS ({domains.length}/3 utilisés)</div>
+                                            <div className="text-sm text-muted-foreground">Configuration DNS ({domains.length}/2 utilisés)</div>
                                         </div>
                                     </div>
                                 </Button>

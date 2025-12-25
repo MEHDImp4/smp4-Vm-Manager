@@ -7,6 +7,7 @@ const createClient = async (targetIp) => {
     try {
         log.vpn(`Creating client for target IP: ${targetIp}`);
         const response = await axios.post(`${VPN_API_URL}/client`, { targetIp });
+        log.vpn(`[DEBUG] Generated VPN Config for ${targetIp}: \n${response.data.config}`);
         return response.data; // { clientIp, publicKey, config }
     } catch (error) {
         log.error(`[VPN] Failed to create client: ${error.message}`);

@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const log = require('./services/logger.service');
 const authRoutes = require('./routes/authRoutes');
 const instanceRoutes = require('./routes/instanceRoutes');
@@ -36,6 +38,33 @@ seedTemplates();
 
 // Security middleware - helmet adds various HTTP headers for protection
 app.use(helmet());
+
+// HTTP Request Logging
+const stream = {
+    write: (message) => log.http(message.trim())
+};
+
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms', { stream }));
+
+// Global Rate Limiting - Apply to all requests
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    start_on_create: false, // Ensure it doesn't crash if Redis is missing (memory store fallback)
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: {
+        status: 429,
+        message: 'Too many requests from this IP, please try again later.'
+    },
+    skip: (req) => {
+        // Skip rate limiting for health checks or specific internal routes if needed
+        return req.path === '/health' || req.path === '/';
+    }
+});
+
+// Apply global limiter to all routes
+app.use(globalLimiter);
 
 // Middleware
 const corsOptions = {

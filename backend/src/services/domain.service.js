@@ -69,12 +69,12 @@ const createDomain = async ({ instance, user, port, customSuffix, isPaidRequest 
         throw error;
     }
 
-    // Check domain limits (3 free, unlimited paid)
+    // Check domain limits (2 free, unlimited paid)
     const freeDomains = instance.domains.filter(d => !d.isPaid);
-    const isPaidDomain = freeDomains.length >= 3;
+    const isPaidDomain = freeDomains.length >= 2;
 
     if (isPaidDomain && isPaidRequest !== true) {
-        const error = new Error("Maximum of 3 free domains reached");
+        const error = new Error("Maximum of 2 free domains reached");
         error.statusCode = 400;
         error.requiresPurchase = true;
         throw error;

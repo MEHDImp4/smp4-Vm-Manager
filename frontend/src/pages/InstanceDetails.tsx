@@ -1223,7 +1223,13 @@ const InstanceDetails = () => {
                                     <div>
                                         <h4 className="font-medium mb-1 text-foreground">Accéder à Portainer</h4>
                                         <p className="text-sm text-muted-foreground">
-                                            Interface disponible sur <code className="bg-black/50 px-1.5 py-0.5 rounded text-xs text-primary font-mono">http://{stats.ip || 'IP'}:9000</code>.
+                                            Interface disponible sur <a href={portainerUrl} target="_blank" rel="noreferrer" className="bg-black/50 px-1.5 py-0.5 rounded text-xs text-primary font-mono hover:underline truncate inline-block max-w-[250px] align-bottom">{portainerUrl}</a>.
+
+                                            <Link to="/docker-guide" className="inline-flex items-center gap-1 ml-2 text-xs text-indigo-400 hover:text-indigo-300 hover:underline">
+                                                <BookOpen className="w-3 h-3" />
+                                                Guide Docker
+                                            </Link>
+
                                             <span className="block mt-2 text-amber-400/90 text-xs font-medium bg-amber-400/10 p-2 rounded border border-amber-400/20">
                                                 ⚠️ Si Portainer ne répond pas immédiatement, essayez de redémarrer la VM via le bouton en haut.
                                             </span>

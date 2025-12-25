@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Sparkles, Gift, DollarSign, Twitter, Github, Linkedin, TrendingUp, Coins, Clock, Zap, ShieldAlert } from "lucide-react";
+import { X, Sparkles, Gift, DollarSign, Instagram, Github, Linkedin, TrendingUp, Coins, Clock, Zap, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -492,7 +492,7 @@ const EarnPointsModal = ({ isOpen, onClose, onPointsEarned }: EarnPointsModalPro
                                         </div>
                                     ) : (
                                         [
-                                            { id: 'twitter', icon: Twitter, label: 'Twitter', color: 'text-sky-400', hover: 'hover:border-sky-500/30 hover:bg-sky-500/5', url: 'https://twitter.com/yourhandle' },
+                                            { id: 'instagram', icon: Instagram, label: 'Instagram', color: 'text-pink-500', hover: 'hover:border-pink-500/30 hover:bg-pink-500/5', url: 'https://instagram.com/smp4_cloud' },
                                             { id: 'github', icon: Github, label: 'GitHub', color: 'text-white', hover: 'hover:border-white/30 hover:bg-white/5', url: 'https://github.com/MEHDImp4' },
                                             { id: 'linkedin', icon: Linkedin, label: 'LinkedIn', color: 'text-blue-500', hover: 'hover:border-blue-500/30 hover:bg-blue-500/5', url: 'https://www.linkedin.com/in/diouri-mehdi-a73579301/' }
                                         ].map((social) => (

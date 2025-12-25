@@ -191,10 +191,10 @@ const claimSocialBonus = async (req, res) => {
             return res.status(403).json({ error: "Veuillez vérifier votre email pour réclamer ce bonus." });
         }
 
-        const { platform, username } = req.body; // "twitter", "github", "linkedin"
+        const { platform, username } = req.body; // "instagram", "github", "linkedin"
 
         const validPlatforms = {
-            twitter: 50,
+            instagram: 50,
             github: 50,
             linkedin: 50
         };

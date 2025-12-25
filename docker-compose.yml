@@ -163,7 +163,17 @@ services:
     container_name: smp4-watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 30 --cleanup smp4-backend smp4-frontend smp4-vpn
+    # Check every hour, do NOT cleanup old images (enables rollback)
+    command: --interval 3600 smp4-backend smp4-frontend smp4-vpn
+    environment:
+      - WATCHTOWER_NOTIFICATIONS=email
+      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=${SMTP_FROM}
+      - WATCHTOWER_NOTIFICATION_EMAIL_TO=${SMTP_FROM}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${SMTP_HOST}
+      - WATCHTOWER_NOTIFICATION_EMAIL_PORT=${SMTP_PORT}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=${SMTP_USER}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${SMTP_PASS}
+      # - WATCHTOWER_ROLLING_RESTART=true # Restart one by one (if multiple replicas)
     restart: unless-stopped
 
 volumes:

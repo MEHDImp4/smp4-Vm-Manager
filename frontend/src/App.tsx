@@ -47,7 +47,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Auth />} />
           <Route path="/register" element={<Auth />} />
-          <Route path="/register" element={<Auth />} />
+
           <Route path="/create" element={<CreateInstance />} />
           <Route path="/instance/:id" element={<InstanceDetails />} />
           <Route path="/instance/:id/domains" element={<InstanceDomains />} />

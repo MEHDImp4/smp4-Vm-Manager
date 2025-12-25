@@ -72,7 +72,7 @@ const upload = multer({
     }
 });
 
-const { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory, verifyEmail, resendVerificationCode, requestAccountDeletion, confirmAccountDeletion } = require('../controllers/authController');
+const { register, login, getProfile, updatePassword, uploadAvatar, getPointsHistory, verifyEmail, resendVerificationCode, requestAccountDeletion, confirmAccountDeletion, refreshToken } = require('../controllers/authController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
 // Public routes with rate limiting and validation
@@ -80,6 +80,7 @@ router.post('/register', authLimiter, validateBody(registerSchema), register);
 router.post('/login', authLimiter, validateBody(loginSchema), login);
 router.post('/verify-email', authLimiter, validateBody(verifyEmailSchema), verifyEmail);
 router.post('/resend-verification', authLimiter, resendVerificationCode);
+router.post('/refresh-token', authLimiter, refreshToken);
 
 // Protected routes
 router.get('/me', verifyToken, getProfile);

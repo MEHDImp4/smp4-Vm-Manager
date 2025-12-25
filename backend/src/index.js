@@ -61,6 +61,10 @@ app.get('/', (req, res) => {
     res.send('SMP4cloud Web Backend is running');
 });
 
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
+
 // Global Error Handler
 const errorHandler = require('./middlewares/errorHandler');
 app.use(errorHandler);

@@ -30,6 +30,20 @@ model User {
   socialClaims SocialClaim[]
 
   @@map("users")
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  replacedByToken String?
+
+  @@map("refresh_tokens")
 }
 
 model PointTransaction {

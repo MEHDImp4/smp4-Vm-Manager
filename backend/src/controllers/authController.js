@@ -4,7 +4,31 @@ const { prisma } = require('../db');
 const emailService = require('../services/email.service');
 const cloudflareService = require('../services/cloudflare.service');
 const vpnService = require('../services/vpn.service');
+const crypto = require('crypto');
 const log = require('../services/logger.service');
+
+// Generate Access (15m) and Refresh (7d) Tokens
+const generateTokens = async (user) => {
+    const accessToken = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '15m' }
+    );
+
+    const refreshTokenString = crypto.randomBytes(40).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await prisma.refreshToken.create({
+        data: {
+            token: refreshTokenString,
+            userId: user.id,
+            expiresAt
+        }
+    });
+
+    return { accessToken, refreshToken: refreshTokenString };
+};
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -44,11 +68,23 @@ const register = async (req, res) => {
         // Send Verification Email
         await emailService.sendVerificationCode(user.email, user.name, user.verificationCode);
 
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+        // Send Verification Email
+        await emailService.sendVerificationCode(user.email, user.name, user.verificationCode);
+
+        const { accessToken, refreshToken } = await generateTokens(user);
 
         res.status(201).json({
             message: 'User registered successfully',
-            user: { id: user.id, name: user.name, email: user.email, points: user.points, role: user.role, isVerified: user.isVerified, token }
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                points: user.points,
+                role: user.role,
+                isVerified: user.isVerified,
+                token: accessToken,
+                refreshToken
+            }
         });
     } catch (error) {
         log.error(error);
@@ -97,7 +133,7 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+        const { accessToken, refreshToken } = await generateTokens(user);
 
         res.status(200).json({
             message: 'Login successful',
@@ -108,7 +144,8 @@ const login = async (req, res) => {
                 points: user.points,
                 role: user.role,
                 isVerified: user.isVerified,
-                token
+                token: accessToken,
+                refreshToken
             }
         });
     } catch (error) {
@@ -467,6 +504,47 @@ const confirmAccountDeletion = async (req, res) => {
     }
 };
 
+const refreshToken = async (req, res) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(400).json({ message: 'Refresh token required' });
+
+    try {
+        const storedToken = await prisma.refreshToken.findUnique({
+            where: { token: refreshToken },
+            include: { user: true }
+        });
+
+        // Validate token
+        if (!storedToken || storedToken.revoked || new Date() > new Date(storedToken.expiresAt)) {
+            // Optional security: Revoke all tokens for this user if reuse detected
+            return res.status(401).json({ message: 'Invalid or expired refresh token' });
+        }
+
+        // Revoke the used refresh token (Rotation)
+        await prisma.refreshToken.update({
+            where: { id: storedToken.id },
+            data: { revoked: true, replacedByToken: 'new_generated' }
+        });
+
+        // Generate new pair
+        const newTokens = await generateTokens(storedToken.user);
+
+        // Link old token to new one for audit
+        await prisma.refreshToken.update({
+            where: { id: storedToken.id },
+            data: { replacedByToken: newTokens.refreshToken }
+        });
+
+        res.json({
+            token: newTokens.accessToken,
+            refreshToken: newTokens.refreshToken
+        });
+    } catch (error) {
+        log.error('Refresh token error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -477,5 +555,7 @@ module.exports = {
     verifyEmail,
     resendVerificationCode,
     requestAccountDeletion,
-    confirmAccountDeletion
+    requestAccountDeletion,
+    confirmAccountDeletion,
+    refreshToken
 };

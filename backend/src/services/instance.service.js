@@ -496,6 +496,7 @@ const getOrCreateVpnConfig = async (instance) => {
         data: { vpnConfig: vpnData.config }
     });
     log.vpn(`[DEBUG] Saved VPN config for instance ${instance.id}`);
+    log.vpn(`[DEBUG] Saved VPN config for instance ${instance.id}`);
 
     return vpnData.config;
 };

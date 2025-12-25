@@ -58,6 +58,10 @@ app.get('/', (req, res) => {
     res.send('SMP4cloud Web Backend is running');
 });
 
+// Global Error Handler
+const errorHandler = require('./middlewares/errorHandler');
+app.use(errorHandler);
+
 const server = app.listen(PORT, () => {
     log.info(`SMP4cloud Backend running on port ${PORT}`);
 });

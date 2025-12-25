@@ -41,7 +41,7 @@ const Templates = () => {
                             <Cloud className="w-5 h-5 text-white" />
                         </div>
                         <span className="text-xl font-bold tracking-tight">
-                            SMP4<span className="gradient-text">cloud</span>
+                            {isLoggedIn ? 'Dashboard' : <>SMP4<span className="gradient-text">cloud</span></>}
                         </span>
                     </Link>
                     <div className="flex items-center gap-4">

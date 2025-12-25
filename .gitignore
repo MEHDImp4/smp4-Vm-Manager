@@ -26,6 +26,11 @@ test.db
 web-backend/database.sqlite
 database.sqlite
 database.sqlite-journal
+*.db
+*.db-journal
+prisma/*.db
+prisma/*.sqlite
+backend/.env
 
 # OS
 .DS_Store

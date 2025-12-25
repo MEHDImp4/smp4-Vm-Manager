@@ -1,9 +1,10 @@
 const { prisma } = require('../db');
 const proxmox = require('./proxmox.service');
+const log = require('./logger.service');
 
 const deductPoints = async () => {
     try {
-        console.log("Running point deduction job...");
+        log.cron("Running point deduction job...");
 
         // 1. Get all users with online instances
         // We fetch users and include their online instances to calculate total cost
@@ -50,7 +51,7 @@ const deductPoints = async () => {
                 let newBalance = user.points - costPerMinute;
 
                 if (newBalance <= 0) {
-                    console.log(`User ${user.email} has exhausted points. Stopping instances.`);
+                    log.warn(`User ${user.email} has exhausted points. Stopping instances.`);
                     newBalance = 0;
 
                     // Get instances to stop with their VMIDs
@@ -65,10 +66,10 @@ const deductPoints = async () => {
                     for (const instance of instancesToStop) {
                         if (instance.vmid) {
                             try {
-                                console.log(`Stopping VM ${instance.vmid} for user ${user.email}`);
+                                log.info(`Stopping VM ${instance.vmid} for user ${user.email} due to insufficient points`);
                                 await proxmox.stopLXC(instance.vmid);
                             } catch (error) {
-                                console.error(`Failed to stop VM ${instance.vmid} in Proxmox:`, error.message);
+                                log.error(`Failed to stop VM ${instance.vmid} in Proxmox: ${error.message}`);
                                 // Continue anyway to update database
                             }
                         }
@@ -101,11 +102,11 @@ const deductPoints = async () => {
                     })
                 ]);
 
-                // console.log(`Deducted ${costPerMinute.toFixed(4)} points from ${user.email}. New balance: ${newBalance.toFixed(4)}`);
+                // log.debug(`Deducted ${costPerMinute.toFixed(4)} points from ${user.email}. New balance: ${newBalance.toFixed(4)}`);
             }
         }
     } catch (error) {
-        console.error("Error in point deduction job:", error);
+        log.error("Error in point deduction job:", error);
     }
 };
 

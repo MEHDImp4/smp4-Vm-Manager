@@ -4,6 +4,7 @@ const { prisma } = require('../db');
 const emailService = require('../services/email.service');
 const cloudflareService = require('../services/cloudflare.service');
 const vpnService = require('../services/vpn.service');
+const log = require('../services/logger.service');
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -50,7 +51,7 @@ const register = async (req, res) => {
             user: { id: user.id, name: user.name, email: user.email, points: user.points, role: user.role, isVerified: user.isVerified, token }
         });
     } catch (error) {
-        console.error(error);
+        log.error(error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -111,7 +112,7 @@ const login = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error(error);
+        log.error(error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -136,7 +137,7 @@ const getProfile = async (req, res) => {
             avatarUrl: user.avatarUrl
         });
     } catch (error) {
-        console.error(error);
+        log.error(error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -168,7 +169,7 @@ const updatePassword = async (req, res) => {
 
         res.json({ message: 'Password updated successfully' });
     } catch (error) {
-        console.error(error);
+        log.error(error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -188,7 +189,7 @@ const uploadAvatar = async (req, res) => {
         // Delete the malicious/invalid file immediately
         const fs = require('fs');
         fs.unlink(req.file.path, (err) => {
-            if (err) console.error('Error deleting invalid file:', err);
+            if (err) log.error('Error deleting invalid file:', err);
         });
         return res.status(400).json({ message: 'Invalid file content. Only real images are allowed.' });
     }
@@ -204,7 +205,7 @@ const uploadAvatar = async (req, res) => {
 
         res.json({ message: 'Avatar updated', avatarUrl });
     } catch (error) {
-        console.error(error);
+        log.error(error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -222,7 +223,7 @@ const getPointsHistory = async (req, res) => {
 
         res.json(result);
     } catch (error) {
-        console.error("History fetch error", error);
+        log.error("History fetch error", error);
         res.status(500).json({ message: "Failed to fetch points history" });
     }
 };
@@ -262,7 +263,7 @@ const verifyEmail = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Verification error", error);
+        log.error("Verification error", error);
         res.status(500).json({ message: "Verification failed" });
     }
 };
@@ -286,7 +287,7 @@ const resendVerificationCode = async (req, res) => {
 
         res.json({ message: "Verification code resent" });
     } catch (error) {
-        console.error("Resend code error", error);
+        log.error("Resend code error", error);
         res.status(500).json({ message: "Failed to resend code" });
     }
 };
@@ -314,7 +315,7 @@ const requestAccountDeletion = async (req, res) => {
 
         res.json({ message: 'Code de suppression envoyé à votre email' });
     } catch (error) {
-        console.error('Error requesting account deletion:', error);
+        log.error('Error requesting account deletion:', error);
         res.status(500).json({ message: 'Erreur lors de l\'envoi du code' });
     }
 };
@@ -343,17 +344,17 @@ const confirmAccountDeletion = async (req, res) => {
         const receivedCode = String(code || '').trim();
 
         if (storedCode !== receivedCode) {
-            console.log('[Delete] Code mismatch:', { storedCode, receivedCode });
+            log.auth('Code mismatch during deletion process'); // Cleaned sensitive data from logs
             return res.status(400).json({ message: 'Code invalide' });
         }
 
-        console.log('[Delete] Code verified, proceeding with account deletion for user:', userId);
+        log.auth(`Code verified, proceeding with account deletion for user: ${userId}`);
 
         // 1. Collect all resources to delete
         const allHostnames = [];
         const instancesToDelete = user.instances;
 
-        console.log(`[Delete] Found ${instancesToDelete.length} instances to clean up for user ${userId}`);
+        log.auth(`Found ${instancesToDelete.length} instances to clean up for user ${userId}`);
 
         for (const instance of instancesToDelete) {
             // Collect hostnames
@@ -379,86 +380,86 @@ const confirmAccountDeletion = async (req, res) => {
 
         // 2. Bulk Delete from Cloudflare
         if (allHostnames.length > 0) {
-            console.log(`[Delete] Removing ${allHostnames.length} domains from Cloudflare...`, allHostnames);
+            log.auth(`Removing ${allHostnames.length} domains from Cloudflare...`);
             try {
                 await cloudflareService.removeMultipleTunnelIngress(allHostnames);
             } catch (cfError) {
-                console.error('[Delete] Cloudflare cleanup error (continuing):', cfError.message);
+                log.error(`[Delete] Cloudflare cleanup error (continuing): ${cfError.message}`);
             }
         }
 
         // 3. Delete Instances (Proxmox + VPN)
         const proxmox = require('../services/proxmox.service');
         for (const instance of instancesToDelete) {
-            console.log(`[Delete] Processing instance ${instance.id} (VMID: ${instance.vmid})...`);
+            log.auth(`Processing instance ${instance.id} (VMID: ${instance.vmid})...`);
 
             // VPN Cleanup
             if (instance.vpnConfig) {
                 try {
-                    console.log(`[Delete] Removing VPN client...`);
+                    log.auth(`Removing VPN client...`);
                     await vpnService.deleteClient(instance.vpnConfig);
                 } catch (vpnError) {
-                    console.warn(`[Delete] VPN cleanup error (continuing):`, vpnError.message);
+                    log.warn(`[Delete] VPN cleanup error (continuing): ${vpnError.message}`);
                 }
             }
 
             // Proxmox Cleanup
             if (instance.vmid) {
                 try {
-                    console.log(`[Delete] Stopping VM ${instance.vmid}...`);
+                    log.auth(`Stopping VM ${instance.vmid}...`);
                     try {
                         const upid = await proxmox.stopLXC(instance.vmid);
-                        console.log(`[Delete] Waiting for stop task ${upid}...`);
+                        log.auth(`Waiting for stop task ${upid}...`);
                         await proxmox.waitForTask(upid);
                     } catch (e) {
                         // Ignore if already stopped or error
-                        console.log(`[Delete] VM stop warning: ${e.message}`);
+                        log.warn(`[Delete] VM stop warning: ${e.message}`);
                     }
 
-                    console.log(`[Delete] Deleting VM ${instance.vmid}...`);
+                    log.auth(`Deleting VM ${instance.vmid}...`);
                     await proxmox.deleteLXC(instance.vmid);
                 } catch (proxmoxError) {
-                    console.error(`[Delete] Proxmox deletion error for ${instance.vmid} (continuing):`, proxmoxError.message);
+                    log.error(`[Delete] Proxmox deletion error for ${instance.vmid} (continuing): ${proxmoxError.message}`);
                 }
             }
         }
 
         // Delete user from database (must delete related records first due to foreign key constraints)
-        console.log('[Delete] Deleting user from database...');
+        log.auth('Deleting user from database...');
         try {
             // Get all instance IDs for cascade deletion
             const instanceIds = user.instances.map(i => i.id);
 
             // Delete in correct order to avoid foreign key violations
-            console.log('[Delete] Deleting snapshots...');
+            log.auth('Deleting snapshots...');
             await prisma.snapshot.deleteMany({ where: { instanceId: { in: instanceIds } } });
 
-            console.log('[Delete] Deleting domains...');
+            log.auth('Deleting domains...');
             await prisma.domain.deleteMany({ where: { instanceId: { in: instanceIds } } });
 
-            console.log('[Delete] Deleting instances...');
+            log.auth('Deleting instances...');
             await prisma.instance.deleteMany({ where: { userId } });
 
-            console.log('[Delete] Deleting point transactions...');
+            log.auth('Deleting point transactions...');
             await prisma.pointTransaction.deleteMany({ where: { userId } });
 
-            console.log('[Delete] Deleting daily spins...');
+            log.auth('Deleting daily spins...');
             await prisma.dailySpin.deleteMany({ where: { userId } });
 
-            console.log('[Delete] Deleting social claims...');
+            log.auth('Deleting social claims...');
             await prisma.socialClaim.deleteMany({ where: { userId } });
 
-            console.log('[Delete] Finally deleting user...');
+            log.auth('Finally deleting user...');
             await prisma.user.delete({ where: { id: userId } });
-            console.log('[Delete] User deleted successfully');
+            log.auth('User deleted successfully');
 
             res.json({ message: 'Votre compte a été supprimé avec succès' });
         } catch (dbError) {
-            console.error('[Delete] Database deletion error:', dbError);
+            log.error('[Delete] Database deletion error:', dbError);
             throw new Error('Impossible de supprimer le compte: ' + dbError.message);
         }
     } catch (error) {
-        console.error('Error confirming account deletion:', error);
+        log.error('Error confirming account deletion:', error);
         res.status(500).json({
             message: 'Erreur lors de la suppression du compte',
             error: error.message

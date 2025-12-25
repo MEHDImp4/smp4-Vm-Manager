@@ -1,13 +1,14 @@
 const cron = require('node-cron');
+const log = require('../services/logger.service');
 const { prisma } = require('../db');
 const emailService = require('../services/email.service');
 
 // Schedule: 10:00 AM every day
 const initDailyReminder = () => {
-    console.log('[Cron] Initializing Daily Reminder Cron Job (10:00 AM Europe/Paris)');
+    log.cron('Initializing Daily Reminder Cron Job (10:00 AM Europe/Paris)');
 
     cron.schedule('0 10 * * *', async () => {
-        console.log('[Cron] Running Daily Spin Reminder...');
+        log.cron('Running Daily Spin Reminder...');
         try {
             // Logic: Find users who spun "yesterday" (active users) but haven't spun "today"
             const today = new Date();
@@ -32,7 +33,7 @@ const initDailyReminder = () => {
             // unique users from yesterday
             const activeUserIds = [...new Set(activeUsersSpins.map(s => s.userId))];
 
-            console.log(`[Cron] Found ${activeUserIds.length} active users from yesterday.`);
+            log.cron(`Found ${activeUserIds.length} active users from yesterday.`);
 
             for (const userId of activeUserIds) {
                 // 2. Check if they already spun *today*
@@ -48,7 +49,7 @@ const initDailyReminder = () => {
                     const user = await prisma.user.findUnique({ where: { id: userId } });
 
                     if (user && user.email) {
-                        console.log(`[Cron] Sending reminder to ${user.email}`);
+                        log.cron(`Sending reminder to ${user.email}`);
                         await emailService.sendEmail(
                             user.email,
                             "🎁 Votre tour quotidien vous attend !",
@@ -66,7 +67,7 @@ const initDailyReminder = () => {
             }
 
         } catch (error) {
-            console.error('[Cron] Error running daily reminder:', error);
+            log.error('[Cron] Error running daily reminder:', error);
         }
     }, {
         timezone: "Europe/Paris"

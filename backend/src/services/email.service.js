@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const log = require('./logger.service');
 
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -21,7 +22,7 @@ const transporter = nodemailer.createTransport({
 const sendInstanceCredentials = async (to, userName, instanceName, ip, password) => {
     try {
         if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-            console.warn('[Email] SMTP not configured, skipping email.');
+            log.warn('[Email] SMTP not configured, skipping email.');
             return;
         }
 
@@ -86,10 +87,10 @@ const sendInstanceCredentials = async (to, userName, instanceName, ip, password)
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log(`[Email] Credentials sent to ${to}: ${info.messageId}`);
+        log.email(`Credentials sent to ${to}: ${info.messageId}`);
         return info;
     } catch (error) {
-        console.error('[Email] Failed to send email:', error);
+        log.error('[Email] Failed to send email:', error);
         // Do not throw, just log. We don't want to break the VM creation flow just because of email.
     }
 };
@@ -103,7 +104,7 @@ const sendInstanceCredentials = async (to, userName, instanceName, ip, password)
 const sendEmail = async (to, subject, html) => {
     try {
         if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-            console.warn('[Email] SMTP not configured, skipping email.');
+            log.warn('[Email] SMTP not configured, skipping email.');
             return;
         }
 
@@ -115,10 +116,10 @@ const sendEmail = async (to, subject, html) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log(`[Email] Sent "${subject}" to ${to}: ${info.messageId}`);
+        log.email(`Sent "${subject}" to ${to}: ${info.messageId}`);
         return info;
     } catch (error) {
-        console.error('[Email] Failed to send email:', error);
+        log.error('[Email] Failed to send email:', error);
     }
 };
 

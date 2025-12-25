@@ -1,4 +1,5 @@
 const cron = require('node-cron');
+const log = require('../services/logger.service');
 const { prisma } = require('../db');
 const proxmoxService = require('../services/proxmox.service');
 
@@ -10,21 +11,21 @@ const rotateBackups = async (vmid, backups) => {
 
     for (let i = 0; i < backupsToDeleteCount; i++) {
         const backupToDelete = backups[i];
-        console.log(`[Cron] Rotation: Deleting old backup ${backupToDelete.volid}...`);
+        log.cron(`Rotation: Deleting old backup ${backupToDelete.volid}...`);
         try {
             const deleteUpid = await proxmoxService.deleteVolume(backupToDelete.volid);
             if (deleteUpid && deleteUpid.startsWith('UPID')) {
                 await proxmoxService.waitForTask(deleteUpid);
             }
         } catch (delErr) {
-            console.error(`[Cron] Failed to delete old backup ${backupToDelete.volid}:`, delErr.message);
+            log.error(`[Cron] Failed to delete old backup ${backupToDelete.volid}: ${delErr.message}`);
         }
     }
 };
 
 const processInstanceBackup = async (instance) => {
     try {
-        console.log(`[Cron] Processing backup for VM ${instance.vmid} (${instance.name})...`);
+        log.cron(`Processing backup for VM ${instance.vmid} (${instance.name})...`);
 
         // 1. List existing backups for this VM
         const backups = await proxmoxService.listBackups('local', instance.vmid);
@@ -32,26 +33,26 @@ const processInstanceBackup = async (instance) => {
         // Sort by time (ctime), oldest first
         backups.sort((a, b) => a.ctime - b.ctime);
 
-        console.log(`[Cron] VM ${instance.vmid} has ${backups.length} existing backups.`);
+        log.cron(`VM ${instance.vmid} has ${backups.length} existing backups.`);
 
         // 2. Rotate: Delete oldest if we have >= MAX_BACKUPS
         await rotateBackups(instance.vmid, backups);
 
         // 3. Create new backup
-        console.log(`[Cron] Creating new backup for VM ${instance.vmid}...`);
+        log.cron(`Creating new backup for VM ${instance.vmid}...`);
         const upid = await proxmoxService.createLXCBackup(instance.vmid, 'local', 'stop');
         await proxmoxService.waitForTask(upid);
 
-        console.log(`[Cron] Backup completed for VM ${instance.vmid}`);
+        log.cron(`Backup completed for VM ${instance.vmid}`);
 
     } catch (err) {
-        console.error(`[Cron] Failed to backup VM ${instance.vmid}:`, err.message);
+        log.error(`[Cron] Failed to backup VM ${instance.vmid}: ${err.message}`);
         // Continue to next instance logic handled by caller loop
     }
 };
 
 const runBackupTask = async () => {
-    console.log('[Cron] Starting Daily Backup Task (00:00)...');
+    log.cron('Starting Daily Backup Task (00:00)...');
 
     try {
         // Fetch all active instances with a VMID
@@ -61,17 +62,17 @@ const runBackupTask = async () => {
             }
         });
 
-        console.log(`[Cron] Found ${instances.length} instances to backup.`);
+        log.cron(`Found ${instances.length} instances to backup.`);
 
         // Process sequentially to avoid overloading Proxmox I/O
         for (const instance of instances) {
             await processInstanceBackup(instance);
         }
 
-        console.log('[Cron] Daily Backup Task Finished.');
+        log.cron('Daily Backup Task Finished.');
 
     } catch (error) {
-        console.error('[Cron] Backup task critical error:', error);
+        log.error('[Cron] Backup task critical error:', error);
     }
 };
 

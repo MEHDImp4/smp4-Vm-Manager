@@ -1,14 +1,15 @@
 const axios = require('axios');
+const log = require('./logger.service');
 
 const VPN_API_URL = 'http://smp4-vpn:3001'; // Internal Docker DNS
 
 const createClient = async (targetIp) => {
     try {
-        console.log(`[VPN] Creating client for target IP: ${targetIp}`);
+        log.vpn(`Creating client for target IP: ${targetIp}`);
         const response = await axios.post(`${VPN_API_URL}/client`, { targetIp });
         return response.data; // { clientIp, publicKey, config }
     } catch (error) {
-        console.error('[VPN] Failed to create client:', error.message);
+        log.error(`[VPN] Failed to create client: ${error.message}`);
         throw error;
     }
 };
@@ -21,18 +22,18 @@ const deleteClient = async (vpnConfig) => {
         // Format: PrivateKey = <key>
         const match = vpnConfig.match(/PrivateKey\s*=\s*(.*)/);
         if (!match || !match[1]) {
-            console.warn('[VPN] Could not find PrivateKey in config to perform deletion');
+            log.warn('[VPN] Could not find PrivateKey in config to perform deletion');
             return;
         }
 
         const privateKey = match[1].trim();
 
-        console.log(`[VPN] Deleting client...`);
+        log.vpn(`Deleting client...`);
         // Use data payload for privateKey
         await axios.delete(`${VPN_API_URL}/client`, { data: { privateKey } });
 
     } catch (error) {
-        console.error('[VPN] Failed to delete client:', error.message);
+        log.error(`[VPN] Failed to delete client: ${error.message}`);
         // Don't throw, we want deletion to proceed
     }
 };

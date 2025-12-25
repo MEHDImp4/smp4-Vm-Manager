@@ -1,4 +1,5 @@
 const { prisma } = require('../db');
+const log = require('../services/logger.service');
 
 // ADMIN: Create a new upgrade pack
 exports.createPack = async (req, res) => {
@@ -20,7 +21,7 @@ exports.createPack = async (req, res) => {
 
         res.json(pack);
     } catch (error) {
-        console.error("Create pack error:", error);
+        log.error("Create pack error:", error);
         res.status(500).json({ error: "Failed to create pack" });
     }
 };
@@ -34,7 +35,7 @@ exports.getPacks = async (req, res) => {
         });
         res.json(packs);
     } catch (error) {
-        console.error("Get packs error:", error);
+        log.error("Get packs error:", error);
         res.status(500).json({
             error: "Failed to fetch packs",
             details: error.message,
@@ -82,7 +83,7 @@ exports.applyUpgrade = async (req, res) => {
         const { packId } = req.body;
         const userId = req.user.userId;
 
-        console.log(`[Upgrade] Request for instance ${instanceId} by user ${userId} with pack ${packId}`);
+        log.info(`[Upgrade] Request for instance ${instanceId} by user ${userId} with pack ${packId}`);
 
         // 1. Verify instance ownership
         const instance = await prisma.instance.findUnique({
@@ -91,12 +92,12 @@ exports.applyUpgrade = async (req, res) => {
         });
 
         if (!instance) {
-            console.error(`[Upgrade] Instance ${instanceId} not found in DB`);
+            log.error(`[Upgrade] Instance ${instanceId} not found in DB`);
             return res.status(404).json({ error: `Instance ${instanceId} not found` });
         }
 
         if (instance.userId !== userId) {
-            console.error(`[Upgrade] Instance ${instanceId} belongs to user ${instance.userId}, not ${userId}`);
+            log.error(`[Upgrade] Instance ${instanceId} belongs to user ${instance.userId}, not ${userId}`);
             return res.status(403).json({ error: "Access denied: You do not own this instance" });
         }
 
@@ -158,7 +159,7 @@ exports.applyUpgrade = async (req, res) => {
         res.json({ message: "Upgrade applied", instance: updatedInstance });
 
     } catch (error) {
-        console.error("Apply upgrade error:", error);
+        log.error("Apply upgrade error:", error);
         res.status(500).json({
             error: "Failed to apply upgrade",
             details: error.message,

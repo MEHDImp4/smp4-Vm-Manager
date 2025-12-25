@@ -1,4 +1,5 @@
 const cron = require('node-cron');
+const log = require('../services/logger.service');
 const { prisma } = require('../db');
 const proxmoxService = require('../services/proxmox.service');
 const emailService = require('../services/email.service');
@@ -6,7 +7,7 @@ const emailService = require('../services/email.service');
 const initIdleCheckCron = () => {
     // Schedule: Every day at 9:00 AM (0 9 * * *)
     cron.schedule('0 9 * * *', async () => {
-        console.log('[Cron] Starting Idle VM Check (09:00)...');
+        log.cron('Starting Idle VM Check (09:00)...');
 
         try {
             // Fetch all active instances associated with a user
@@ -19,7 +20,7 @@ const initIdleCheckCron = () => {
                 }
             });
 
-            console.log(`[Cron] Checking ${instances.length} instances for high uptime...`);
+            log.cron(`Checking ${instances.length} instances for high uptime...`);
 
             const UPTIME_THRESHOLD_SECONDS = 72 * 60 * 60; // 72 hours
             const SPAM_PREVENTION_DAYS = 7; // Don't annoy user more than once a week per VM
@@ -45,7 +46,7 @@ const initIdleCheckCron = () => {
                             }
                         }
 
-                        console.log(`[Cron] VM ${instance.name} (${instance.vmid}) has been up for ${(statusData.uptime / 3600).toFixed(1)}h. Sending reminder.`);
+                        log.cron(`VM ${instance.name} (${instance.vmid}) has been up for ${(statusData.uptime / 3600).toFixed(1)}h. Sending reminder.`);
 
                         const uptimeHours = Math.floor(statusData.uptime / 3600);
                         const uptimeDays = Math.floor(uptimeHours / 24);
@@ -78,14 +79,14 @@ const initIdleCheckCron = () => {
                     }
 
                 } catch (err) {
-                    console.error(`[Cron] Failed to check idle status for VM ${instance.vmid}:`, err.message);
+                    log.error(`[Cron] Failed to check idle status for VM ${instance.vmid}: ${err.message}`);
                 }
             }
 
-            console.log('[Cron] Idle VM Check Finished.');
+            log.cron('Idle VM Check Finished.');
 
         } catch (error) {
-            console.error('[Cron] Idle check critical error:', error);
+            log.error('[Cron] Idle check critical error:', error);
         }
     }, {
         timezone: "Europe/Paris"

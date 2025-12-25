@@ -1,4 +1,5 @@
 const axios = require('axios');
+const log = require('./logger.service');
 
 const CF_API_URL = 'https://api.cloudflare.com/client/v4';
 
@@ -61,10 +62,10 @@ const CloudflareService = {
                 }
             });
 
-            console.log(`[Cloudflare] Added ingress for ${hostname} -> ${serviceUrl}`);
+            log.cloudflare(`Added ingress for ${hostname} -> ${serviceUrl}`);
             return true;
         } catch (error) {
-            console.error("[Cloudflare] Error adding ingress:", error.response?.data || error.message);
+            log.error("[Cloudflare] Error adding ingress:", error.response?.data || error.message);
             throw new Error("Failed to configure Cloudflare Tunnel");
         }
     },
@@ -85,7 +86,7 @@ const CloudflareService = {
             const newIngress = currentConfig.ingress.filter(r => r.hostname !== hostname);
 
             if (newIngress.length === currentConfig.ingress.length) {
-                console.log(`[Cloudflare] No rule found for ${hostname}`);
+                log.warn(`[Cloudflare] No rule found for ${hostname}`);
                 return false;
             }
 
@@ -96,10 +97,10 @@ const CloudflareService = {
                 }
             });
 
-            console.log(`[Cloudflare] Removed ingress for ${hostname}`);
+            log.cloudflare(`Removed ingress for ${hostname}`);
             return true;
         } catch (error) {
-            console.error("[Cloudflare] Error removing ingress:", error.response?.data || error.message);
+            log.error("[Cloudflare] Error removing ingress:", error.response?.data || error.message);
             throw new Error("Failed to update Cloudflare Tunnel");
         }
     },
@@ -122,7 +123,7 @@ const CloudflareService = {
             const newIngress = currentConfig.ingress.filter(r => !hostnames.includes(r.hostname));
 
             if (newIngress.length === currentConfig.ingress.length) {
-                console.log(`[Cloudflare] No matching rules found for provided hostnames.`);
+                log.warn(`[Cloudflare] No matching rules found for provided hostnames.`);
                 return false;
             }
 
@@ -133,10 +134,10 @@ const CloudflareService = {
                 }
             });
 
-            console.log(`[Cloudflare] Removed ingress rules for: ${hostnames.join(', ')}`);
+            log.cloudflare(`Removed ingress rules for: ${hostnames.join(', ')}`);
             return true;
         } catch (error) {
-            console.error("[Cloudflare] Error removing multiple ingress:", error.response?.data || error.message);
+            log.error("[Cloudflare] Error removing multiple ingress:", error.response?.data || error.message);
             throw new Error("Failed to update Cloudflare Tunnel");
         }
     }

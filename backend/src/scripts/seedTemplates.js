@@ -1,9 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const templates = require('../config/templates.json');
+const log = require('../services/logger.service');
 
 async function seedTemplates() {
-    console.log('Seeding templates from JSON config...');
+    log.info('Seeding templates from JSON config...');
 
     try {
         for (const template of templates) {
@@ -44,9 +45,9 @@ async function seedTemplates() {
                 }
             }
         }
-        console.log('Templates and versions seeded successfully.');
+        log.info('Templates and versions seeded successfully.');
     } catch (error) {
-        console.error('Error seeding templates:', error);
+        log.error('Error seeding templates:', error);
     }
 }
 
@@ -57,7 +58,7 @@ if (require.main === module) {
             await prisma.$disconnect();
         })
         .catch(async (e) => {
-            console.error(e);
+            log.error(e);
             await prisma.$disconnect();
             process.exit(1);
         });

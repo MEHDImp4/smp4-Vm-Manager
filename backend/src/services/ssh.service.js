@@ -1,6 +1,7 @@
 const { Client } = require('ssh2');
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
+const log = require('./logger.service');
 
 class SSHService {
     constructor() {
@@ -14,7 +15,7 @@ class SSHService {
     init(server) {
         // Ensure JWT_SECRET is available
         if (!process.env.JWT_SECRET) {
-            console.error('[SSH] CRITICAL: JWT_SECRET not defined. SSH service may not be secure.');
+            log.error('[SSH] CRITICAL: JWT_SECRET not defined. SSH service may not be secure.');
         }
 
         this.wss = new WebSocket.Server({
@@ -25,7 +26,7 @@ class SSHService {
                 const token = url.searchParams.get('token');
 
                 if (!token) {
-                    console.warn('[SSH] Access denied: No token provided');
+                    log.warn('[SSH] Access denied: No token provided');
                     return cb(false, 401, 'Unauthorized: No token provided');
                 }
 
@@ -34,14 +35,14 @@ class SSHService {
                     // Token is valid
                     return cb(true);
                 } catch (err) {
-                    console.warn('[SSH] Access denied: Invalid token', err.message);
+                    log.warn(`[SSH] Access denied: Invalid token ${err.message}`);
                     return cb(false, 403, 'Forbidden: Invalid token');
                 }
             }
         });
 
         this.wss.on('connection', (ws, req) => {
-            console.log('[SSH] New WebSocket connection');
+            log.ssh('New WebSocket connection');
 
             // Parse query params for connection info
             const rawUrl = (req && typeof req.url === 'string') ? req.url : '';
@@ -63,7 +64,7 @@ class SSHService {
             this.createSSHSession(ws, vmid, host);
         });
 
-        console.log('[SSH] WebSocket server initialized on /ws/ssh with JWT protection');
+        log.info('[SSH] WebSocket server initialized on /ws/ssh with JWT protection');
     }
 
     /**
@@ -87,7 +88,7 @@ class SSHService {
         let passwordChangeDone = null;
 
         const attemptConnection = (username, password) => {
-            console.log(`[SSH] Connecting to ${host} as ${username}...`);
+            log.ssh(`Connecting to ${host} as ${username}...`);
             conn.connect({
                 host: host,
                 port: 22,
@@ -101,7 +102,7 @@ class SSHService {
         };
 
         conn.on('ready', () => {
-            console.log(`[SSH] Connected to ${host} for VM ${vmid}`);
+            log.ssh(`Connected to ${host} for VM ${vmid}`);
             isCollectingPassword = false;
             isChangingPassword = false;
             ws.send(JSON.stringify({ type: 'connected' }));
@@ -123,7 +124,7 @@ class SSHService {
                 });
 
                 stream.on('close', () => {
-                    console.log(`[SSH] Stream closed for ${vmid}`);
+                    log.ssh(`Stream closed for ${vmid}`);
                     this.cleanupSession(sessionId);
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ type: 'disconnect' }));
@@ -135,13 +136,13 @@ class SSHService {
 
         conn.on('keyboard-interactive', (name, instructions, lang, prompts, finish) => {
             // Auto-reply with collected password if we have one
-            console.log(`[SSH] Keyboard interactive prompt for ${vmid}`);
+            log.ssh(`Keyboard interactive prompt for ${vmid}`);
             finish(prompts.map(() => passwordBuffer));
         });
 
         // Handle password change required by server
         conn.on('change password', (message, done) => {
-            console.log(`[SSH] Password change required for ${vmid}: ${message}`);
+            log.ssh(`Password change required for ${vmid}: ${message}`);
             isChangingPassword = true;
             isCollectingPassword = false;
             passwordChangeStep = 0;
@@ -155,7 +156,7 @@ class SSHService {
         });
 
         conn.on('error', (err) => {
-            console.error(`[SSH] Connection error for ${vmid}:`, err.message);
+            log.error(`[SSH] Connection error for ${vmid}: ${err.message}`);
             if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'error', message: `SSH Error: ${err.message}` }));
             }
@@ -247,12 +248,12 @@ class SSHService {
                     if (stream) stream.setWindow(msg.rows, msg.cols, 0, 0);
                 }
             } catch (e) {
-                console.error(e);
+                log.error(`[SSH] ${e.message}`);
             }
         });
 
         ws.on('close', () => {
-            console.log(`[SSH] WebSocket closed for ${vmid}`);
+            log.ssh(`WebSocket closed for ${vmid}`);
             this.cleanupSession(sessionId);
         });
     }
@@ -314,7 +315,7 @@ class SSHService {
                 readyTimeout: 10000,
                 keepaliveInterval: 30000,
                 keepaliveCountMax: 60,
-                debug: (msg) => console.log(`[SSH-DEBUG] ${msg}`)
+                debug: (msg) => log.debug(`[SSH-DEBUG] ${msg}`)
             });
         });
     }

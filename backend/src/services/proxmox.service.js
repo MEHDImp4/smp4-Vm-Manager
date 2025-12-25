@@ -1,4 +1,5 @@
 const axios = require('axios');
+const log = require('./logger.service');
 
 class ProxmoxService {
     constructor() {
@@ -7,7 +8,7 @@ class ProxmoxService {
         this.node = process.env.PROXMOX_NODE || 'pve';
 
         if (!this.baseURL || !this.apiToken) {
-            console.warn('Proxmox URL or API Token not configured');
+            log.warn('Proxmox URL or API Token not configured');
         }
 
         this.client = axios.create({
@@ -27,7 +28,7 @@ class ProxmoxService {
             const response = await this.client.get(`/api2/json/nodes/${this.node}/lxc`);
             return response.data.data;
         } catch (error) {
-            console.error('Error fetching LXC list:', error.response?.data || error.message);
+            log.error('Error fetching LXC list:', error.response?.data || error.message);
             throw new Error('Failed to get LXC list');
         }
     }
@@ -37,7 +38,7 @@ class ProxmoxService {
             const response = await this.client.get('/api2/json/cluster/nextid');
             return response.data.data;
         } catch (error) {
-            console.error('Error fetching next VMID:', error.response?.data || error.message);
+            log.error('Error fetching next VMID:', error.response?.data || error.message);
             throw new Error('Failed to get next VMID');
         }
     }
@@ -53,7 +54,7 @@ class ProxmoxService {
             });
             return response.data.data; // Returns a task UPID
         } catch (error) {
-            console.error('Error cloning LXC:', error.response?.data || error.message);
+            log.error('Error cloning LXC:', error.response?.data || error.message);
             throw new Error(`Failed to clone LXC ${templateId}`);
         }
     }
@@ -64,7 +65,7 @@ class ProxmoxService {
             const response = await this.client.put(`/api2/json/nodes/${this.node}/lxc/${vmid}/config`, config);
             return response.data.data;
         } catch (error) {
-            console.error('Error configuring LXC:', error.response?.data || error.message);
+            log.error('Error configuring LXC:', error.response?.data || error.message);
             throw new Error(`Failed to configure LXC ${vmid}`);
         }
     }
@@ -75,7 +76,7 @@ class ProxmoxService {
             const response = await this.client.get(`/api2/json/nodes/${this.node}/lxc/${vmid}/config`);
             return response.data.data;
         } catch (error) {
-            console.error('Error getting LXC config:', error.response?.data || error.message);
+            log.error('Error getting LXC config:', error.response?.data || error.message);
             throw new Error(`Failed to get config for LXC ${vmid}`);
         }
     }
@@ -85,7 +86,7 @@ class ProxmoxService {
             const response = await this.client.post(`/api2/json/nodes/${this.node}/lxc/${vmid}/status/start`, {});
             return response.data.data;
         } catch (error) {
-            console.error('Error starting LXC:', error.response?.data || error.message);
+            log.error('Error starting LXC:', error.response?.data || error.message);
             throw new Error(`Failed to start LXC ${vmid}`);
         }
     }
@@ -95,7 +96,7 @@ class ProxmoxService {
             const response = await this.client.post(`/api2/json/nodes/${this.node}/lxc/${vmid}/status/stop`, {});
             return response.data.data;
         } catch (error) {
-            console.error('Error stopping LXC:', error.response?.data || error.message);
+            log.error('Error stopping LXC:', error.response?.data || error.message);
             throw new Error(`Failed to stop LXC ${vmid}`);
         }
     }
@@ -105,7 +106,7 @@ class ProxmoxService {
             const response = await this.client.post(`/api2/json/nodes/${this.node}/lxc/${vmid}/status/reboot`, {});
             return response.data.data;
         } catch (error) {
-            console.error('Error rebooting LXC:', error.response?.data || error.message);
+            log.error('Error rebooting LXC:', error.response?.data || error.message);
             throw new Error(`Failed to reboot LXC ${vmid}`);
         }
     }
@@ -126,7 +127,7 @@ class ProxmoxService {
             const response = await this.client.get(`/api2/json/nodes/${this.node}/lxc/${vmid}/interfaces`);
             return response.data.data;
         } catch (error) {
-            console.error(`Error getting interfaces for LXC ${vmid}:`, error.message); // Don't throw, just return empty
+            log.error(`Error getting interfaces for LXC ${vmid}: ${error.message}`); // Don't throw, just return empty
             return [];
         }
     }
@@ -137,7 +138,7 @@ class ProxmoxService {
             const response = await this.client.delete(`/api2/json/nodes/${this.node}/lxc/${vmid}?purge=1`);
             return response.data.data;
         } catch (error) {
-            console.error('Error deleting LXC:', error.response?.data || error.message);
+            log.error('Error deleting LXC:', error.response?.data || error.message);
             throw new Error(`Failed to delete LXC ${vmid}`);
         }
     }
@@ -181,7 +182,7 @@ class ProxmoxService {
             );
             return response.data.data; // Returns task UPID
         } catch (error) {
-            console.error('Error creating LXC snapshot:', error.response?.data || error.message);
+            log.error('Error creating LXC snapshot:', error.response?.data || error.message);
             throw new Error(`Failed to create snapshot for LXC ${vmid}`);
         }
     }
@@ -198,7 +199,7 @@ class ProxmoxService {
             // Filter out 'current' which is not a real snapshot
             return (response.data.data || []).filter(snap => snap.name !== 'current');
         } catch (error) {
-            console.error('Error listing LXC snapshots:', error.response?.data || error.message);
+            log.error('Error listing LXC snapshots:', error.response?.data || error.message);
             throw new Error(`Failed to list snapshots for LXC ${vmid}`);
         }
     }
@@ -215,7 +216,7 @@ class ProxmoxService {
             );
             return response.data.data; // Returns task UPID
         } catch (error) {
-            console.error('Error deleting LXC snapshot:', error.response?.data || error.message);
+            log.error('Error deleting LXC snapshot:', error.response?.data || error.message);
             throw new Error(`Failed to delete snapshot ${snapname} for LXC ${vmid}`);
         }
     }
@@ -233,7 +234,7 @@ class ProxmoxService {
             );
             return response.data.data; // Returns task UPID
         } catch (error) {
-            console.error('Error rolling back LXC snapshot:', error.response?.data || error.message);
+            log.error('Error rolling back LXC snapshot:', error.response?.data || error.message);
             throw new Error(`Failed to rollback to snapshot ${snapname} for LXC ${vmid}`);
         }
     }
@@ -257,7 +258,7 @@ class ProxmoxService {
             );
             return response.data.data; // Returns task UPID
         } catch (error) {
-            console.error('Error creating LXC backup:', error.response?.data || error.message);
+            log.error('Error creating LXC backup:', error.response?.data || error.message);
             throw new Error(`Failed to create backup for LXC ${vmid}`);
         }
     }
@@ -279,7 +280,7 @@ class ProxmoxService {
             }
             return backups;
         } catch (error) {
-            console.error('Error listing backups:', error.response?.data || error.message);
+            log.error('Error listing backups:', error.response?.data || error.message);
             throw new Error('Failed to list backups');
         }
     }
@@ -296,7 +297,7 @@ class ProxmoxService {
             );
             return response.data.data;
         } catch (error) {
-            console.error('Error deleting backup:', error.response?.data || error.message);
+            log.error('Error deleting backup:', error.response?.data || error.message);
             throw new Error(`Failed to delete backup ${volid}`);
         }
     }
@@ -317,7 +318,7 @@ class ProxmoxService {
             return response.data.data;
         } catch (error) {
             // Fallback: return direct volume path
-            console.warn('Download ticket not available, using direct path');
+            log.warn('Download ticket not available, using direct path');
             return { volid };
         }
     }
@@ -340,7 +341,7 @@ class ProxmoxService {
             );
             return response.data.data;
         } catch (error) {
-            console.error('Error deleting volume:', error.response?.data || error.message);
+            log.error('Error deleting volume:', error.response?.data || error.message);
             throw new Error(`Failed to delete volume ${volid}`);
         }
     }
@@ -357,7 +358,7 @@ class ProxmoxService {
             );
             return response.data.data;
         } catch (error) {
-            console.error('Error adding firewall rule:', error.response?.data || error.message);
+            log.error('Error adding firewall rule:', error.response?.data || error.message);
             throw new Error(`Failed to add firewall rule for LXC ${vmid}`);
         }
     }
@@ -375,7 +376,7 @@ class ProxmoxService {
             );
             return response.data.data;
         } catch (error) {
-            console.error('Error setting firewall options:', error.response?.data || error.message);
+            log.error('Error setting firewall options:', error.response?.data || error.message);
             throw new Error(`Failed to set firewall options for LXC ${vmid}`);
         }
     }
@@ -387,7 +388,7 @@ class ProxmoxService {
             const response = await this.client.get(`/api2/json/nodes/${this.node}/status`);
             return response.data.data;
         } catch (error) {
-            console.error('Error getting node status:', error.response?.data || error.message);
+            log.error('Error getting node status:', error.response?.data || error.message);
             throw new Error('Failed to get node status');
         }
     }

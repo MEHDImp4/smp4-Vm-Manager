@@ -61,6 +61,21 @@ services:
           cpus: '1'
           memory: 1G
 
+  prisma-studio:
+    image: mehdimp4/smp4-vm-manager-backend:latest
+    container_name: smp4-prisma-studio
+    restart: unless-stopped
+    command: npx prisma studio
+    ports:
+      - "5555:5555"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-smp4}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-smp4_db}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smp4-net
+
   frontend:
     image: mehdimp4/smp4-vm-manager-frontend:latest
     container_name: smp4-frontend

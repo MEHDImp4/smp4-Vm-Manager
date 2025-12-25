@@ -29,6 +29,12 @@ export default defineConfig({
       ],
       // Skip full instrumentation for faster coverage
       all: false,
+      thresholds: {
+        lines: 50,
+        functions: 50,
+        branches: 50,
+        statements: 50
+      }
     },
     exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**', '**/.{idea,git,cache,output,temp}/**'],
   },

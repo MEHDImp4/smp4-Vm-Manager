@@ -18,9 +18,13 @@ class ProxmoxService {
                 'Content-Type': 'application/json',
             },
             httpsAgent: new (require('https').Agent)({
-                rejectUnauthorized: false // Often Proxmox uses self-signed certs
+                rejectUnauthorized: process.env.PROXMOX_SSL_VERIFY === 'true' // Defaults to false if not set
             })
         });
+
+        if (process.env.PROXMOX_SSL_VERIFY !== 'true') {
+            log.warn('Proxmox SSL verification is disabled (PROXMOX_SSL_VERIFY!=true). This is insecure for production.');
+        }
     }
 
     async getLXCList() {

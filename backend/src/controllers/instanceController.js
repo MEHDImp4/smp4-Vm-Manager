@@ -17,10 +17,7 @@ const createInstance = async (req, res) => {
         const userId = req.user.id;
         const role = req.user.role;
 
-        // Admins don't pay points
-        if (role === 'admin') {
-            pointsPerDay = 0;
-        }
+
 
         // Fetch User
         const user = await prisma.user.findUnique({ where: { id: userId } });

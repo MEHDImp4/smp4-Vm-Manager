@@ -338,7 +338,7 @@ const confirmAccountDeletion = async (req, res) => {
         }
 
         // Verify code
-        console.log('[Delete] Comparing codes:', { stored: user.verificationCode, received: code });
+
         const storedCode = String(user.verificationCode || '').trim();
         const receivedCode = String(code || '').trim();
 

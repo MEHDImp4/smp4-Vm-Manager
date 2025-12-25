@@ -69,22 +69,14 @@ const Footer = () => {
                   Tutoriels
                 </a>
               </li>
-              <li>
-                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
-                  Blog
-                </a>
-              </li>
+
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
-                  Centre d'aide
-                </a>
-              </li>
+
               <li>
                 <Link to="/contact" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
                   Contact

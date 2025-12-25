@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const { startConsumptionCron } = require('./cron/consumptionCron');
 
 const app = express();
+app.set('trust proxy', 1); // Trust Nginx proxy
 const PORT = process.env.PORT || 3000;
 
 // Start background jobs
@@ -49,7 +50,7 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms', 
 // Global Rate Limiting - Apply to all requests
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 1000, // Limit each IP to 1000 requests per windowMs
     start_on_create: false, // Ensure it doesn't crash if Redis is missing (memory store fallback)
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers

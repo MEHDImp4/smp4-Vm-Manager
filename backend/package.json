@@ -51,6 +51,24 @@
     "glob": "10.5.0",
     "test-exclude": {
       "glob": "7.2.3"
+    },
+    "jest": {
+      "glob": "7.2.3"
+    },
+    "jest-cli": {
+      "glob": "7.2.3"
+    },
+    "jest-config": {
+      "glob": "7.2.3"
+    },
+    "jest-runtime": {
+      "glob": "7.2.3"
+    },
+    "@jest/core": {
+      "glob": "7.2.3"
+    },
+    "@jest/reporters": {
+      "glob": "7.2.3"
     }
   }
 }

@@ -18,6 +18,18 @@ jest.mock('../../src/db', () => ({
 }));
 jest.mock('../../src/services/email.service');
 
+// Inline mock to avoid hoisting ReferenceError
+jest.mock('../../src/services/logger.service', () => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    cron: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn()
+}));
+
+// Import the mocked logger to verify calls
+const logger = require('../../src/services/logger.service');
+
 describe('Reminder Cron', () => {
     let cronCallback;
 
@@ -96,17 +108,14 @@ describe('Reminder Cron', () => {
     it('should handle errors gracefully', async () => {
         initDailyReminder();
 
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
         prisma.dailySpin.findMany.mockRejectedValue(new Error('DB Error'));
 
         await cronCallback();
 
-        expect(consoleSpy).toHaveBeenCalledWith(
+        expect(logger.error).toHaveBeenCalledWith(
             '[Cron] Error running daily reminder:',
             expect.any(Error)
         );
-
-        consoleSpy.mockRestore();
     });
 
     it('should unique-ify user IDs from yesterday', async () => {

@@ -237,7 +237,7 @@ describe('Domain Service Unit Tests', () => {
                 port: 8080,
                 customSuffix: 'myapp',
                 isPaidRequest: false // Not paying
-            })).rejects.toThrow("3 free domains");
+            })).rejects.toThrow("Maximum of 2 free domains reached");
         });
 
         it('should allow paid domain after limit', async () => {

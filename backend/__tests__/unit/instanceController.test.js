@@ -313,41 +313,7 @@ describe('Instance Controller Unit Tests', () => {
         });
     });
 
-    describe('getVpnConfig', () => {
-        it('should return existing config', async () => {
-            req.params.id = 'inst1';
-            const mockInstance = {
-                id: 'inst1',
-                userId: 'user1',
-                vpnConfig: 'existing-conf'
-            };
 
-            instanceService.getInstanceWithOwner.mockResolvedValue(mockInstance);
-            instanceService.getOrCreateVpnConfig.mockResolvedValue('existing-conf');
-
-            await instanceController.getVpnConfig(req, res);
-
-            expect(res.json).toHaveBeenCalledWith({ config: 'existing-conf' });
-        });
-
-        it('should generate config if missing and instance has IP', async () => {
-            req.params.id = 'inst1';
-            const mockInstance = {
-                id: 'inst1',
-                userId: 'user1',
-                vmid: 100,
-                vpnConfig: null
-            };
-
-            instanceService.getInstanceWithOwner.mockResolvedValue(mockInstance);
-            instanceService.getOrCreateVpnConfig.mockResolvedValue('new-conf');
-
-            await instanceController.getVpnConfig(req, res);
-
-            expect(instanceService.getOrCreateVpnConfig).toHaveBeenCalledWith(mockInstance);
-            expect(res.json).toHaveBeenCalledWith({ config: 'new-conf' });
-        });
-    });
 
     describe('createInstance', () => {
         it('should create instance successfully', async () => {

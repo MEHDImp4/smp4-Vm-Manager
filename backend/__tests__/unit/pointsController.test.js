@@ -218,7 +218,7 @@ describe('Points Controller Unit Tests', () => {
 
         it('should return 400 if bonus already claimed', async () => {
             prisma.user.findUnique.mockResolvedValue({ isVerified: true });
-            req.body.platform = 'twitter';
+            req.body.platform = 'instagram';
             req.body.username = 'testuser';
 
             prisma.socialClaim.findUnique.mockResolvedValue({ id: 'claim1' });

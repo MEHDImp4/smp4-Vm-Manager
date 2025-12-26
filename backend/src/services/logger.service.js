@@ -108,6 +108,7 @@ const log = {
     email: (message, meta = {}) => logger.info(`[Email] ${message}`, meta),
     auth: (message, meta = {}) => logger.info(`[Auth] ${message}`, meta),
     instance: (message, meta = {}) => logger.info(`[Instance] ${message}`, meta),
+    vpn: (message, meta = {}) => logger.info(`[VPN] ${message}`, meta),
 };
 
 module.exports = log;

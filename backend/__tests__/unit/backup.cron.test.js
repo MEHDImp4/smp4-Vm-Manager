@@ -19,12 +19,21 @@ jest.mock('../../src/services/proxmox.service', () => ({
     waitForTask: jest.fn(),
 }));
 
+// Inline mock to avoid hoisting ReferenceError
+jest.mock('../../src/services/logger.service', () => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    cron: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn()
+}));
+
+// Import the mocked logger to verify calls
+const logger = require('../../src/services/logger.service');
+
 describe('Backup Cron Job', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        // Silence console logs during tests
-        console.log = jest.fn();
-        console.error = jest.fn();
     });
 
     describe('runBackupTask', () => {
@@ -52,18 +61,16 @@ describe('Backup Cron Job', () => {
 
             await runBackupTask();
 
-            expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Backup task critical error'), expect.anything());
+            expect(logger.error).toHaveBeenCalledWith(
+                expect.stringContaining('Backup task critical error'),
+                expect.anything()
+            );
         });
     });
 
     describe('rotateBackups', () => {
         it('should delete old backups if count > MAX_BACKUPS (3)', async () => {
-            // MAX_BACKUPS is 3. We have 4. Correct logic is: length - (3 - 1) = 4 - 2 = 2 to delete?
-            // Wait, logic in code: Math.max(0, backups.length - (MAX_BACKUPS - 1));
-            // If MAX=3, we want to keep 2 old ones + 1 new one = 3 total.
-            // If we have 3, we delete 1 (oldest). 3 - (3-1) = 1. Correct.
-            // If we have 2, we delete 0. 2 - 2 = 0. Correct.
-
+            // MAX_BACKUPS is 3. We have 4.
             const vmid = 100;
             const mockBackups = [
                 { volid: 'backup1', ctime: 100 }, // Oldest
@@ -116,7 +123,9 @@ describe('Backup Cron Job', () => {
 
             await processInstanceBackup(instance);
 
-            expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Failed to backup VM 100'), expect.anything());
+            expect(logger.error).toHaveBeenCalledWith(
+                expect.stringContaining('Failed to backup VM 100')
+            );
         });
     });
 });

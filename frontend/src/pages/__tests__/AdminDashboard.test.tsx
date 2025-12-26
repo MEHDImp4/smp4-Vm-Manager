@@ -11,25 +11,25 @@ const DialogContext = React.createContext({ open: false, onOpenChange: (open: bo
 const AlertDialogContext = React.createContext({ open: false });
 
 vi.mock('@/components/ui/dialog', () => ({
-    Dialog: ({ open, onOpenChange, children }: any) => (
+    Dialog: ({ open, onOpenChange, children }: { open: boolean; onOpenChange?: (o: boolean) => void; children: ReactNode }) => (
         <DialogContext.Provider value={{ open, onOpenChange }}>
             <div data-testid="mock-dialog" data-state={open ? 'open' : 'closed'}>
                 {children}
             </div>
         </DialogContext.Provider>
     ),
-    DialogContent: ({ children }: any) => {
+    DialogContent: ({ children }: { children: ReactNode }) => {
         return (
             <DialogContext.Consumer>
                 {({ open }) => open ? <div data-testid="mock-dialog-content">{children}</div> : null}
             </DialogContext.Consumer>
         );
     },
-    DialogHeader: ({ children }: any) => <div>{children}</div>,
-    DialogTitle: ({ children }: any) => <h2>{children}</h2>,
-    DialogDescription: ({ children }: any) => <div>{children}</div>,
-    DialogFooter: ({ children }: any) => <div>{children}</div>,
-    DialogTrigger: ({ children, onClick, asChild }: any) => {
+    DialogHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
+    DialogDescription: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    DialogFooter: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    DialogTrigger: ({ children, onClick, asChild }: { children: ReactNode; onClick?: React.MouseEventHandler; asChild?: boolean }) => {
         return (
             <DialogContext.Consumer>
                 {({ onOpenChange }) => (
@@ -49,28 +49,28 @@ vi.mock('@/components/ui/dialog', () => ({
 }));
 
 vi.mock('@/components/ui/alert-dialog', () => ({
-    AlertDialog: ({ open, onOpenChange, children }: any) => (
+    AlertDialog: ({ open, onOpenChange, children }: { open: boolean; onOpenChange?: (o: boolean) => void; children: ReactNode }) => (
         <AlertDialogContext.Provider value={{ open }}>
             <div data-testid="mock-alert-dialog" data-state={open ? 'open' : 'closed'}>
                 {children}
             </div>
         </AlertDialogContext.Provider>
     ),
-    AlertDialogContent: ({ children }: any) => {
+    AlertDialogContent: ({ children }: { children: ReactNode }) => {
         return (
             <AlertDialogContext.Consumer>
                 {({ open }) => open ? <div data-testid="mock-alert-dialog-content">{children}</div> : null}
             </AlertDialogContext.Consumer>
         );
     },
-    AlertDialogHeader: ({ children }: any) => <div>{children}</div>,
-    AlertDialogTitle: ({ children }: any) => <h2>{children}</h2>,
-    AlertDialogDescription: ({ children }: any) => <div>{children}</div>,
-    AlertDialogFooter: ({ children }: any) => <div>{children}</div>,
-    AlertDialogAction: ({ children, onClick }: any) => (
+    AlertDialogHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    AlertDialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
+    AlertDialogDescription: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    AlertDialogFooter: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    AlertDialogAction: ({ children, onClick }: { children: ReactNode; onClick?: React.MouseEventHandler }) => (
         <button data-testid="mock-alert-action" onClick={onClick}>{children}</button>
     ),
-    AlertDialogCancel: ({ children, onClick }: any) => (
+    AlertDialogCancel: ({ children, onClick }: { children: ReactNode; onClick?: React.MouseEventHandler }) => (
         <button data-testid="mock-alert-cancel" onClick={onClick}>{children}</button>
     ),
 }));
@@ -79,7 +79,7 @@ vi.mock('@/components/ui/alert-dialog', () => ({
 const TabsContext = React.createContext({ value: 'overview', setValue: (v: string) => { } });
 
 vi.mock('@/components/ui/tabs', () => ({
-    Tabs: ({ defaultValue, children }: any) => {
+    Tabs: ({ defaultValue, children }: { defaultValue: string; children: ReactNode }) => {
         const [value, setValue] = React.useState(defaultValue);
         return (
             <TabsContext.Provider value={{ value, setValue }}>
@@ -87,8 +87,8 @@ vi.mock('@/components/ui/tabs', () => ({
             </TabsContext.Provider>
         );
     },
-    TabsList: ({ children }: any) => <div>{children}</div>,
-    TabsTrigger: ({ value, children }: any) => {
+    TabsList: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    TabsTrigger: ({ value, children }: { value: string; children: ReactNode }) => {
         return (
             <TabsContext.Consumer>
                 {({ value: currentValue, setValue }) => (
@@ -102,7 +102,7 @@ vi.mock('@/components/ui/tabs', () => ({
             </TabsContext.Consumer>
         );
     },
-    TabsContent: ({ value, children }: any) => {
+    TabsContent: ({ value, children }: { value: string; children: ReactNode }) => {
         return (
             <TabsContext.Consumer>
                 {({ value: currentValue }) => currentValue === value ? <div>{children}</div> : null}

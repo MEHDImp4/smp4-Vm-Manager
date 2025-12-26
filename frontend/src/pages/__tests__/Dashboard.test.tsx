@@ -29,9 +29,10 @@ describe('Dashboard Page', () => {
     pointsPerDay: 10,
     type: 'ct',
     vmid: 100,
-    cpu: '1',
-    ram: '512',
-    storage: '10'
+    cpu: 1,
+    ram: 512,
+    storage: 10,
+    created_at: new Date().toISOString()
   };
 
   beforeEach(() => {
@@ -45,7 +46,26 @@ describe('Dashboard Page', () => {
     );
   });
 
-  const mockFetch = (instances: any[] = [], isVerified = true) => {
+  interface Instance {
+    id: string;
+    name: string;
+    template: string;
+    status: string;
+    pointsPerDay: number;
+    paidDomainsCount?: number;
+    created_at: string;
+    expiresAt?: string | null;
+    user?: { email: string };
+    cpu: number;
+    ram: number;
+    storage: number;
+    ip?: string;
+    vmid?: number;
+    node?: string;
+    snapshotCount?: number;
+  }
+
+  const mockFetch = (instances: Instance[] = [], isVerified = true) => {
     if (!isVerified) {
       localStorage.getItem = vi.fn(() => JSON.stringify({ token: 'test-token', points: 1000, isVerified: false, email: 'test@smp4.xyz' }));
     }

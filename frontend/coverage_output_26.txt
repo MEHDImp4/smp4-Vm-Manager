@@ -1,0 +1,328 @@
+
+> vite_react_shadcn_ts@0.0.0 test:coverage
+> vitest run --coverage
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mC:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend[39m
+[2m      Coverage enabled with [22m[33mv8[39m
+
+ [32mΓ£ô[39m src/hooks/__tests__/use-toast.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32mΓ£ô[39m src/components/ui/__tests__/button.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 191[2mms[22m[39m
+ [32mΓ£ô[39m src/pages/__tests__/CreateInstance.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 871[2mms[22m[39m
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ [32mΓ£ô[39m src/pages/__tests__/Auth.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 1363[2mms[22m[39m
+ [32mΓ£ô[39m src/pages/__tests__/Dashboard.test.tsx [2m ([22m[2m10 tests[22m[2m)[22m[33m 1490[2mms[22m[39m
+ [32mΓ£ô[39m src/pages/__tests__/AdminDashboard.test.tsx [2m ([22m[2m7 tests[22m[2m)[22m[33m 1820[2mms[22m[39m
+stderr | src/pages/__tests__/InstanceDetails.test.tsx > InstanceDetails Page > Snapshots > should open create snapshot dialog and submit
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/__tests__/InstanceDetails.test.tsx > InstanceDetails Page > Snapshots > should open create snapshot dialog and submit
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/__tests__/InstanceDetails.test.tsx > InstanceDetails Page > Snapshots > should handle restore snapshot
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+Warning: validateDOMNesting(...): <p> cannot appear as a descendant of <p>.
+    at p
+    at div
+    at p
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-primitive/dist/index.mjs:28:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:254:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-alert-dialog/dist/index.mjs:99:11
+    at C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\components\ui\alert-dialog.tsx:75:82
+    at div
+    at AlertDialogHeader (C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\components\ui\alert-dialog.tsx:47:30)
+    at Slottable2 (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:50:25)
+    at div
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-primitive/dist/index.mjs:28:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs:24:7
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:33:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:9:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-primitive/dist/index.mjs:28:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-focus-scope/dist/index.mjs:15:5
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:206:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:132:58
+    at Presence (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-presence/dist/index.mjs:19:11)
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:123:64
+    at Provider (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-context/dist/index.mjs:27:15)
+    at Provider (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-context/dist/index.mjs:7:13)
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-alert-dialog/dist/index.mjs:53:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:33:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:9:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-primitive/dist/index.mjs:28:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-portal/dist/index.mjs:11:22
+    at Presence (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-presence/dist/index.mjs:19:11)
+    at Provider (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-context/dist/index.mjs:27:15)
+    at DialogPortal (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:85:11)
+    at AlertDialogPortal (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-alert-dialog/dist/index.mjs:34:11)
+    at C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\components\ui\alert-dialog.tsx:24:78
+    at Provider (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-context/dist/index.mjs:27:15)
+    at Dialog (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:25:5)
+    at AlertDialog (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-alert-dialog/dist/index.mjs:18:11)
+    at div
+    at InstanceDetails (C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\pages\InstanceDetails.tsx:64:53)
+    at AllTheProviders (C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\test\test-utils.tsx:5:28)
+Warning: validateDOMNesting(...): <div> cannot appear as a descendant of <p>.
+    at div
+    at p
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-primitive/dist/index.mjs:28:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:254:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-alert-dialog/dist/index.mjs:99:11
+    at C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\components\ui\alert-dialog.tsx:75:82
+    at div
+    at AlertDialogHeader (C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\components\ui\alert-dialog.tsx:47:30)
+    at Slottable2 (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:50:25)
+    at div
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-primitive/dist/index.mjs:28:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dismissable-layer/dist/index.mjs:24:7
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:33:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:9:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-primitive/dist/index.mjs:28:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-focus-scope/dist/index.mjs:15:5
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:206:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:132:58
+    at Presence (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-presence/dist/index.mjs:19:11)
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:123:64
+    at Provider (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-context/dist/index.mjs:27:15)
+    at Provider (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-context/dist/index.mjs:7:13)
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-alert-dialog/dist/index.mjs:53:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:33:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-slot/dist/index.mjs:9:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-primitive/dist/index.mjs:28:13
+    at file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-portal/dist/index.mjs:11:22
+    at Presence (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-presence/dist/index.mjs:19:11)
+    at Provider (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-context/dist/index.mjs:27:15)
+    at DialogPortal (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:85:11)
+    at AlertDialogPortal (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-alert-dialog/dist/index.mjs:34:11)
+    at C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\components\ui\alert-dialog.tsx:24:78
+    at Provider (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-context/dist/index.mjs:27:15)
+    at Dialog (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-dialog/dist/index.mjs:25:5)
+    at AlertDialog (file:///C:/Users/mehdi/Documents/GitHub/smp4-Vm-Manager/frontend/node_modules/@radix-ui/react-alert-dialog/dist/index.mjs:18:11)
+    at div
+    at InstanceDetails (C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\pages\InstanceDetails.tsx:64:53)
+    at AllTheProviders (C:\Users\mehdi\Documents\GitHub\smp4-Vm-Manager\frontend\src\test\test-utils.tsx:5:28)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/__tests__/InstanceDetails.test.tsx > InstanceDetails Page > Snapshots > should handle delete snapshot
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/__tests__/InstanceDetails.test.tsx > InstanceDetails Page > Upgrades > should purchase an upgrade
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/__tests__/InstanceDetails.test.tsx > InstanceDetails Page > Upgrades > should purchase an upgrade
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/__tests__/InstanceDetails.test.tsx > InstanceDetails Page > Power Actions > should handle restart action with confirmation
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/__tests__/InstanceDetails.test.tsx > InstanceDetails Page > Power Actions > should handle restart action with confirmation
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ [32mΓ£ô[39m src/pages/__tests__/InstanceDetails.test.tsx [2m ([22m[2m6 tests[22m[2m)[22m[33m 1430[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[32m38 passed[39m[22m[90m (38)[39m
+[2m   Start at [22m 00:38:50
+[2m   Duration [22m 9.41s[2m (transform 1.92s, setup 2.01s, collect 9.81s, tests 7.20s, environment 11.30s, prepare 2.66s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   79.11 |    59.22 |   51.02 |   79.11 |                   
+ components        |   50.86 |       25 |      10 |   50.86 |                   
+  ...intsModal.tsx |   50.86 |       25 |      10 |   50.86 | ...98-407,464-494 
+ lib               |     100 |      100 |     100 |     100 |                   
+  utils.ts         |     100 |      100 |     100 |     100 |                   
+ pages             |   85.23 |    61.23 |   58.51 |   85.23 |                   
+  Auth.tsx         |   78.97 |       40 |   28.57 |   78.97 | 62-93,97-141,165  
+  ...eInstance.tsx |   95.56 |    70.96 |   66.66 |   95.56 | ...2-83,91-96,182 
+  Dashboard.tsx    |   89.48 |    71.56 |   71.42 |   89.48 | ...77-602,798-819 
+  ...ceDetails.tsx |   81.92 |     55.7 |   60.37 |   81.92 | ...1057,1280-1284 
+ pages/admin       |    78.1 |    53.62 |   42.85 |    78.1 |                   
+  ...Dashboard.tsx |    78.1 |    53.62 |   42.85 |    78.1 | ...1022,1037-1238 
+-------------------|---------|----------|---------|---------|-------------------

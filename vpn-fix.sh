@@ -1,4 +1,7 @@
 #!/bin/sh
+# Install iptables
+apk add --no-cache iptables
+
 # wait for vpn interface?
 sleep 5
 echo "Applying VPN Masquerade Fix..."

@@ -512,8 +512,9 @@ const AdminDashboard = () => {
                                     </DialogHeader>
                                     <div className="space-y-4 py-4">
                                         <div className="space-y-2">
-                                            <Label>Nom</Label>
+                                            <Label htmlFor="pack-name">Nom</Label>
                                             <Input
+                                                id="pack-name"
                                                 placeholder="Ex: +1 vCPU, +4GB RAM"
                                                 value={newPack.name}
                                                 onChange={e => setNewPack({ ...newPack, name: e.target.value })}
@@ -521,8 +522,9 @@ const AdminDashboard = () => {
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label>Type</Label>
+                                                <Label htmlFor="pack-type">Type</Label>
                                                 <select
+                                                    id="pack-type"
                                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                                     value={newPack.type}
                                                     onChange={e => setNewPack({ ...newPack, type: e.target.value })}
@@ -533,8 +535,9 @@ const AdminDashboard = () => {
                                                 </select>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Quantité</Label>
+                                                <Label htmlFor="pack-amount">Quantité</Label>
                                                 <Input
+                                                    id="pack-amount"
                                                     type="number"
                                                     value={newPack.amount}
                                                     onChange={e => setNewPack({ ...newPack, amount: parseInt(e.target.value) })}
@@ -542,8 +545,9 @@ const AdminDashboard = () => {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Coût en Points (par jour)</Label>
+                                            <Label htmlFor="pack-cost">Coût en Points (par jour)</Label>
                                             <Input
+                                                id="pack-cost"
                                                 type="number"
                                                 step="0.1"
                                                 value={newPack.pointsCost}
@@ -678,40 +682,15 @@ const AdminDashboard = () => {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Button
-                                                                variant="outline" size="sm"
-                                                                onClick={() => {
-                                                                    setEditUser(user);
-                                                                    setEditPoints(user.points.toString());
-                                                                }}
-                                                            >
-                                                                <Edit className="w-3 h-3" />
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>Modifier les points</DialogTitle>
-                                                                <DialogDescription>
-                                                                    Mettre à jour le solde de {user.name}
-                                                                </DialogDescription>
-                                                            </DialogHeader>
-                                                            <div className="space-y-4 py-4">
-                                                                <div className="space-y-2">
-                                                                    <Label>Points</Label>
-                                                                    <Input
-                                                                        type="number"
-                                                                        value={editPoints}
-                                                                        onChange={(e) => setEditPoints(e.target.value)}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <DialogFooter>
-                                                                <Button onClick={handleUpdatePoints}>Sauvegarder</Button>
-                                                            </DialogFooter>
-                                                        </DialogContent>
-                                                    </Dialog>
+                                                    <Button
+                                                        variant="outline" size="sm"
+                                                        onClick={() => {
+                                                            setEditUser(user);
+                                                            setEditPoints(user.points.toString());
+                                                        }}
+                                                    >
+                                                        <Edit className="w-3 h-3" />
+                                                    </Button>
 
                                                     <Button
                                                         variant={user.isBanned ? "default" : "destructive"}
@@ -884,8 +863,9 @@ const AdminDashboard = () => {
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label>Points</Label>
+                                <Label htmlFor="points-edit">Points</Label>
                                 <Input
+                                    id="points-edit"
                                     type="number"
                                     value={editPoints}
                                     onChange={(e) => setEditPoints(e.target.value)}
@@ -1045,6 +1025,8 @@ const AdminDashboard = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+
         </div>
     );
 };

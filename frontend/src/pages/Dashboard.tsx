@@ -682,6 +682,7 @@ const Dashboard = () => {
                           size="icon"
                           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                           onClick={(e) => handleDeleteClick(instance, e)}
+                          data-testid="delete-instance-btn"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

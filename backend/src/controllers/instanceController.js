@@ -303,48 +303,9 @@ const getDomains = async (req, res) => {
     }
 };
 
-/**
- * GET /instances/:id/vpn - Get VPN config
- */
-const getVpnConfig = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userId = req.user.id;
 
-        const instance = await instanceService.getInstanceWithOwner(id, userId);
-        if (!instance) {
-            return res.status(404).json({ error: "Instance not found" });
-        }
 
-        try {
-            const config = await instanceService.getOrCreateVpnConfig(instance);
-            res.json({ config });
-        } catch (genError) {
-            log.error("Auto-generate VPN error:", genError);
-            return res.status(genError.message.includes("VMID") ? 400 : 500)
-                .json({ error: genError.message });
-        }
-    } catch (error) {
-        log.error("Get VPN config error:", error);
-        res.status(500).json({ error: "Failed to fetch VPN config" });
-    }
-};
 
-/**
- * POST /instances/:id/reset-password - Reset root password
- */
-const resetPassword = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userId = req.user.id;
-
-        const newPassword = await instanceService.resetRootPassword(id, userId);
-        res.json({ success: true, password: newPassword });
-    } catch (error) {
-        log.error(`Error resetting password: ${error.message}`);
-        res.status(500).json({ error: error.message });
-    }
-};
 
 module.exports = {
     createInstance,
@@ -356,7 +317,7 @@ module.exports = {
     createDomain,
     deleteDomain,
     getDomains,
-    getVpnConfig,
-    resetPassword,
+    // getVpnConfig removed
+    // resetPassword removed,
     togglePower: toggleInstanceStatus // Alias for consistency with route
 };

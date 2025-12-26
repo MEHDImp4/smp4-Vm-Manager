@@ -102,7 +102,7 @@ const log = {
     // Service-specific logging
     proxmox: (message, meta = {}) => logger.info(`[Proxmox] ${message}`, meta),
     cloudflare: (message, meta = {}) => logger.info(`[Cloudflare] ${message}`, meta),
-    vpn: (message, meta = {}) => logger.info(`[VPN] ${message}`, meta),
+
     ssh: (message, meta = {}) => logger.info(`[SSH] ${message}`, meta),
     cron: (message, meta = {}) => logger.info(`[Cron] ${message}`, meta),
     email: (message, meta = {}) => logger.info(`[Email] ${message}`, meta),

@@ -7,7 +7,7 @@ const { prisma } = require('../db');
 const proxmoxService = require('./proxmox.service');
 const sshService = require('./ssh.service');
 const cloudflareService = require('./cloudflare.service');
-const vpnService = require('./vpn.service');
+
 const emailService = require('./email.service');
 const { vmCreationQueue, vmAllocationQueue } = require('./queue.service');
 const log = require('./logger.service');
@@ -129,50 +129,7 @@ const configureSshAccess = async (ip, rootPassword) => {
     await sshService.execCommand(ip, `echo "root:${rootPassword}" | chpasswd`);
 };
 
-/**
- * Configure firewall rules for the VM
- */
-const configureFirewall = async (vmid) => {
-    const backendIp = getBackendIp();
 
-    if (backendIp) {
-        // Block VM from attacking host sensitive ports
-        const sensitivePorts = [22, 80, 85, 443, 8006];
-        await Promise.all(
-            sensitivePorts.map((port) =>
-                proxmoxService.addFirewallRule(vmid, {
-                    type: 'out',
-                    action: 'DROP',
-                    dest: backendIp,
-                    dport: port,
-                    proto: 'tcp',
-                    enable: 1,
-                    comment: `Block access to Host Port ${port}`
-                })
-            )
-        );
-    }
-
-    // Allow ALL Inbound Traffic
-    await proxmoxService.addFirewallRule(vmid, {
-        type: 'in',
-        action: 'ACCEPT',
-        enable: 1,
-        comment: 'Allow all inbound traffic (Web, Portainer, etc.)'
-    });
-
-    // Block access to Gateway
-    await proxmoxService.addFirewallRule(vmid, {
-        type: 'out',
-        action: 'DROP',
-        dest: '192.168.1.254',
-        enable: 1,
-        comment: 'Block access to Gateway Admin Interface'
-    });
-
-    // Enable firewall
-    await proxmoxService.setFirewallOptions(vmid, { enable: 1 });
-};
 
 /**
  * Create Portainer domain for instance
@@ -248,27 +205,10 @@ const provisionInBackground = async ({ instance, vmid, rootPassword, templateVer
                         await emailService.sendInstanceCredentials(user.email, user.name, instance.name, ip, rootPassword);
                     }
 
-                    // Configure firewall
-                    try {
-                        await configureFirewall(vmid);
-                        log.debug(`[Background] Firewall configured for ${vmid}`);
-                    } catch (fwError) {
-                        log.warn(`[Background] Firewall setup failed:`, fwError.message);
-                    }
+
+
                 } catch (sshError) {
                     log.error(`[Background] SSH configuration failed:`, sshError.message);
-                }
-
-                // Create VPN
-                try {
-                    const vpnData = await vpnService.createClient(ip);
-                    await prisma.instance.update({
-                        where: { id: instance.id },
-                        data: { vpnConfig: vpnData.config }
-                    });
-                    log.debug(`[Background] VPN configured for ${vmid}`);
-                } catch (vpnError) {
-                    log.error(`[Background] VPN creation failed:`, vpnError.message);
                 }
 
                 // Create Portainer domain
@@ -366,11 +306,7 @@ const deleteInstance = async (instance) => {
         }
     }
 
-    // Clean up VPN
-    if (instance.vpnConfig) {
-        log.debug(`Cleaning up VPN for instance ${instance.id}...`);
-        await vpnService.deleteClient(instance.vpnConfig);
-    }
+
 
     // Clean up domains
     if (instance.domains && instance.domains.length > 0) {
@@ -468,64 +404,9 @@ const syncDbStatus = async (instance, proxmoxStatus) => {
     }
 };
 
-/**
- * Generate or retrieve VPN config
- */
-const getOrCreateVpnConfig = async (instance) => {
-    if (instance.vpnConfig) {
-        return instance.vpnConfig;
-    }
 
-    if (!instance.vmid) {
-        throw new Error("Instance has no VMID");
-    }
 
-    const interfaces = await proxmoxService.getLXCInterfaces(instance.vmid);
-    const eth0 = interfaces.find(i => i.name === 'eth0');
-    const ip = eth0 && eth0.inet ? eth0.inet.split('/')[0] : null;
 
-    if (!ip || ip.startsWith('127.')) {
-        throw new Error("Instance must be running to generate VPN config");
-    }
-
-    log.debug(`[VPN] Generating missing config for ${instance.id} (${ip})...`);
-    const vpnData = await vpnService.createClient(ip);
-
-    await prisma.instance.update({
-        where: { id: instance.id },
-        data: { vpnConfig: vpnData.config }
-    });
-    log.vpn(`[DEBUG] Saved VPN config for instance ${instance.id}`);
-    log.vpn(`[DEBUG] Saved VPN config for instance ${instance.id}`);
-
-    return vpnData.config;
-};
-
-const resetRootPassword = async (instanceId, userId) => {
-    const instance = await prisma.instance.findUnique({
-        where: { id: instanceId }
-    });
-
-    if (!instance) throw new Error("Instance not found");
-    if (instance.userId !== userId) throw new Error("Unauthorized");
-
-    // Generate new secure password
-    const newPassword = crypto.randomBytes(8).toString('hex');
-
-    // Update Proxmox
-    await proxmoxService.configureLXC(instance.vmid, {
-        password: newPassword
-    });
-
-    // Update DB
-    await prisma.instance.update({
-        where: { id: instanceId },
-        data: { rootPassword: newPassword }
-    });
-
-    log.info(`[Instance] Reset password for ${instanceId}`);
-    return newPassword;
-};
 
 module.exports = {
     getBackendIp,
@@ -537,10 +418,6 @@ module.exports = {
     deleteInstance,
     getInstanceStats,
     syncDbStatus,
-    getOrCreateVpnConfig,
-    waitForVmIp,
-    configureSshAccess,
-    configureFirewall,
     createPortainerDomain,
-    resetRootPassword
+    // resetRootPassword removed
 };

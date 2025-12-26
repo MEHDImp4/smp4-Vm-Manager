@@ -537,39 +537,7 @@ const InstanceDetails = () => {
     };
 
     const handleDownloadVpnConfig = async () => {
-        try {
-            const userStr = localStorage.getItem("user");
-            if (!userStr) return;
-            const user = JSON.parse(userStr);
-
-            const toastId = toast.loading("Récupération de la configuration VPN...");
-
-            const response = await fetch(`/api/instances/${id}/vpn`, {
-                headers: { "Authorization": `Bearer ${user.token}` }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-
-                // Create Blob and download
-                const blob = new Blob([data.config], { type: 'text/plain' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `vpn-${instance.name.toLowerCase()}.conf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-
-                toast.success("Configuration téléchargée", { id: toastId });
-            } else {
-                toast.error("Impossible de récupérer la configuration", { id: toastId });
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("Erreur de téléchargement");
-        }
+        toast.error("La fonctionnalité VPN est temporairement désactivée pour maintenance.");
     };
 
 
@@ -759,60 +727,7 @@ const InstanceDetails = () => {
         }
     };
 
-    const handleResetPassword = () => {
-        setConfirmDialog({
-            isOpen: true,
-            title: "Réinitialiser le mot de passe root ?",
-            description: "Cela va générer un nouveau mot de passe root aléatoire et redémarrer les services SSH. Vous recevrez le nouveau mot de passe ici.",
-            onConfirm: () => executeResetPassword()
-        });
-    };
 
-    const executeResetPassword = async () => {
-        const userStr = localStorage.getItem("user");
-        if (!userStr) return;
-        const user = JSON.parse(userStr);
-
-        // Don't set global loading, just show toast
-        const toastId = toast.loading("Réinitialisation du mot de passe...");
-
-        try {
-            const response = await fetch(`/api/instances/${id}/reset-password`, {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${user.token}` }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                toast.success("Mot de passe réinitialisé !", { id: toastId });
-
-                // Show new password in a persistent alert or dialog
-                setConfirmDialog({
-                    isOpen: true,
-                    title: "Nouveau Mot de Passe Root",
-                    description: (
-                        <div className="space-y-4">
-                            <p>Voici votre nouveau mot de passe root. Copiez-le soigneusement :</p>
-                            <div className="bg-black/50 p-4 rounded-lg font-mono text-xl text-center select-all cursor-text border border-white/20 text-primary">
-                                {data.password}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Il a également été mis à jour dans la base de données.</p>
-                        </div>
-                    ),
-                    onConfirm: () => { } // Just close
-                });
-
-                // Trigger reload of stats to hopefully pick up changes if any
-                setRefreshKey(prev => prev + 1);
-            } else {
-                const err = await response.json();
-                toast.error(err.error || "Erreur lors de la réinitialisation", { id: toastId });
-            }
-        } catch (e) {
-            console.error(e);
-            toast.error("Erreur de connexion", { id: toastId });
-        }
-    };
 
 
     if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground"><Loader2 className="w-8 h-8 animate-spin" /></div>;
@@ -1185,22 +1100,7 @@ const InstanceDetails = () => {
                                 </div>
                             </div>
 
-                            {/* Danger Zone / Admin Actions */}
-                            <div className="glass rounded-xl p-6 border border-red-500/20 bg-red-500/5 animate-fade-up-delay-2 mt-6">
-                                <h3 className="font-semibold text-lg text-red-400 mb-4 flex items-center gap-2">
-                                    <Shield className="w-5 h-5" />
-                                    Zone de Danger
-                                </h3>
-                                <div className="flex gap-4 flex-wrap">
-                                    <Button
-                                        variant="outline"
-                                        className="border-red-500/50 hover:bg-red-500/10 hover:text-red-400"
-                                        onClick={handleResetPassword}
-                                    >
-                                        Réinitialiser le mot de passe Root
-                                    </Button>
-                                </div>
-                            </div>
+
 
                             <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between text-xs text-muted-foreground">
                                 <div className="flex items-center gap-2">
@@ -1310,21 +1210,7 @@ const InstanceDetails = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex gap-4 p-4 rounded-lg bg-white/5 border border-white/5">
-                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-bold text-sm">3</div>
-                                    <div>
-                                        <h4 className="font-medium mb-1 text-foreground">Accès VPN (Recommandé)</h4>
-                                        <div className="text-sm text-muted-foreground space-y-2">
-                                            <p>Pour accéder à votre VM de manière sécurisée et accéder aux services locaux :</p>
-                                            <ol className="list-decimal pl-4 space-y-1 text-xs marker:text-muted-foreground">
-                                                <li>Téléchargez votre fichier de configuration via le bouton <strong>VPN Config</strong> ci-dessus.</li>
-                                                <li>Installez le client officiel <a href="https://www.wireguard.com/install/" target="_blank" rel="noreferrer" className="text-primary hover:underline">WireGuard</a>.</li>
-                                                <li>Importez le fichier <code className="bg-black/50 px-1 py-0.5 rounded text-secondary font-mono">.conf</code> téléchargé.</li>
-                                                <li>Activez la connexion ("Activate") pour accéder à l'IP locale.</li>
-                                            </ol>
-                                        </div>
-                                    </div>
-                                </div>
+
                             </div>
                         </div>
 

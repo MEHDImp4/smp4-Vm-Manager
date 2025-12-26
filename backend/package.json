@@ -50,25 +50,25 @@
     "cross-spawn": "7.0.6",
     "glob": "10.5.0",
     "test-exclude": {
-      "glob": "7.2.3"
+      "glob": "10.5.0"
     },
     "jest": {
-      "glob": "7.2.3"
+      "glob": "10.5.0"
     },
     "jest-cli": {
-      "glob": "7.2.3"
+      "glob": "10.5.0"
     },
     "jest-config": {
-      "glob": "7.2.3"
+      "glob": "10.5.0"
     },
     "jest-runtime": {
-      "glob": "7.2.3"
+      "glob": "10.5.0"
     },
     "@jest/core": {
-      "glob": "7.2.3"
+      "glob": "10.5.0"
     },
     "@jest/reporters": {
-      "glob": "7.2.3"
+      "glob": "10.5.0"
     }
   }
 }

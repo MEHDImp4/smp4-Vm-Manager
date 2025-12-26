@@ -501,6 +501,32 @@ const getOrCreateVpnConfig = async (instance) => {
     return vpnData.config;
 };
 
+const resetRootPassword = async (instanceId, userId) => {
+    const instance = await prisma.instance.findUnique({
+        where: { id: instanceId }
+    });
+
+    if (!instance) throw new Error("Instance not found");
+    if (instance.userId !== userId) throw new Error("Unauthorized");
+
+    // Generate new secure password
+    const newPassword = crypto.randomBytes(8).toString('hex');
+
+    // Update Proxmox
+    await proxmoxService.configureLXC(instance.vmid, {
+        password: newPassword
+    });
+
+    // Update DB
+    await prisma.instance.update({
+        where: { id: instanceId },
+        data: { rootPassword: newPassword }
+    });
+
+    log.info(`[Instance] Reset password for ${instanceId}`);
+    return newPassword;
+};
+
 module.exports = {
     getBackendIp,
     allocateInstance,
@@ -515,5 +541,6 @@ module.exports = {
     waitForVmIp,
     configureSshAccess,
     configureFirewall,
-    createPortainerDomain
+    createPortainerDomain,
+    resetRootPassword
 };

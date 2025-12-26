@@ -15,7 +15,8 @@ router.use(verifyToken);
 
 router.get('/', getInstances);
 router.post('/', validateBody(createInstanceSchema), createInstance);
-router.post('/:id/toggle', toggleInstanceStatus);
+router.post('/:id/toggle', require('../controllers/instanceController').togglePower);
+router.post('/:id/reset-password', require('../controllers/instanceController').resetPassword);
 router.post('/:id/restart', require('../controllers/instanceController').restartInstance);
 router.get('/:id/stats', getInstanceStats);
 router.get('/:id/vpn', require('../controllers/instanceController').getVpnConfig);

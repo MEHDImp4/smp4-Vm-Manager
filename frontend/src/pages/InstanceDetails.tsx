@@ -759,6 +759,60 @@ const InstanceDetails = () => {
         }
     };
 
+    const handleResetPassword = () => {
+        setConfirmDialog({
+            isOpen: true,
+            title: "Réinitialiser le mot de passe root ?",
+            description: "Cela va générer un nouveau mot de passe root aléatoire et redémarrer les services SSH. Vous recevrez le nouveau mot de passe ici.",
+            onConfirm: () => executeResetPassword()
+        });
+    };
+
+    const executeResetPassword = async () => {
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+
+        // Don't set global loading, just show toast
+        const toastId = toast.loading("Réinitialisation du mot de passe...");
+
+        try {
+            const response = await fetch(`/api/instances/${id}/reset-password`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${user.token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                toast.success("Mot de passe réinitialisé !", { id: toastId });
+
+                // Show new password in a persistent alert or dialog
+                setConfirmDialog({
+                    isOpen: true,
+                    title: "Nouveau Mot de Passe Root",
+                    description: (
+                        <div className="space-y-4">
+                            <p>Voici votre nouveau mot de passe root. Copiez-le soigneusement :</p>
+                            <div className="bg-black/50 p-4 rounded-lg font-mono text-xl text-center select-all cursor-text border border-white/20 text-primary">
+                                {data.password}
+                            </div>
+                            <p className="text-xs text-muted-foreground">Il a également été mis à jour dans la base de données.</p>
+                        </div>
+                    ),
+                    onConfirm: () => { } // Just close
+                });
+
+                // Trigger reload of stats to hopefully pick up changes if any
+                setRefreshKey(prev => prev + 1);
+            } else {
+                const err = await response.json();
+                toast.error(err.error || "Erreur lors de la réinitialisation", { id: toastId });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Erreur de connexion", { id: toastId });
+        }
+    };
 
 
     if (loading) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground"><Loader2 className="w-8 h-8 animate-spin" /></div>;
@@ -1109,6 +1163,7 @@ const InstanceDetails = () => {
                                                         onClick={() => handleRestoreSnapshot(snap.id, snap.name)}
                                                         disabled={snapshotLoading}
                                                         title="Restaurer"
+
                                                         className="h-8 w-8 text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10"
                                                     >
                                                         <History className="w-4 h-4" />
@@ -1127,6 +1182,23 @@ const InstanceDetails = () => {
                                             </div>
                                         ))
                                     )}
+                                </div>
+                            </div>
+
+                            {/* Danger Zone / Admin Actions */}
+                            <div className="glass rounded-xl p-6 border border-red-500/20 bg-red-500/5 animate-fade-up-delay-2 mt-6">
+                                <h3 className="font-semibold text-lg text-red-400 mb-4 flex items-center gap-2">
+                                    <Shield className="w-5 h-5" />
+                                    Zone de Danger
+                                </h3>
+                                <div className="flex gap-4 flex-wrap">
+                                    <Button
+                                        variant="outline"
+                                        className="border-red-500/50 hover:bg-red-500/10 hover:text-red-400"
+                                        onClick={handleResetPassword}
+                                    >
+                                        Réinitialiser le mot de passe Root
+                                    </Button>
                                 </div>
                             </div>
 
@@ -1385,7 +1457,7 @@ const InstanceDetails = () => {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 };
 

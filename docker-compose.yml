@@ -158,6 +158,19 @@ services:
           cpus: '1'
           memory: 512M
 
+  vpn-fixer:
+    image: alpine:latest
+    container_name: smp4-vpn-fixer
+    cap_add:
+      - NET_ADMIN
+    network_mode: service:vpn
+    restart: on-failure
+    volumes:
+      - ./vpn-fix.sh:/vpn-fix.sh
+    command: /bin/sh /vpn-fix.sh
+    depends_on:
+      - vpn
+
   watchtower:
     image: containrrr/watchtower
     container_name: smp4-watchtower

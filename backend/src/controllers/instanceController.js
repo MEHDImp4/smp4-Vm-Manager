@@ -330,6 +330,22 @@ const getVpnConfig = async (req, res) => {
     }
 };
 
+/**
+ * POST /instances/:id/reset-password - Reset root password
+ */
+const resetPassword = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const newPassword = await instanceService.resetRootPassword(id, userId);
+        res.json({ success: true, password: newPassword });
+    } catch (error) {
+        log.error(`Error resetting password: ${error.message}`);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     createInstance,
     getInstances,
@@ -340,5 +356,7 @@ module.exports = {
     createDomain,
     deleteDomain,
     getDomains,
-    getVpnConfig
+    getVpnConfig,
+    resetPassword,
+    togglePower: toggleInstanceStatus // Alias for consistency with route
 };

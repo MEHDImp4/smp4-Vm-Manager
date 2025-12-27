@@ -48,27 +48,27 @@
   },
   "overrides": {
     "cross-spawn": "7.0.6",
-    "glob": "10.5.0",
+    "glob": "10.6.0",
     "test-exclude": {
-      "glob": "10.5.0"
+      "glob": "7.2.3"
     },
     "jest": {
-      "glob": "10.5.0"
+      "glob": "7.2.3"
     },
     "jest-cli": {
-      "glob": "10.5.0"
+      "glob": "7.2.3"
     },
     "jest-config": {
-      "glob": "10.5.0"
+      "glob": "7.2.3"
     },
     "jest-runtime": {
-      "glob": "10.5.0"
+      "glob": "7.2.3"
     },
     "@jest/core": {
-      "glob": "10.5.0"
+      "glob": "7.2.3"
     },
     "@jest/reporters": {
-      "glob": "10.5.0"
+      "glob": "7.2.3"
     }
   }
 }

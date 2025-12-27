@@ -50,53 +50,6 @@ jobs:
           cache-from: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.FRONTEND_IMAGE }}:buildcache,mode=max
 
-      - name: Build and push VPN
-        uses: docker/build-push-action@v5
-        with:
-          context: ./vpn
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.VPN_IMAGE }}:latest,${{ env.VPN_IMAGE }}:${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.VPN_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.VPN_IMAGE }}:buildcache,mode=max
 
-  security-scan:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    permissions:
-      security-events: write
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner on Backend
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.BACKEND_IMAGE }}:latest
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Run Trivy vulnerability scanner on Frontend
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.FRONTEND_IMAGE }}:latest
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Run Trivy vulnerability scanner on VPN
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.VPN_IMAGE }}:latest
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
 
 

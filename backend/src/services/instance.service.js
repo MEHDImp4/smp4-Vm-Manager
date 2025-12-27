@@ -58,7 +58,8 @@ const getBackendIp = () => {
  * Allocate VMID and create initial DB record
  * Serialized via vmAllocationQueue to prevent race conditions
  */
-const allocateInstance = async ({ name, template, cpu, ram, storage, pointsPerDay, userId }) => {
+const allocateInstance = async (config) => {
+    const { name, template, cpu, ram, storage, pointsPerDay, userId } = config;
     return vmAllocationQueue.add(async () => {
         // Get next VMID from Proxmox
         let vmid = parseInt(await proxmoxService.getNextVmid());
@@ -161,81 +162,87 @@ const createPortainerDomain = async (instance, user, ip) => {
 /**
  * Provision instance in background (clone, configure, setup)
  */
-const provisionInBackground = async ({ instance, vmid, rootPassword, templateVersion, user }) => {
-    vmCreationQueue.add(async () => {
+/**
+ * Provision instance in background (clone, configure, setup)
+ */
+const provisionInBackground = async (params) => {
+    vmCreationQueue.add(() => _performProvisioning(params));
+};
+
+/**
+ * Internal provisioning logic (extracted to reduce nesting)
+ */
+const _performProvisioning = async ({ instance, vmid, rootPassword, templateVersion, user }) => {
+    try {
+        const sanitizedUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const userIdShort = String(user.id).slice(0, 6);
+        const instanceIdShort = String(instance.id).slice(0, 8);
+        const technicalHostname = `${userIdShort}-${sanitizedUser}-${instance.template.toLowerCase()}-${instanceIdShort}`;
+
+        log.debug(`[Queue] Starting processing for ${vmid}...`);
+
+        // Clone LXC
+        const upid = await proxmoxService.cloneLXC(templateVersion.proxmoxId, vmid, technicalHostname);
+        await proxmoxService.waitForTask(upid);
+        log.debug(`[Background] Clone complete for ${vmid}`);
+
+        // Set tags
         try {
-            const sanitizedUser = user.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const userIdShort = String(user.id).slice(0, 6);
-            const instanceIdShort = String(instance.id).slice(0, 8);
-            const technicalHostname = `${userIdShort}-${sanitizedUser}-${instance.template.toLowerCase()}-${instanceIdShort}`;
-
-            log.debug(`[Queue] Starting processing for ${vmid}...`);
-
-            // Clone LXC
-            const upid = await proxmoxService.cloneLXC(templateVersion.proxmoxId, vmid, technicalHostname);
-            await proxmoxService.waitForTask(upid);
-            log.debug(`[Background] Clone complete for ${vmid}`);
-
-            // Set tags
-            try {
-                const dateTag = new Date().toISOString().split('T')[0];
-                await proxmoxService.configureLXC(vmid, { tags: `${sanitizedUser},${instance.template},${dateTag}` });
-            } catch (tagError) {
-                log.warn(`[Background] Failed to set tag for ${vmid}:`, tagError.message);
-            }
-
-            // Start LXC
-            await proxmoxService.startLXC(vmid);
-            log.debug(`[Background] LXC ${vmid} started`);
-
-            // Wait for IP
-            const ip = await waitForVmIp(vmid);
-
-            if (ip) {
-                log.debug(`[Background] VM ${vmid} is up at ${ip}. Configuring...`);
-
-                await new Promise(r => setTimeout(r, SSH_READY_DELAY_MS));
-
-                try {
-                    await configureSshAccess(ip, rootPassword);
-                    log.debug(`[Background] User 'smp4' configured for ${vmid}`);
-
-                    // Send credentials email
-                    if (user && user.email) {
-                        await emailService.sendInstanceCredentials(user.email, user.name, instance.name, ip, rootPassword);
-                    }
-
-
-
-                } catch (sshError) {
-                    log.error(`[Background] SSH configuration failed:`, sshError.message);
-                }
-
-                // Create Portainer domain
-                try {
-                    await createPortainerDomain(instance, user, ip);
-                } catch (domainError) {
-                    log.error(`[Background] Portainer domain creation failed:`, domainError);
-                }
-            } else {
-                log.error(`[Background] Timed out waiting for IP for ${vmid}`);
-            }
-
-            // Mark as online
-            await prisma.instance.update({
-                where: { id: instance.id },
-                data: { status: 'online' }
-            });
-            log.debug(`[Background] Instance ${instance.id} is now ONLINE`);
-
-        } catch (bgError) {
-            log.error(`[Background] Creation failed for ${vmid}:`, bgError.message);
-            await prisma.instance.update({
-                where: { id: instance.id },
-                data: { status: 'error' }
-            });
+            const dateTag = new Date().toISOString().split('T')[0];
+            await proxmoxService.configureLXC(vmid, { tags: `${sanitizedUser},${instance.template},${dateTag}` });
+        } catch (tagError) {
+            log.warn(`[Background] Failed to set tag for ${vmid}:`, tagError.message);
         }
-    });
+
+        // Start LXC
+        await proxmoxService.startLXC(vmid);
+        log.debug(`[Background] LXC ${vmid} started`);
+
+        // Wait for IP
+        const ip = await waitForVmIp(vmid);
+
+        if (ip) {
+            log.debug(`[Background] VM ${vmid} is up at ${ip}. Configuring...`);
+
+            await new Promise(r => setTimeout(r, SSH_READY_DELAY_MS));
+
+            try {
+                await configureSshAccess(ip, rootPassword);
+                log.debug(`[Background] User 'smp4' configured for ${vmid}`);
+
+                // Send credentials email
+                if (user && user.email) {
+                    await emailService.sendInstanceCredentials(user.email, user.name, instance.name, ip, rootPassword);
+                }
+
+            } catch (sshError) {
+                log.error(`[Background] SSH configuration failed:`, sshError.message);
+            }
+
+            // Create Portainer domain
+            try {
+                await createPortainerDomain(instance, user, ip);
+            } catch (domainError) {
+                log.error(`[Background] Portainer domain creation failed:`, domainError);
+            }
+        } else {
+            log.error(`[Background] Timed out waiting for IP for ${vmid}`);
+        }
+
+        // Mark as online
+        await prisma.instance.update({
+            where: { id: instance.id },
+            data: { status: 'online' }
+        });
+        log.debug(`[Background] Instance ${instance.id} is now ONLINE`);
+
+    } catch (bgError) {
+        log.error(`[Background] Creation failed for ${vmid}:`, bgError.message);
+        await prisma.instance.update({
+            where: { id: instance.id },
+            data: { status: 'error' }
+        });
+    }
 };
 
 /**

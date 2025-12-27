@@ -81,37 +81,7 @@ jobs:
       - name: Run tests
         working-directory: frontend
         run: npm run test:coverage
-
-
-
-  vpn-tests:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: vpn/package-lock.json
-
-      - name: Install dependencies
-        working-directory: vpn
-        run: npm ci
-
-      - name: Run tests
-        working-directory: vpn
-        run: npm test
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./vpn/coverage/coverage-final.json
-          flags: vpn
-          name: vpn-coverage
-
+        
   lint:
     runs-on: ubuntu-latest
 

@@ -48,9 +48,9 @@ describe('Admin Routes', () => {
                 meta: { total: 1, page: 1, lastPage: 1 }
             });
 
-            const res = await request(app).get('/api/admin/users');
-            expect(res.status).toBe(200);
-            expect(res.body.data).toHaveLength(1);
+            const response = await request(app).get('/api/admin/users');
+            expect(response.status).toBe(200);
+            expect(response.body.data).toHaveLength(1);
         });
     });
 
@@ -59,14 +59,14 @@ describe('Admin Routes', () => {
             // Setup update mock
             prisma.user.update.mockResolvedValue({ id: 2, points: 500 }); // Mock on the imported prisma instance
 
-            const res = await request(app)
+            const response = await request(app)
                 .put('/api/admin/users/2')
                 .send({ points: 500 });
 
-            if (res.status === 500) {
-                console.error(res.body);
+            if (response.status === 500) {
+                console.error(response.body);
             }
-            expect(res.status).toBe(200);
+            expect(response.status).toBe(200);
             expect(prisma.user.update).toHaveBeenCalled();
         });
     });
@@ -84,8 +84,8 @@ describe('Admin Routes', () => {
             prisma.user.delete.mockResolvedValue({ id: 2 });
             prisma.$transaction.mockImplementation((callback) => callback(prisma));
 
-            const res = await request(app).delete('/api/admin/users/2').send({ reason: 'Bye' });
-            expect(res.status).toBe(200);
+            const response = await request(app).delete('/api/admin/users/2').send({ reason: 'Bye' });
+            expect(response.status).toBe(200);
         });
     });
 
@@ -97,8 +97,8 @@ describe('Admin Routes', () => {
                 meta: { total: 0, page: 1, lastPage: 1 }
             });
 
-            const res = await request(app).get('/api/admin/instances');
-            expect(res.status).toBe(200);
+            const response = await request(app).get('/api/admin/instances');
+            expect(response.status).toBe(200);
         });
     });
 });
